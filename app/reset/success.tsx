@@ -29,7 +29,7 @@ export default function Success() {
         />
         <View className="flex-row items-center justify-center my-2">
 
-        <Text className="text-3xl font-bold text-center text-primary"
+        <Text className="text-3xl font-bold text-center text-primary mr-2"
         style={{ color: '#0072CE' }} // Adjust the color as needed
         >
          HI!
