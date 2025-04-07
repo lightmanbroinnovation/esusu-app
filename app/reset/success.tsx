@@ -48,9 +48,9 @@ export default function Success() {
         </View>
       <TouchableOpacity
         className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
-        onPress={() => router.push("/signup/security")}
+        onPress={() => router.push("/login")} // Navigate to the login page
       >
-        <Text className="text-white font-bold text-center">Go to Dashboard</Text>
+        <Text className="text-white font-bold text-center">Go to Login</Text>
       </TouchableOpacity>
     </View>
   );
