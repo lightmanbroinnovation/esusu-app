@@ -109,7 +109,8 @@ export default function PasscodeScreen() {
 
         {renderPinInputs()}
 
-        <TouchableOpacity className="mt-2">
+        <TouchableOpacity className="mt-2"
+          onPress={() => router.push("/reset/otp")}>
           <Text className="text-sm text-primaryText">Forgot passcode?</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleFingerprintAuth} className="mt-6 items-center">
