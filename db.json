@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "id": "79f8",
+      "firstname": "John",
+      "lastname": "Doe",
+      "email": "J@gmail.com",
+      "business": "Garri",
+      "address": "123",
+      "city": "Main",
+      "state": "Boston"
+    },
+    {
+      "id": "138e",
+      "firstname": "Olumide",
+      "lastname": "Oyebisi",
+      "email": "oluoye@gmail.con",
+      "business": "Real estate mogul",
+      "address": "123th street",
+      "city": "Peckham",
+      "state": "London"
+    },
+    {
+      "id": "5ac0",
+      "firstname": "jane",
+      "lastname": "doe",
+      "email": "jane@gmail.com",
+      "business": "okrika",
+      "address": "23, Main street",
+      "city": "sun city",
+      "state": "texas"
+    }
+  ]
+}

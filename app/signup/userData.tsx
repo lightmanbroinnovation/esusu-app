@@ -8,10 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+import { MaterialIcons, Ionicons } from "@expo/vector-icons"; 
+import { registerUser } from '../../services/api';  // Import registerUser function
 
 export default function UserData() {
   const router = useRouter();
@@ -44,6 +46,29 @@ export default function UserData() {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  // Function to handle form submission
+  const handleSubmit = async () => {
+    const userData = {
+      firstname,
+      lastname,
+      email,
+      business,
+      address,
+      city,
+      state,
+    };
+
+    try {
+      const response = await registerUser(userData);
+      Alert.alert("User Registered", "User information saved successfully!");
+      console.log("User registered:", response);
+      router.push("/signup/document");  // Navigate to next screen on success
+    } catch (error) {
+      Alert.alert("Error", "Failed to register user. Please try again.");
+      console.error("Registration error:", error);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -189,16 +214,14 @@ export default function UserData() {
 
         {/* Continue Button */}
         <View className="pb-4">
-      
           {!isKeyboardVisible && ( // Hide button when keyboard is visible
-               <TouchableOpacity
-               className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-               onPress={() => router.push("/signup/document")}
-             >
-               <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
-               <MaterialIcons name="arrow-forward" size={18} color="white" />
-             </TouchableOpacity>
-          )}
+            <TouchableOpacity
+              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              onPress={handleSubmit} // Use handleSubmit for registration
+            >
+              <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
+              <MaterialIcons name="arrow-forward" size={18} color="white" />
+            </TouchableOpacity>          )}
         </View>
       </View>
     </KeyboardAvoidingView>
