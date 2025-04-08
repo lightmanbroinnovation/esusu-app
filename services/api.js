@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL } from "@env"; // Import the environment variable
 
 const axiosInstance = axios.create({
-  baseURL: 'http://192.168.0.116:8082', // Ensure this is your correct server URL
+  baseURL: API_BASE_URL, // Use the environment variable
   timeout: 5000, // Timeout increased to 5 seconds (you can adjust as needed)
 });
 

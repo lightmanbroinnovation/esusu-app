@@ -22,7 +22,7 @@ export default function SecuritySetup() {
       console.log("User registered:", response);
 
       // Navigate to the dashboard or success page
-      router.push("/"); // Replace with your dashboard route
+      router.push("/dashboard/index"); // Optional navigation
     } catch (error) {
       Alert.alert("Error", "Failed to register user. Please try again.");
       console.error("Registration error:", error);

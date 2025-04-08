@@ -33,7 +33,7 @@ export default function PasscodeScreen() {
 
     if (result.success) {
       alert("Authenticated successfully!");
-      // router.push("/home"); // Optional navigation
+      router.push("/dashboard/index"); // Optional navigation
     } else {
       alert("Authentication failed");
     }
