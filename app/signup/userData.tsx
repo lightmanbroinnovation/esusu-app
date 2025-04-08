@@ -8,16 +8,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; 
-import { registerUser } from '../../services/api';  // Import registerUser function
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 
 export default function UserData() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { phone, pin } = useLocalSearchParams(); // Retrieve phone and pin from query params
 
   // State for input fields
   const [firstname, setFirstname] = useState("");
@@ -48,8 +47,10 @@ export default function UserData() {
   }, []);
 
   // Function to handle form submission
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const userData = {
+      phone,
+      pin,
       firstname,
       lastname,
       email,
@@ -59,15 +60,11 @@ export default function UserData() {
       state,
     };
 
-    try {
-      const response = await registerUser(userData);
-      Alert.alert("User Registered", "User information saved successfully!");
-      console.log("User registered:", response);
-      router.push("/signup/document");  // Navigate to next screen on success
-    } catch (error) {
-      Alert.alert("Error", "Failed to register user. Please try again.");
-      console.error("Registration error:", error);
-    }
+    // Navigate to the next page with the user data
+    router.push({
+      pathname: "/signup/document",
+      params: userData, // Pass all user data to the next page
+    });
   };
 
   return (
@@ -115,8 +112,8 @@ export default function UserData() {
                 placeholder="Enter your first name"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-inputBg"
                 style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                  backgroundColor: "#F4F4F5",
+                }}
               />
             </View>
 
@@ -128,9 +125,9 @@ export default function UserData() {
                 onChangeText={setLastname}
                 placeholder="Enter your last name"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                      style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                style={{
+                  backgroundColor: "#F4F4F5",
+                }}
               />
             </View>
 
@@ -143,9 +140,9 @@ export default function UserData() {
                 placeholder="Enter your email"
                 keyboardType="email-address"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                      style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                style={{
+                  backgroundColor: "#F4F4F5",
+                }}
               />
             </View>
 
@@ -157,9 +154,9 @@ export default function UserData() {
                 onChangeText={setBusiness}
                 placeholder="Enter your business name"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                      style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                style={{
+                  backgroundColor: "#F4F4F5",
+                }}
               />
             </View>
 
@@ -171,9 +168,9 @@ export default function UserData() {
                 onChangeText={setAddress}
                 placeholder="Enter your address"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                      style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                style={{
+                  backgroundColor: "#F4F4F5",
+                }}
               />
             </View>
 
@@ -186,9 +183,9 @@ export default function UserData() {
                   onChangeText={setCity}
                   placeholder="Enter your city"
                   className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                        style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                  style={{
+                    backgroundColor: "#F4F4F5",
+                  }}
                 />
               </View>
 
@@ -200,9 +197,9 @@ export default function UserData() {
                   onChangeText={setState}
                   placeholder="Enter your state"
                   className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                        style={{
-                backgroundColor: "#F4F4F5",
-              }}
+                  style={{
+                    backgroundColor: "#F4F4F5",
+                  }}
                 />
               </View>
             </View>
@@ -214,14 +211,15 @@ export default function UserData() {
 
         {/* Continue Button */}
         <View className="pb-4">
-          {!isKeyboardVisible && ( // Hide button when keyboard is visible
+          {!isKeyboardVisible && (
             <TouchableOpacity
               className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={handleSubmit} // Use handleSubmit for registration
+              onPress={handleSubmit} // Use handleSubmit to pass data to the next page
             >
               <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
               <MaterialIcons name="arrow-forward" size={18} color="white" />
-            </TouchableOpacity>          )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </KeyboardAvoidingView>

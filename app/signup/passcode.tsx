@@ -5,7 +5,7 @@ export const options = {
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, Vibration } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 
 export default function PasscodeScreen() {
@@ -14,6 +14,7 @@ export default function PasscodeScreen() {
   const [isConfirming, setIsConfirming] = useState<boolean>(false); // State to toggle between "Enter PIN" and "Confirm PIN"
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams(); // Retrieve params from the previous page
 
   const handleKeyPress = (digit: string) => {
     if (!isConfirming && pin.length < 4) {
@@ -95,19 +96,48 @@ export default function PasscodeScreen() {
     );
   };
 
+  const handleSubmit = () => {
+    if (!isConfirming) {
+      if (pin.length === 4) {
+        setIsConfirming(true); // Move to confirm PIN step
+        setConfirmPin(""); // Clear confirm PIN field
+      } else {
+        Vibration.vibrate(100);
+        alert("Please enter a 4-digit passcode.");
+      }
+    } else {
+      if (confirmPin === pin) {
+        const passcodeData = {
+          ...params, // Include data from the previous page
+          pin, // Add the confirmed PIN
+        };
+
+        // Navigate to the success page with the combined data
+        router.push({
+          pathname: "/signup/success",
+          params: passcodeData, // Pass all data to the next page
+        });
+      } else {
+        Vibration.vibrate(100);
+        alert("Passcodes do not match. Please try again.");
+        setConfirmPin(""); // Reset confirm PIN field
+      }
+    }
+  };
+
   return (
     <View className="flex-1 bg-white px-6 justify-between pb-10">
       {/* Top section */}
-              {/* Header */}
-              <View className="flex-row justify-between items-center mt-6">
-          <TouchableOpacity
-            className="flex-row items-center"
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={28} />
-          </TouchableOpacity>
-          <Text className="font-semibold">Step 4 of 4</Text>
-        </View>
+      {/* Header */}
+      <View className="flex-row justify-between items-center mt-6">
+        <TouchableOpacity
+          className="flex-row items-center"
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={28} />
+        </TouchableOpacity>
+        <Text className="font-semibold">Step 4 of 4</Text>
+      </View>
       <View className="items-center">
         <Text className="text-2xl font-bold text-primaryText">
           {isConfirming ? "Confirm passcode" : "Create passcode"}
@@ -126,35 +156,16 @@ export default function PasscodeScreen() {
 
       {/* Next or Complete Registration Button */}
       <View className="pb-4">
-  <TouchableOpacity
-    className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-    onPress={() => {
-      if (!isConfirming) {
-        if (pin.length === 4) {
-          setIsConfirming(true); // Move to confirm PIN step
-          setConfirmPin(""); // Clear confirm PIN field
-        } else {
-          Vibration.vibrate(100);
-          alert("Please enter a 4-digit passcode.");
-        }
-      } else {
-        if (confirmPin === pin) {
-          // Navigate to the success page
-          router.push("/signup/success");
-        } else {
-          Vibration.vibrate(100);
-          alert("Passcodes do not match. Please try again.");
-          setConfirmPin(""); // Reset confirm PIN field
-        }
-      }
-    }}
-  >
-    <Text className="text-white text-lg mr-2 font-semibold">
-      {isConfirming ? "Complete Registration" : "Next"}
-    </Text>
-    <MaterialIcons name="arrow-forward" size={18} color="white" />
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity
+          className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+          onPress={handleSubmit}
+        >
+          <Text className="text-white text-lg mr-2 font-semibold">
+            {isConfirming ? "Complete Registration" : "Next"}
+          </Text>
+          <MaterialIcons name="arrow-forward" size={18} color="white" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

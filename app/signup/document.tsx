@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { Ionicons } from "@expo/vector-icons"; // Import icon library
 
 export default function UploadDocumentScreen() {
@@ -18,20 +18,36 @@ export default function UploadDocumentScreen() {
   const [cacImage, setCacImage] = useState(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams(); // Retrieve params from the previous page
 
-const pickImage = async (setImage: any) => {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images, // Use MediaTypeOptions.Images
-    quality: 1,
-  });
+  const pickImage = async (setImage: any) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Use MediaTypeOptions.Images
+      quality: 1,
+    });
 
-  if (!result.canceled && result.assets && result.assets.length > 0) {
-    console.log("Selected Image URI:", result.assets[0].uri); // Debugging: Log the selected image URI
-    setImage(result.assets[0].uri);
-  } else {
-    console.log("Image selection canceled or failed."); // Debugging: Log if no image is selected
-  }
-};
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      console.log("Selected Image URI:", result.assets[0].uri); // Debugging: Log the selected image URI
+      setImage(result.assets[0].uri);
+    } else {
+      console.log("Image selection canceled or failed."); // Debugging: Log if no image is selected
+    }
+  };
+
+  const handleSubmit = () => {
+    const documentData = {
+      ...params, // Include data from the previous page
+      bvn,
+      idImage,
+      cacImage,
+    };
+
+    // Navigate to the next page with the combined data
+    router.push({
+      pathname: "/signup/passcode",
+      params: documentData, // Pass all data to the next page
+    });
+  };
 
   return (
     <View
@@ -49,7 +65,7 @@ const pickImage = async (setImage: any) => {
         <Text className="font-semibold">Step 3 of 4</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{  paddingTop: 10 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 10 }}>
         {/* Title */}
         <Text className="text-[#0072CE] text-[24px] font-bold mb-2">
           Upload Your ID for Security
@@ -78,15 +94,15 @@ const pickImage = async (setImage: any) => {
           Upload ID (NIN, Voter's Card, or Driver’s License)
         </Text>
         <View
-         className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
-         style={{
-           height: 160,
-           backgroundColor: "#F4F4F5",
-           padding: 30,
-           borderWidth: 2,
-           borderColor: "#E0E0E0",
-           borderStyle: "dashed", // Add dashed border
-         }}
+          className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
+          style={{
+            height: 160,
+            backgroundColor: "#F4F4F5",
+            padding: 30,
+            borderWidth: 2,
+            borderColor: "#E0E0E0",
+            borderStyle: "dashed", // Add dashed border
+          }}
         >
           <TouchableOpacity
             onPress={() => pickImage(setIdImage)}
@@ -100,18 +116,26 @@ const pickImage = async (setImage: any) => {
               />
             ) : (
               <>
-   <View
-                  className="rounded-full bg-[#CCE3FF] p-1  "
-                  style={{ width: 40, height: 40, justifyContent: "center", alignItems: "center", borderRadius: 20, backgroundColor: "#CCE3FF" }}   
+                <View
+                  className="rounded-full bg-[#CCE3FF] p-1"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 20,
+                    backgroundColor: "#CCE3FF",
+                  }}
                 >
                   <Ionicons name="cloud-upload-outline" size={24} color="#0072CE" />
                 </View>
-                                <Text className="text-gray-500 mt-2 text-sm">
+                <Text className="text-gray-500 mt-2 text-sm">
                   Choose a file & drop it here
                 </Text>
-                <TouchableOpacity className="bg-[#94b7e2] px-4 py-3 rounded-lg mt-2"
-            style={{ backgroundColor: "#CCE3FF" }} // Background color for the button
-            >
+                <TouchableOpacity
+                  className="bg-[#94b7e2] px-4 py-3 rounded-lg mt-2"
+                  style={{ backgroundColor: "#CCE3FF" }} // Background color for the button
+                >
                   <Text className="text-primaryText text-sm font-medium">
                     Choose from Browser
                   </Text>
@@ -126,17 +150,17 @@ const pickImage = async (setImage: any) => {
           Upload Your CAC Document
         </Text>
         <TouchableOpacity
-  className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
-  onPress={() => pickImage(setCacImage)}
-  style={{
-    height: 160,
-    backgroundColor: "#F4F4F5",
-    padding: 30,
-    borderWidth: 2,
-    borderColor: "#E0E0E0",
-    borderStyle: "dashed", // Add dashed border
-  }}
->
+          className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
+          onPress={() => pickImage(setCacImage)}
+          style={{
+            height: 160,
+            backgroundColor: "#F4F4F5",
+            padding: 30,
+            borderWidth: 2,
+            borderColor: "#E0E0E0",
+            borderStyle: "dashed", // Add dashed border
+          }}
+        >
           {cacImage ? (
             <Image
               source={{ uri: cacImage }}
@@ -145,45 +169,54 @@ const pickImage = async (setImage: any) => {
             />
           ) : (
             <>
-               <View
-                  className="rounded-full bg-[#CCE3FF] p-1  "
-                  style={{ width: 40, height: 40, justifyContent: "center", alignItems: "center", borderRadius: 20, backgroundColor: "#CCE3FF" }}   
-                >
-                  <Ionicons name="cloud-upload-outline" size={24} color="#0072CE" />
-                </View>
-            <Text className="text-gray-500 mt-2 text-sm">
-              Choose a file & drop it here
-            </Text>
-            <TouchableOpacity className="bg-[#94b7e2] px-4 py-3 rounded-lg mt-2"
-            style={{ backgroundColor: "#CCE3FF" }} // Background color for the button
-            >
-              <Text className="text-primaryText text-sm font-medium">
-                Choose from Browser
+              <View
+                className="rounded-full bg-[#CCE3FF] p-1"
+                style={{
+                  width: 40,
+                  height: 40,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 20,
+                  backgroundColor: "#CCE3FF",
+                }}
+              >
+                <Ionicons name="cloud-upload-outline" size={24} color="#0072CE" />
+              </View>
+              <Text className="text-gray-500 mt-2 text-sm">
+                Choose a file & drop it here
               </Text>
-            </TouchableOpacity>
-          </>
+              <TouchableOpacity
+                className="bg-[#94b7e2] px-4 py-3 rounded-lg mt-2"
+                style={{ backgroundColor: "#CCE3FF" }} // Background color for the button
+              >
+                <Text className="text-primaryText text-sm font-medium">
+                  Choose from Browser
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
         </TouchableOpacity>
       </ScrollView>
-{/* Submit Button */}
-<View
-  style={{
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: "white", // Optional: Add background color to separate it from the content
-  }}
->
-  <TouchableOpacity
-    className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-    onPress={() => router.push("/signup/passcode")} // Navigate to Passcode page
-  >
-    <Text className="text-white text-base font-bold">Submit</Text>
-  </TouchableOpacity>
-</View>
+
+      {/* Submit Button */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 20,
+          paddingBottom: 16,
+          backgroundColor: "white", // Optional: Add background color to separate it from the content
+        }}
+      >
+        <TouchableOpacity
+          className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+          onPress={handleSubmit} // Use handleSubmit to pass data to the next page
+        >
+          <Text className="text-white text-base font-bold">Submit</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

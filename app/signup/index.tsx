@@ -94,6 +94,7 @@ export default function Login() {
             <TextInput
               placeholder="Enter phone number"
               keyboardType="phone-pad"
+              maxLength={10}
               value={phone}
               onChangeText={setPhone}
               style={{
@@ -117,7 +118,7 @@ export default function Login() {
           {!isKeyboardVisible && ( // Hide button when keyboard is visible
             <TouchableOpacity
               className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={() => router.push("/signup/otp")}
+              onPress={() => router.push({ pathname: "/signup/otp", params: { phone } })} // Pass phone as a query parameter
             >
               <Text className="text-white text-lg mr-2 font-semibold">Signup</Text>
               <MaterialIcons name="arrow-forward" size={18} color="white" />
