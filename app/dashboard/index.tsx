@@ -6,14 +6,14 @@ const Dashboard = () => {
     const router = useRouter();
 
     const navigateToWithdrawal = () => {
-        router.push('/withdrawal/index');
+        // router.push('/withdrawal/index');
     };
 
     const navigateToDeposit = () => {
-        router.push('/deposit/index');
+        // router.push('/deposit/index');
     };
     const navigateToSettings = () => {
-        router.push('/settings/index');
+        router.push('./settings/');
     };
 
     return (
@@ -23,19 +23,19 @@ const Dashboard = () => {
                 className="bg-primaryBg py-4 px-6 rounded-lg mb-4 w-3/4 items-center"
                 onPress={navigateToWithdrawal}
             >
-                <Text className="text-white font-semibold text-lg">Go to Withdrawal</Text>
+                <Text className="text-primary font-semibold text-lg">Go to Withdrawal</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 className="bg-primaryBg py-4 px-6 rounded-lg w-3/4 items-center"
                 onPress={navigateToDeposit}
             >
-                <Text className="text-white font-semibold text-lg">Go to Deposit</Text>
+                <Text className="text-primary font-semibold text-lg">Go to Deposit</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 className="bg-primaryBg py-4 px-6 rounded-lg w-3/4 items-center"
                 onPress={navigateToSettings}
             >
-                <Text className="text-white font-semibold text-lg">Go to Settings</Text>
+                <Text className="text-primary font-semibold text-lg">Go to Settings</Text>
             </TouchableOpacity>
         </View>
     );

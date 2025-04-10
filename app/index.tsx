@@ -48,7 +48,7 @@ export default function Index() {
         <View className="flex-row justify-between mb-10 space-x-4 px-6">
           <TouchableOpacity
             className="flex-1 border border-white py-3 mr-2 rounded-2xl items-center"
-            onPress={() => router.push("/login")} // Navigate to the login page
+            onPress={() => router.push("/dashboard")} // Navigate to the login page
           >
             <Text className="text-white font-semibold">LOG IN</Text>
           </TouchableOpacity>
