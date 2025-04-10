@@ -1,44 +1,24 @@
 import React from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
-import { useRouter } from "expo-router";
+import { ScrollView, SafeAreaView, Text, View } from 'react-native';
+import UserCard from '../components/UserCard';
+import Footer from '../components/Footer';
+import RecentActivity from '../components/RecentActivity';
 
-const Dashboard = () => {
-    const router = useRouter();
+const HomeScreen = () => {
+  return (
+    <SafeAreaView className="flex-1 bg-gray-50 px-4">
+      <ScrollView>
+        <UserCard />
+        <View className='border flex-row justify-center items-center p-2 rounded-2xl mt-6 bg-[#E5F1FF]'>
 
-    const navigateToWithdrawal = () => {
-        // router.push('/withdrawal/index');
-    };
-
-    const navigateToDeposit = () => {
-        // router.push('/deposit/index');
-    };
-    const navigateToSettings = () => {
-        router.push('./settings/');
-    };
-
-    return (
-        <View className="flex-1 justify-center items-center bg-gray-100 p-4">
-            <Text className="text-2xl font-bold text-gray-800 mb-6">Dashboard</Text>
-            <TouchableOpacity
-                className="bg-primaryBg py-4 px-6 rounded-lg mb-4 w-3/4 items-center"
-                onPress={navigateToWithdrawal}
-            >
-                <Text className="text-primary font-semibold text-lg">Go to Withdrawal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="bg-primaryBg py-4 px-6 rounded-lg w-3/4 items-center"
-                onPress={navigateToDeposit}
-            >
-                <Text className="text-primary font-semibold text-lg">Go to Deposit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                className="bg-primaryBg py-4 px-6 rounded-lg w-3/4 items-center"
-                onPress={navigateToSettings}
-            >
-                <Text className="text-primary font-semibold text-lg">Go to Settings</Text>
-            </TouchableOpacity>
+        <Text className=" ">➕ New User</Text>
         </View>
-    );
+<RecentActivity />
+        {/* Add more components like KYB, Recent Activity etc here */}
+      </ScrollView>
+      <Footer />
+    </SafeAreaView>
+  );
 };
 
-export default Dashboard;
+export default HomeScreen;
