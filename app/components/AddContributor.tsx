@@ -67,8 +67,24 @@ const AddContributor = () => {
   };
 
   const handleNext = () => {
-    // Navigate to agent verification screen
-    router.push('/contributor/agent-verification');
+    // Navigate to agent verification screen with selected data
+    router.push({
+      pathname: '/contributor/agent-verification',
+      params: {
+        firstName,
+        lastName,
+        phoneNumber,
+        ninNumber,
+        language: selectedLanguage,
+        photoUri: imageUri
+      }
+    });
+  };
+
+  // Handle language selection and track the change
+  const handleLanguageSelect = (language: string) => {
+    console.log(`Language changed from ${selectedLanguage} to ${language}`);
+    setSelectedLanguage(language);
   };
 
   return (
@@ -88,7 +104,7 @@ const AddContributor = () => {
 
         <ScrollView className="flex-1 px-4">
           {/* Title */}
-          <Text className="text-3xl font-bold text-[#0052CC] mt-4">Add New User</Text>
+          <Text className="text-3xl font-bold text-[#0052CC] mt-4 mb-2">Add New User</Text>
           <Text className="text-gray-700 mb-6">Help your customer start their Esusu journey</Text>
           
           {/* Profile Image Section */}
@@ -122,10 +138,10 @@ const AddContributor = () => {
           </View>
           
           {/* Form Fields */}
-          <View className="space-y-4">
+          <View className="space-y-4 my-2">
             {/* First Name */}
             <View>
-              <Text className="text-gray-700 mb-1">First Name</Text>
+              <Text className="text-gray-700 mb-2">First Name</Text>
               <TextInput
                 value={firstName}
                 onChangeText={setFirstName}
@@ -136,7 +152,7 @@ const AddContributor = () => {
             
             {/* Last Name */}
             <View>
-              <Text className="text-gray-700 mb-1">Last Name</Text>
+              <Text className="text-gray-700 mb-2">Last Name</Text>
               <TextInput
                 value={lastName}
                 onChangeText={setLastName}
@@ -147,28 +163,37 @@ const AddContributor = () => {
             
             {/* Phone Number */}
             <View>
-              <Text className="text-gray-700 mb-1">Phone Number</Text>
-              <View className="flex-row">
-                <View className="bg-gray-100 p-4 rounded-xl w-20 flex-row items-center justify-center mr-2">
+              <Text className="text-gray-700 mb-2">Phone Number</Text>
+              <View className="flex-row items-center">
+                {/* NGN Flag + Code */}
+                <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
                   <Image
-                    source={require('../../assets/images/icon.png')}
-                    style={{width: 24, height: 16}}
+                    source={{ uri: "https://flagcdn.com/w40/ng.png" }}
+                    style={{
+                      width: 24, 
+                      height: 18,
+                      borderRadius: 2,
+                      marginRight: 6,
+                    }}
                   />
-                  <Text className="ml-2">NG</Text>
+                  <Text className="text-base text-[#BDBDBD]">
+                    NGN
+                  </Text>
                 </View>
                 <TextInput
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   placeholder="Enter phone number"
-                  className="bg-gray-100 p-4 rounded-xl flex-1"
+                  className="flex-1 text-base border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                   keyboardType="phone-pad"
+                  placeholderTextColor="#BDBDBD"
                 />
               </View>
             </View>
             
             {/* NIN */}
             <View>
-              <Text className="text-gray-700 mb-1">National Identity Number (NIN)</Text>
+              <Text className="text-gray-700 mb-2">National Identity Number (NIN)</Text>
               <TextInput
                 value={ninNumber}
                 onChangeText={setNinNumber}
@@ -180,13 +205,13 @@ const AddContributor = () => {
             
             {/* Language Selection */}
             <View>
-              <Text className="text-gray-700 mb-1">Language</Text>
+              <Text className="text-gray-700 mb-2">Language</Text>
               <View className="flex-row justify-between">
                 {['English', 'Yoruba', 'Hausa', 'Igbo'].map((language) => (
                   <TouchableOpacity 
                     key={language}
                     className={`py-3 px-5 rounded-full ${selectedLanguage === language ? 'bg-[#E5F1FF]' : 'bg-gray-100'}`}
-                    onPress={() => setSelectedLanguage(language)}
+                    onPress={() => handleLanguageSelect(language)}
                   >
                     <Text 
                       className={selectedLanguage === language ? 'text-blue-600' : 'text-gray-500'}

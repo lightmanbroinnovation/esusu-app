@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
   SafeAreaView, 
   TouchableOpacity, 
   TextInput, 
-  ScrollView
+  ScrollView,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -13,13 +14,12 @@ import TransactionItem from './TransactionItem';
 import TransactionFilter, { FilterOptions } from './TransactionFilter';
 import { Transaction } from './types';
 
-// Directly define transaction data in this file to eliminate any import issues
+// Use a more consistent date format for cross-platform compatibility
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric'
-  });
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`; // MM/DD/YYYY format
 };
 
 // Today's date
@@ -27,13 +27,13 @@ const today = new Date();
 const todayString = formatDate(today);
 
 // Yesterday's date
-const yesterday = new Date();
+const yesterday = new Date(today);
 yesterday.setDate(yesterday.getDate() - 1);
 const yesterdayString = formatDate(yesterday);
 
 // Generate a timestamp string
 const formatTime = (): string => {
-  return '12:03 AM'; // For demo, using fixed time
+  return '12:03 PM'; // For demo, using fixed time
 };
 
 // Directly define transaction data
@@ -93,6 +93,10 @@ const directTransactions: Transaction[] = [
 
 // Group transactions by date
 const groupTransactionsByDate = (transactions: Transaction[]) => {
+  if (!transactions || transactions.length === 0) {
+    return {};
+  }
+  
   const grouped: Record<string, Transaction[]> = {};
   
   transactions.forEach(transaction => {
@@ -113,15 +117,28 @@ const TransactionsScreen = () => {
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
   
   // Initialize with the direct transactions
+  const [transactions, setTransactions] = useState<Transaction[]>(directTransactions);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>(directTransactions);
   const [groupedTransactions, setGroupedTransactions] = useState<Record<string, Transaction[]>>(
     groupTransactionsByDate(directTransactions)
   );
 
+  // Initialize transactions data (simulating API fetch)
+  useEffect(() => {
+    // For debugging on different platforms
+    console.log(`Platform: ${Platform.OS}`);
+    console.log("Initial transactions:", directTransactions.length);
+    
+    // Set the transactions
+    setTransactions(directTransactions);
+    setFilteredTransactions(directTransactions);
+    setGroupedTransactions(groupTransactionsByDate(directTransactions));
+  }, []);
+
   // Apply both search and filters
   useEffect(() => {
     // Filter transactions based on search query and active filters
-    const filtered = directTransactions.filter(transaction => {
+    const filtered = transactions.filter(transaction => {
       // Search query filter (name or amount)
       const nameMatch = searchQuery 
         ? transaction.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -156,38 +173,23 @@ const TransactionsScreen = () => {
     });
     
     setFilteredTransactions(filtered);
-    setGroupedTransactions(groupTransactionsByDate(filtered));
-  }, [searchQuery, activeFilters]);
-
-  // Debug log
-  useEffect(() => {
-    console.log("Transactions loaded:", directTransactions.length);
-    console.log("Grouped transactions keys:", Object.keys(groupedTransactions));
-  }, [groupedTransactions]);
-
-  const getDateHeading = (date: string) => {
-    const today = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'numeric', 
-      day: 'numeric' 
-    });
+    const grouped = groupTransactionsByDate(filtered);
+    setGroupedTransactions(grouped);
     
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayString = yesterday.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'numeric', 
-      day: 'numeric' 
-    });
-    
-    if (date === today) {
+    console.log("Filtered transactions:", filtered.length);
+    console.log("Grouped keys:", Object.keys(grouped));
+  }, [searchQuery, activeFilters, transactions]);
+
+  // Helper function to get consistent date heading
+  const getDateHeading = useCallback((date: string) => {
+    if (date === todayString) {
       return 'Today';
     } else if (date === yesterdayString) {
       return 'Yesterday';
     } else {
       return date;
     }
-  };
+  }, [todayString, yesterdayString]);
 
   const navigateBack = () => {
     router.back();
@@ -207,9 +209,16 @@ const TransactionsScreen = () => {
     setActiveFilters({});
   };
 
+  // Force reload transactions
+  const forceReloadTransactions = () => {
+    setTransactions([...directTransactions]);
+    setFilteredTransactions([...directTransactions]);
+    setGroupedTransactions(groupTransactionsByDate(directTransactions));
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="p-4">
+      <View className="p-4 flex-1">
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={navigateBack}
@@ -249,10 +258,12 @@ const TransactionsScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Debug Info */}
-        <Text className="text-xs text-gray-400 mb-2">
-          Debug: {Object.keys(groupedTransactions).length} transaction groups
-        </Text>
+        {/* Platform Debug Info - only in development */}
+        {__DEV__ && (
+          <Text className="text-xs text-gray-400 mb-2">
+            Platform: {Platform.OS} | Groups: {Object.keys(groupedTransactions).length}
+          </Text>
+        )}
 
         {/* Transactions list */}
         <ScrollView className="flex-1">
@@ -262,32 +273,29 @@ const TransactionsScreen = () => {
               
               {/* Add a button to manually display sample transactions */}
               <TouchableOpacity
-                className="mt-4 bg-blue-500 px-4 py-2 rounded-lg border"
-                onPress={() => {
-                  const today = new Date().toLocaleDateString('en-US');
-                  setGroupedTransactions({
-                    [today]: directTransactions
-                  });
-                }}
+                className="mt-4 bg-blue-500 px-4 py-2 rounded-lg"
+                onPress={forceReloadTransactions}
               >
-                <Text className="">Show Sample Transactions</Text>
+                <Text className="text-white font-semibold">Load Sample Transactions</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            Object.keys(groupedTransactions).map(date => (
-              <View key={date}>
-                <Text className="text-gray-400 text-lg mt-4 mb-2">
-                  {getDateHeading(date)}
-                </Text>
-                
-                {groupedTransactions[date].map(transaction => (
-                  <TransactionItem 
-                    key={transaction.id} 
-                    transaction={transaction}
-                  />
-                ))}
-              </View>
-            ))
+            <>
+              {Object.keys(groupedTransactions).map(date => (
+                <View key={date} className="mb-4">
+                  <Text className="text-gray-400 text-lg mt-2 mb-2">
+                    {getDateHeading(date)}
+                  </Text>
+                  
+                  {groupedTransactions[date].map((transaction: Transaction) => (
+                    <TransactionItem 
+                      key={transaction.id} 
+                      transaction={transaction}
+                    />
+                  ))}
+                </View>
+              ))}
+            </>
           )}
           
           {/* Add some bottom padding */}

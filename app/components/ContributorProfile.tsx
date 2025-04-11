@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   SafeAreaView, 
   TouchableOpacity, 
   Image,
-  ScrollView
+  ScrollView,
+  Modal,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 const ContributorProfile = () => {
   const router = useRouter();
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
   
   const navigateBack = () => {
     router.back();
@@ -26,7 +29,11 @@ const ContributorProfile = () => {
   };
 
   const handleSendReminder = () => {
-    console.log('Send payment reminder');
+    setReminderModalVisible(true);
+  };
+
+  const closeReminderModal = () => {
+    setReminderModalVisible(false);
   };
 
   return (
@@ -41,11 +48,7 @@ const ContributorProfile = () => {
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text className="text-lg font-semibold flex-1 text-center">Adebimpe Adewale</Text>
-          <TouchableOpacity 
-            className="bg-gray-100 p-2 rounded-full"
-          >
-            <Ionicons name="ellipsis-horizontal" size={20} color="#000" />
-          </TouchableOpacity>
+          <View style={{ width: 40 }} />
         </View>
 
         <ScrollView className="flex-1">
@@ -54,7 +57,7 @@ const ContributorProfile = () => {
             {/* Profile Image and Balance */}
             <View className="items-center mb-4">
               <Image 
-                // source={require('../../assets/images/profile-photo.jpg')}
+                source={require('../../assets/images/profile.jpg')}
                 className="w-20 h-20 rounded-full mb-3"
               />
               <Text className="text-white text-sm">Total Contributions Made</Text>
@@ -82,8 +85,8 @@ const ContributorProfile = () => {
 
           {/* Agent Notice */}
           <View className="bg-blue-50 mx-4 mt-4 rounded-lg p-4">
-            <Text className="text-blue-800 font-medium mb-1">Important Notice for Agents</Text>
-            <Text className="text-blue-800 text-sm">
+            <Text className="text-blue-500 font-medium">Important Notice for Agents</Text>
+            <Text className="text-blue-500 text-sm">
               As an agent, you do not have access to withdraw or control a contributor's funds—only the 
               contributor can initiate payouts securely.
             </Text>
@@ -118,11 +121,15 @@ const ContributorProfile = () => {
                 <Text className="text-gray-500 text-sm">Language</Text>
                 <Text className="font-medium">English</Text>
               </View>
+              <View className="flex-1">
+                <Text className="text-gray-500 text-sm">Days Left</Text>
+                <Text className="font-medium">30</Text>
+              </View>
             </View>
           </View>
           
           {/* Recent Activity */}
-          <View className="mx-4 mt-4">
+          <View className="mx-4 mt-4 mb-4">
             <View className="flex-row justify-between items-center mb-3">
               <Text className="font-semibold">Recent Activity</Text>
               <TouchableOpacity>
@@ -155,10 +162,33 @@ const ContributorProfile = () => {
             onPress={handleSendReminder}
             className="bg-blue-600 p-4 rounded-xl items-center flex-row justify-center"
           >
-            <Ionicons name="notifications" size={20} color="white" />
+            <Ionicons name="notifications-outline" size={22} color="white" />
             <Text className="text-white font-semibold text-lg ml-2">Send Reminder</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Reminder Sent Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={reminderModalVisible}
+          onRequestClose={closeReminderModal}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="bg-white rounded-xl w-10/12 p-6">
+              <Text className="text-blue-600 text-2xl font-bold text-center mb-4">Reminder Sent!</Text>
+              <Text className="text-center text-gray-700 text-base mb-6">
+                A reminder has been sent to <Text className="font-medium">Adebimpe Adewale</Text> via SMS to not forget to contribute today.
+              </Text>
+              <TouchableOpacity 
+                className="bg-blue-600 py-3 rounded-xl"
+                onPress={closeReminderModal}
+              >
+                <Text className="text-white font-semibold text-center text-lg">Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );

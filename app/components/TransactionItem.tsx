@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Transaction } from './types';
 
 interface TransactionItemProps {
@@ -46,18 +46,37 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
   };
   
   // Determine text color based on transaction type
-  const amountColor = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
+  const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
+  
+  // Platform specific styling to ensure consistent rendering
+  const containerClass = Platform.OS === 'web' 
+    ? 'flex-row justify-between items-center py-4 border-b border-gray-100' 
+    : 'flex-row justify-between items-center py-4 border-b border-gray-200';
   
   return (
     <TouchableOpacity 
-      className="flex-row justify-between items-center py-4 border-b border-gray-100 border"
+      className={containerClass}
       onPress={onPress}
+      style={{ 
+        marginBottom: 2, // Ensure some space between items on all platforms
+      }}
     >
       <View className="flex-1 pr-4">
-        <Text className="text-lg font-semibold text-gray-800">{getTransactionTitle()}</Text>
-        <Text className="text-gray-500">{getTransactionSubtitle()}</Text>
+        <Text 
+          className="text-base font-semibold text-gray-800"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {getTransactionTitle()}
+        </Text>
+        <Text 
+          className="text-gray-500 text-sm"
+          numberOfLines={1}
+        >
+          {getTransactionSubtitle()}
+        </Text>
       </View>
-      <Text className={`text-lg font-bold ${amountColor}`}>
+      <Text className={`text-base font-bold ${amountColorClass}`}>
         {formattedAmount()}
       </Text>
     </TouchableOpacity>
