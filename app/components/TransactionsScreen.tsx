@@ -229,7 +229,18 @@ const TransactionsScreen = () => {
           <Text className="text-2xl font-bold flex-1 text-center mr-8">Activities</Text>
         </View>
 
-        {/* Search and Filter Bar */}
+      
+
+        {/* Platform Debug Info - only in development
+        {__DEV__ && (
+          <Text className="text-xs text-gray-400 mb-2">
+            Platform: {Platform.OS} | Groups: {Object.keys(groupedTransactions).length}
+          </Text>
+        )} */}
+
+        {/* Transactions list */}
+        <ScrollView className="flex-1">
+            {/* Search and Filter Bar */}
         <View className="flex-row items-center mb-4">
           <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
             <Ionicons name="search" size={20} color="#A0A0A0" />
@@ -257,16 +268,6 @@ const TransactionsScreen = () => {
             />
           </TouchableOpacity>
         </View>
-
-        {/* Platform Debug Info - only in development */}
-        {__DEV__ && (
-          <Text className="text-xs text-gray-400 mb-2">
-            Platform: {Platform.OS} | Groups: {Object.keys(groupedTransactions).length}
-          </Text>
-        )}
-
-        {/* Transactions list */}
-        <ScrollView className="flex-1">
           {Object.keys(groupedTransactions).length === 0 ? (
             <View className="items-center justify-center p-8">
               <Text className="text-gray-500 text-lg">No transactions found</Text>

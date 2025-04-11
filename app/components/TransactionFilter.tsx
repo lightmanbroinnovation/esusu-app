@@ -53,8 +53,8 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
       transparent={true}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black bg-opacity-50 justify-end">
-        <View className="bg-white rounded-t-3xl p-6">
+      <View className="flex-1 bg-black justify-end">
+        <View className="bg-white rounded-t-3xl p-6 z-50">
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-xl font-bold">Filter Transactions</Text>
             <TouchableOpacity onPress={onClose}>

@@ -53,14 +53,14 @@ const ContributorProfile = () => {
 
         <ScrollView className="flex-1">
           {/* Profile Card */}
-          <View className="bg-blue-600 mx-4 rounded-xl p-6">
+          <View className="bg-blue-600 mx-4 rounded-xl p-4">
             {/* Profile Image and Balance */}
             <View className="items-center mb-4">
               <Image 
-                source={require('../../assets/images/profile.jpg')}
-                className="w-20 h-20 rounded-full mb-3"
+                source={require('../../assets/images/icon.png')}
+                className="w-20 h-20 rounded-full"
               />
-              <Text className="text-white text-sm">Total Contributions Made</Text>
+              <Text className="text-white text-sm mt-2">Total Contributions Made</Text>
               <Text className="text-white text-3xl font-bold">₦50,000</Text>
             </View>
             
@@ -121,10 +121,7 @@ const ContributorProfile = () => {
                 <Text className="text-gray-500 text-sm">Language</Text>
                 <Text className="font-medium">English</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Days Left</Text>
-                <Text className="font-medium">30</Text>
-              </View>
+          
             </View>
           </View>
           
@@ -175,16 +172,19 @@ const ContributorProfile = () => {
           onRequestClose={closeReminderModal}
         >
           <View className="flex-1 justify-center items-center bg-black/50">
-            <View className="bg-white rounded-xl w-10/12 p-6">
-              <Text className="text-blue-600 text-2xl font-bold text-center mb-4">Reminder Sent!</Text>
+            <View className="bg-white rounded-xl w-10/12 p-6 relative">
+              <Text className="text-blue-600 text-2xl font-bold text-center border-b border-gray-200 pb-4 mb-4">Reminder Sent!</Text>
               <Text className="text-center text-gray-700 text-base mb-6">
                 A reminder has been sent to <Text className="font-medium">Adebimpe Adewale</Text> via SMS to not forget to contribute today.
               </Text>
+              
+              {/* Close Button */}
               <TouchableOpacity 
-                className="bg-blue-600 py-3 rounded-xl"
+                className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[40%] "
+                style={{ width: '40%' }} // Adjust width and height as needed
                 onPress={closeReminderModal}
               >
-                <Text className="text-white font-semibold text-center text-lg">Close</Text>
+                <Text className="text-white font-semibold text-center ">Close</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -94,7 +94,7 @@ const AddContributor = () => {
         <View className="flex-row items-center p-4">
           <TouchableOpacity 
             onPress={navigateBack}
-            className="bg-gray-100 p-2 rounded-full"
+            className="bg-gray-200 p-2 rounded-full"
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
@@ -123,7 +123,7 @@ const AddContributor = () => {
               <View>
                 <TouchableOpacity 
                   onPress={handleAddImage}
-                  className="bg-gray-50 w-full p-16 rounded-xl mb-2 items-center justify-center"
+                  className="bg-gray-100 w-full p-16 rounded-xl mb-2 items-center justify-center"
                 >
                   <Image 
                     source={require('../../assets/images/icon.png')} 
@@ -140,7 +140,7 @@ const AddContributor = () => {
           {/* Form Fields */}
           <View className="space-y-4 my-2">
             {/* First Name */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">First Name</Text>
               <TextInput
                 value={firstName}
@@ -151,7 +151,7 @@ const AddContributor = () => {
             </View>
             
             {/* Last Name */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">Last Name</Text>
               <TextInput
                 value={lastName}
@@ -162,7 +162,7 @@ const AddContributor = () => {
             </View>
             
             {/* Phone Number */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">Phone Number</Text>
               <View className="flex-row items-center">
                 {/* NGN Flag + Code */}
@@ -192,7 +192,7 @@ const AddContributor = () => {
             </View>
             
             {/* NIN */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">National Identity Number (NIN)</Text>
               <TextInput
                 value={ninNumber}
@@ -204,9 +204,9 @@ const AddContributor = () => {
             </View>
             
             {/* Language Selection */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">Language</Text>
-              <View className="flex-row justify-between">
+              <View className="flex-row justify-between my-2">
                 {['English', 'Yoruba', 'Hausa', 'Igbo'].map((language) => (
                   <TouchableOpacity 
                     key={language}

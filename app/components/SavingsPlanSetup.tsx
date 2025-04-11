@@ -18,6 +18,7 @@ const SavingsPlanSetup = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [startDate, setStartDate] = useState('Mar 1, 2025');
   const [endDate, setEndDate] = useState('Mar 31, 2025');
+  const [showReminderModal, setShowReminderModal] = useState(false);
   
   const navigateBack = () => {
     router.back();
@@ -26,6 +27,11 @@ const SavingsPlanSetup = () => {
   const handleNext = () => {
     // In a real app, this would create the contributor profile
     router.push('/contributor/profile');
+  };
+
+  const handleSendReminder = () => {
+    // Logic to send the reminder (e.g., API call)
+    setShowReminderModal(true); // Show the modal after sending the reminder
   };
 
   return (
@@ -47,7 +53,7 @@ const SavingsPlanSetup = () => {
           {/* Form Fields */}
           <View className="space-y-6">
             {/* Deposit Amount */}
-            <View>
+            <View className='my-2'>
               <Text className="text-gray-700 mb-2">Deposit Amount</Text>
               <View className="flex-row items-center bg-gray-100 p-4 rounded-xl">
                 <Text className="text-black font-medium mr-2">₦</Text>
@@ -61,7 +67,7 @@ const SavingsPlanSetup = () => {
             </View>
             
             {/* Duration */}
-            <View>
+            <View className='my-4'>
               <Text className="text-gray-700 mb-2">Duration</Text>
               <View className="flex-row">
                 {[
@@ -72,22 +78,22 @@ const SavingsPlanSetup = () => {
                 ].map(item => (
                   <TouchableOpacity 
                     key={item.id}
-                    className={`flex-1 rounded-xl p-4 items-center justify-center mx-1 ${frequency === item.id ? 'bg-green-600' : 'bg-blue-600'}`}
+                    className={`flex-1 rounded-xl p-4 px-3 items-center justify-center mx-1 ${frequency === item.id ? 'bg-green-600' : 'bg-blue-600'}`}
                     onPress={() => setFrequency(item.id)}
                   >
                     {frequency === item.id && (
-                      <View className="absolute top-3 right-3">
+                      <View className="absolute top-3 right-4">
                         <Ionicons name="checkmark-circle" size={16} color="white" />
                       </View>
                     )}
-                    <Text className="text-white font-semibold">{item.label}</Text>
+                    <Text className="text-white  font-semibold">{item.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
             
             {/* Start Date */}
-            <View>
+            <View className='my-3'>
               <Text className="text-gray-700 mb-2">Start Date</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
@@ -99,7 +105,7 @@ const SavingsPlanSetup = () => {
             </View>
             
             {/* End Date */}
-            <View>
+            <View className='my-3'>
               <Text className="text-gray-700 mb-2">End Date</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
@@ -167,6 +173,29 @@ const SavingsPlanSetup = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Reminder Modal */}
+      {showReminderModal && (
+        <Modal
+          transparent={true}
+          visible={showReminderModal}
+          animationType="slide"
+          onRequestClose={() => setShowReminderModal(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black bg-opacity-30">
+            <View className="bg-white rounded-lg p-6 w-80">
+              <Text className="text-lg font-semibold">Reminder Sent!</Text>
+              <Text className="mt-2">A reminder has been sent to Adeimpe Adewale via SMS to not forget to contribute today.</Text>
+              <TouchableOpacity 
+                onPress={() => setShowReminderModal(false)}
+                className="bg-blue-600 p-2 rounded-lg mt-4"
+              >
+                <Text className="text-white text-center">Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
