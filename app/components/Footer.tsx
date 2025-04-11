@@ -1,87 +1,83 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
-import { MaterialIcons, FontAwesome, Entypo, FontAwesome6, Fontisto   } from "@expo/vector-icons"; // Import icons from @expo/vector-icons
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 
 const Footer = () => {
-  const [activePage, setActivePage] = useState("Home"); // Default active page is Home
+  const [activePage, setActivePage] = useState("Home");
 
   const handlePress = (page: string) => {
     setActivePage(page);
-    console.log(`Navigating to ${page}`); // Replace with navigation logic
+    console.log(`Navigating to ${page}`);
   };
 
   return (
-    <View className="flex-row justify-around bg-white py-3 border-t border-gray-200">
+    <View className="flex-row justify-around items-center bg-white py-3 border-t border-gray-200">
       {/* Home Button */}
       <TouchableOpacity
-        className={`items-center ${
-          activePage === "Home" ? "" : ""
-        }`}
+        className="items-center"
         onPress={() => handlePress("Home")}
       >
-        <Entypo 
-          name="home"
-          size={24}
-          className={`${
-            activePage === "Home" ? "bg-[#E5F1FF] rounded-lg p-1 w-full text-center" : ""
-          }`}
-          color={activePage === "Home" ? "#0072CE" : "#000"}
-        />
-        <Text className="text-xs mt-1 text-gray-500">Home</Text>
+        <View className={`p-2 ${activePage === "Home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+          <Ionicons 
+            name="home"
+            size={22} 
+            color={activePage === "Home" ? "#0052CC" : "#8F92A1"}
+          />
+        </View>
+        <Text className={`text-xs mt-1 ${activePage === "Home" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+          Home
+        </Text>
       </TouchableOpacity>
 
       {/* Contributor Button */}
       <TouchableOpacity
-        className={`items-center ${
-          activePage === "Contributor" ? " " : ""
-        }`}
+        className="items-center"
         onPress={() => handlePress("Contributor")}
       >
-        <FontAwesome6 
-          name="users"
-          size={24}
-          className={`${
-            activePage === "Contributor" ? "bg-[#E5F1FF] rounded-lg p-1 w-full text-center" : ""
-          }`}
-          color={activePage === "Contributor" ? "#0072CE" : "#000"}
-        />
-        <Text className="text-xs mt-1 text-gray-500">Contributor</Text>
+        <View className={`p-2 ${activePage === "Contributor" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+          <Ionicons 
+            name="people-outline"
+            size={22}
+            color={activePage === "Contributor" ? "#0052CC" : "#8F92A1"}
+          />
+        </View>
+        <Text className={`text-xs mt-1 ${activePage === "Contributor" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+          Contributor
+        </Text>
       </TouchableOpacity>
 
       {/* Commission Button */}
       <TouchableOpacity
-        className={`items-center ${
-          activePage === "Commission" ? "" : ""
-        }`}
+        className="items-center"
         onPress={() => handlePress("Commission")}
       >
-        <Fontisto 
-          name="wallet"
-          size={24}
-          className={`${
-            activePage === "Commission" ? "bg-[#E5F1FF] rounded-lg p-1 w-full text-center" : ""
-          }`}
-          color={activePage === "Commission" ? "#0072CE" : "#000"}
-        />
-        <Text className="text-xs mt-1 text-gray-500">Commission</Text>
+        <View className={`p-2 ${activePage === "Commission" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+          <Ionicons 
+            name="wallet-outline"
+            size={22}
+            color={activePage === "Commission" ? "#0052CC" : "#8F92A1"}
+          />
+        </View>
+        <Text className={`text-xs mt-1 ${activePage === "Commission" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+          Commission
+        </Text>
       </TouchableOpacity>
 
       {/* Profile Button */}
       <TouchableOpacity
-        className={`items-center ${
-          activePage === "Profile" ? "" : ""
-        }`}
+        className="items-center"
         onPress={() => handlePress("Profile")}
       >
-        <FontAwesome
-          name="user"
-          size={24}
-          className={`${
-            activePage === "Profile" ? "bg-[#E5F1FF] rounded-lg p-1 w-full text-center" : ""
-          }`}
-          color={activePage === "Profile" ? "#0072CE" : "#000"}
-        />
-        <Text className="text-xs mt-1 text-gray-500">Profile</Text>
+        <View className={`p-2 ${activePage === "Profile" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+          <Ionicons 
+            name="person-outline"
+            size={22}
+            color={activePage === "Profile" ? "#0052CC" : "#8F92A1"}
+          />
+        </View>
+        <Text className={`text-xs mt-1 ${activePage === "Profile" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+          Profile
+        </Text>
       </TouchableOpacity>
     </View>
   );
