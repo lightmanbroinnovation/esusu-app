@@ -1,8 +1,9 @@
 import axios from "axios";
-import { API_BASE_URL } from "@env"; // Import the environment variable
+// Define base URL directly instead of using dotenv
+const API_BASE_URL = 'http://192.168.100.20:8082'; // Direct value instead of using .env
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL, // Use the environment variable
+  baseURL: "http://192.168.100.20:8082", // Use the environment variable
   timeout: 5000, // Timeout increased to 5 seconds (you can adjust as needed)
 });
 

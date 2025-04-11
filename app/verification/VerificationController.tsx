@@ -11,6 +11,14 @@ interface VerificationControllerProps {
   onClose?: () => void;
 }
 
+// Define a proper interface for the verification data
+interface VerificationData {
+  businessInfo: any | null;
+  governmentIDType: string | null;
+  governmentIDImage: string | null;
+  locationImages: string[];
+}
+
 enum VerificationStage {
   MAIN = 'main',
   BUSINESS_INFO = 'business_info',
@@ -22,8 +30,8 @@ enum VerificationStage {
 
 const VerificationController = ({ onClose }: VerificationControllerProps) => {
   const router = useRouter();
-  const [currentStage, setCurrentStage] = useState(VerificationStage.MAIN);
-  const [verificationData, setVerificationData] = useState({
+  const [currentStage, setCurrentStage] = useState<VerificationStage>(VerificationStage.MAIN);
+  const [verificationData, setVerificationData] = useState<VerificationData>({
     businessInfo: null,
     governmentIDType: null,
     governmentIDImage: null,

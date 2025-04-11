@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 
-export default function Login() {
+export default function Signup() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
@@ -38,7 +38,7 @@ export default function Login() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ flex: 1 }}
+      className="flex-1"
     >
       <View
         className="flex-1 bg-white px-6"
@@ -59,8 +59,8 @@ export default function Login() {
         </View>
 
         <View className="mt-8">
-          <Text className="text-[24px] font-bold text-primaryText mb-2">
-            Let’s Get Started!
+          <Text className="text-2xl font-bold text-[#0072CE] mb-2">
+            Let's Get Started!
           </Text>
           <Text className="text-base text-[#4F4F4F]">
             We'll send a verification code to your phone number to secure your account.
@@ -72,12 +72,7 @@ export default function Login() {
           <Text className="text-sm text-[#4F4F4F] mb-1">Phone Number</Text>
           <View className="flex-row items-center">
             {/* NG Flag + Code */}
-            <View
-              style={{
-                backgroundColor: "#F4F4F5",
-              }}
-              className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3"
-            >
+            <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
               <Image
                 source={{ uri: "https://flagcdn.com/w40/ng.png" }}
                 style={{
@@ -97,10 +92,7 @@ export default function Login() {
               maxLength={10}
               value={phone}
               onChangeText={setPhone}
-              style={{
-                backgroundColor: "#F4F4F5",
-              }}
-              className="flex-1 text-base text-primaryText border border-[#E0E0E0] rounded-lg px-3 py-3"
+              className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholderTextColor="#BDBDBD"
             />
           </View>
