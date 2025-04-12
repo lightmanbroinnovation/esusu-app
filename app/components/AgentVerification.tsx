@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -7,20 +7,60 @@ import {
   TextInput
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { fetchUser } from '../../services/api';
+
+interface User {
+  firstname: string;
+  lastname: string;
+  email: string;
+  id: string; // Add other user properties as needed
+}
 
 const AgentVerification = () => {
   const router = useRouter();
-  const [agentName, setAgentName] = useState('John Ade');
-  const [agentId, setAgentId] = useState('AGT-12345');
-  
+  const params = useLocalSearchParams(); // Get parameters passed from the previous screen
+  const [userData, setUserData] = useState<User | null>(null);
+  const userId = '62f2'; // Replace with the actual user ID you want to fetch
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const data = await fetchUser(userId);
+        setUserData(data);
+        console.log(data); // Log the fetched data for debugging
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
+
+    fetchUserDetails();
+  }, [userId]);
+
   const navigateBack = () => {
     router.back();
   };
 
   const handleNext = () => {
-    // Navigate to the savings plan setup screen
-    router.push('/contributor/savings-plan');
+    if (userData) {
+      const agentName = `${userData.firstname} ${userData.lastname}`; // Combine first and last name
+      const agentId = userData.id; // Use the user ID
+
+      // Navigate to the savings plan setup screen with agentName and agentId
+      router.push({
+        pathname: '/contributor/savings-plan',
+        params: {
+          agentName,
+          agentId,
+          firstName: params.firstName, // Pass original firstName
+          lastName: params.lastName, // Pass original lastName
+          phoneNumber: params.phoneNumber,
+          ninNumber: params.ninNumber,
+          language: params.language,
+          photoUri: params.photoUri,
+        }
+      });
+    }
   };
 
   return (
@@ -51,8 +91,7 @@ const AgentVerification = () => {
             <View>
               <Text className="text-gray-700 mb-1">Agent Name</Text>
               <TextInput
-                value={agentName}
-                onChangeText={setAgentName}
+                value={userData ? `${userData.firstname} ${userData.lastname}` : ''}
                 className="bg-gray-100 p-4 rounded-xl"
                 editable={false}
               />
@@ -62,8 +101,7 @@ const AgentVerification = () => {
             <View>
               <Text className="text-gray-700 mb-1">Agent ID</Text>
               <TextInput
-                value={agentId}
-                onChangeText={setAgentId}
+                value={userData ? userData.id : ''}
                 className="bg-gray-100 p-4 rounded-xl"
                 editable={false}
               />

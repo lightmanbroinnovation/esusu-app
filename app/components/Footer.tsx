@@ -15,7 +15,7 @@ const Footer = () => {
       {/* Home Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("Home")}
+        onPress={() => handlePress("../dashboard")}
       >
         <View className={`p-2 ${activePage === "Home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
@@ -32,7 +32,7 @@ const Footer = () => {
       {/* Contributor Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("Contributor")}
+        onPress={() => handlePress("../contributors/ContributorsScreen")}
       >
         <View className={`p-2 ${activePage === "Contributor" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
@@ -66,7 +66,7 @@ const Footer = () => {
       {/* Profile Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("Profile")}
+        onPress={() => handlePress("../settings/")}
       >
         <View className={`p-2 ${activePage === "Profile" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 

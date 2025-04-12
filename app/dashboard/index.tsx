@@ -6,70 +6,68 @@ import RecentActivity from '../components/RecentActivity';
 import { Ionicons } from "@expo/vector-icons";
 import VerificationController from '../verification/VerificationController';
 import { useRouter } from 'expo-router';
+import { fetchUser } from '../../services/api';
+
+interface User {
+  firstname: string;
+  email: string;
+  id: string;
+
+}
 
 const HomeScreen = () => {
   const router = useRouter();
   const [showVerification, setShowVerification] = useState(false);
+  const [userData, setUserData] = useState<User | null>(null);
+  const userId = '62f2';
 
-  const handleVerifyNow = () => {
-    console.log('Verify Now clicked');
-    setShowVerification(true);
-  };
+  React.useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const data = await fetchUser(userId);
+        setUserData(data);
+        console.log(data);
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      }
+    };
 
-  const handleCloseVerification = () => {
-    console.log('Closing verification');
-    setShowVerification(false);
-  };
-
-  const handleViewAllActivity = () => {
-    // Navigate to the transactions screen
-    console.log('Navigating to transactions');
-    // @ts-ignore - Using string path directly to work around type issues
-    router.push('/transactions');
-  };
-
-  const handleAddContributor = () => {
-    // Navigate to add contributor flow
-    console.log('Adding new contributor');
-    // @ts-ignore - Using string path directly to work around type issues
-    router.push('/contributor/add');
-  };
+    fetchUserDetails();
+  }, [userId]);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 px-4">
       <ScrollView>
-        <UserCard />
-        <TouchableOpacity
-        onPress={() => router.push("/contributor/add")}
-         >
+        {userData ? (
+          <UserCard user={userData} />
+        ) : (
+          <Text className="text-center">Loading user data...</Text>
+        )}
+        <TouchableOpacity onPress={() => router.push("/contributor/add")}>
           <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]'>
             <Ionicons name="person-add-outline" size={24} color="#0052CC" className="mr-2" />
             <Text className="text-[#0052CC] font-medium">New User</Text>
           </View>
         </TouchableOpacity>
         <RecentActivity 
-          onVerifyNow={handleVerifyNow}
-          onViewAllActivity={handleViewAllActivity} 
+          onVerifyNow={() => console.log('Verify Now clicked')}
+          onViewAllActivity={() => router.push('/transactions')} 
         />
-        
-        {/* Temporary test button for direct verification */}
         <TouchableOpacity 
-          onPress={handleVerifyNow}
+          onPress={() => router.push("/contributors/ContributorsScreen")}
           className="bg-blue-500 p-4 rounded-xl mt-4 mb-4"
         >
           <Text className="text-white text-center font-bold">TEST: Open Verification</Text>
         </TouchableOpacity>
       </ScrollView>
       <Footer />
-
-      {/* Verification Modal */}
       <Modal
         animationType="slide"
         transparent={false}
         visible={showVerification}
-        onRequestClose={handleCloseVerification}
+        onRequestClose={() => setShowVerification(false)}
       >
-        <VerificationController onClose={handleCloseVerification} />
+        <VerificationController onClose={() => setShowVerification(false)} />
       </Modal>
     </SafeAreaView>
   );

@@ -2,8 +2,18 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icons from @expo/vector-icons
 
+interface User {
+  firstname: string;
+  email: string;
+  id: string; // Add other user properties as needed
 
-const UserCard = () => {
+}
+
+interface UserCardProps {
+  user: User;
+}
+
+const UserCard: React.FC<UserCardProps> = ({ user }) => {
   return (
     <View className="bg-[#0052CC] rounded-2xl px-4 py-[20px] mt-4">
       {/* Header Section */}
@@ -14,8 +24,8 @@ const UserCard = () => {
             className="w-10 h-10 rounded-full mr-2 border border-gray-100"
           />
           <View>
-            <Text className="text-white text-sm">Hi, John 👋</Text>
-            <Text className="text-white text-xs opacity-70">Agent ID: AGT-12345</Text>
+            <Text className="text-white text-sm">Hi, {user.firstname} 👋</Text>
+            <Text className="text-white text-xs opacity-70">Agent ID: {user.id}</Text>
           </View>
         </View>
         <Ionicons
@@ -30,13 +40,13 @@ const UserCard = () => {
       <View className="flex-row justify-between mt-4">
         <View>
           <Text className="text-white text-xs mb-2">Total Balance</Text>
-          <Text className="text-white text-3xl font-bold">₦0.0</Text>
+          <Text className="text-white text-3xl font-bold">₦ 0.00</Text>
         </View>
         <View>
           <Text className="text-white text-xs mb-2">Commission</Text>
           <View className="flex-row items-center bg-white rounded-full px-2 py-0.5">
             <Ionicons name="arrow-up" size={14} color="green" />
-            <Text className="text-green-600 text-xs font-bold ml-1">₦0.0</Text>
+            <Text className="text-green-600 text-xs font-bold ml-1">₦0.00</Text>
           </View>
         </View>
       </View>

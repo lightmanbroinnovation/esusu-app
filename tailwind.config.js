@@ -8,6 +8,7 @@ module.exports = {
       colors: {
         primary: "#0072CE", // Example custom color
         primaryText: "#0074FF", // Example primary text color
+        primaryCard: "#010630FF", // Example primary text color
         inputBg: "#C7C5C5", // Example input background color
         secondary: "#FFFFFF", // Example secondary color
         accent: "#FF5733", // Example accent color

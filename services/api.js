@@ -1,10 +1,10 @@
 import axios from "axios";
-// Define base URL directly instead of using dotenv
-const API_BASE_URL = 'http://192.168.100.20:8082'; // Direct value instead of using .env
+
+const API_BASE_URL = 'http://192.168.100.62:8082'; // Ensure this is the correct base URL
 
 const axiosInstance = axios.create({
-  baseURL: "http://192.168.100.20:8082", // Use the environment variable
-  timeout: 5000, // Timeout increased to 5 seconds (you can adjust as needed)
+  baseURL: API_BASE_URL,
+  timeout: 5000,
 });
 
 export const registerUser = async (userData) => {
@@ -22,9 +22,32 @@ export const fetchUser = async (userId) => {
   try {
     const response = await axiosInstance.get(`/users/${userId}`);
     console.log("User details fetched successfully:", response.data);
-    return response.data;
+    return response.data; // Ensure this returns the user data directly
   } catch (error) {
     console.error("Error fetching user details:", error);
+    throw error;
+  }
+};
+
+export const addContributor = async (contributorData) => {
+  try {
+    const response = await axiosInstance.post("/contributors", contributorData);
+    console.log("Contributor added successfully:", response.data);
+    return response.data; // Return the added contributor data
+  } catch (error) {
+    console.error("Error adding contributor:", error);
+    throw error;
+  }
+};
+
+// Updated function to fetch contributors based on agentId
+export const fetchContributors = async (agentId) => {
+  try {
+    const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
+    console.log("Contributors fetched successfully:", response.data);
+    return response.data; // Return the list of contributors
+  } catch (error) {
+    console.error("Error fetching contributors:", error);
     throw error;
   }
 };

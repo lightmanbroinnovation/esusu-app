@@ -6,32 +6,130 @@ import {
   TouchableOpacity, 
   TextInput,
   Modal,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import moment from 'moment'; // Import moment for date formatting
+import { Picker as NativePicker } from '@react-native-picker/picker'; // Updated import for Picker
+import { addContributor } from '../../services/api'; // Import the addContributor function
 
 const SavingsPlanSetup = () => {
   const router = useRouter();
   const [depositAmount, setDepositAmount] = useState('2,000');
   const [frequency, setFrequency] = useState('daily');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [startDate, setStartDate] = useState('Mar 1, 2025');
-  const [endDate, setEndDate] = useState('Mar 31, 2025');
-  const [showReminderModal, setShowReminderModal] = useState(false);
-  
+  const [startDate, setStartDate] = useState(moment().startOf('day').toDate()); // Default to today's date
+  const [endDate, setEndDate] = useState(moment().startOf('day').toDate()); // Default to today's date
+  const [showStartCalendar, setShowStartCalendar] = useState(false);
+  const [showEndCalendar, setShowEndCalendar] = useState(false);
+  const [durationValue, setDurationValue] = useState(1); // Default value for duration dropdown
+  const params = useLocalSearchParams(); // Get parameters passed from the previous screen
+
   const navigateBack = () => {
     router.back();
   };
 
-  const handleNext = () => {
-    // In a real app, this would create the contributor profile
-    router.push('/contributor/profile');
+  const handleNext = async () => {
+    // Prepare the parameters including entered details
+    const contributorData = {
+      agentName: params.agentName,
+      agentId: params.agentId,
+      firstName: params.firstName, // Pass original firstName
+      lastName: params.lastName, // Pass original lastName
+      phoneNumber: params.phoneNumber,
+      ninNumber: params.ninNumber,
+      language: params.language,
+      photoUri: params.photoUri,
+      depositAmount,
+      frequency,
+      startDate: moment(startDate).format('YYYY-MM-DD'),
+      endDate: moment(endDate).format('YYYY-MM-DD'),
+      durationValue,
+    };
+    console.log(contributorData); // Log the parameters
+
+    try {
+      await addContributor(contributorData); // Send data to the endpoint
+      router.push('/contributor/profile'); // Navigate to the profile page after successful addition
+    } catch (error) {
+      console.error("Error adding contributor:", error);
+    }
   };
 
-  const handleSendReminder = () => {
-    // Logic to send the reminder (e.g., API call)
-    setShowReminderModal(true); // Show the modal after sending the reminder
+  // Function to render the calendar
+  const renderCalendar = (isStartCalendar: boolean) => {
+    const currentMonth = moment(startDate).month(); // Get the current month (0-11)
+    const currentYear = moment(startDate).year(); // Get the current year
+    const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth(); // Get days in month
+    const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day(); // Get the first day of the month
+
+    const days = [];
+    // Add empty views for days before the first day of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(<View key={`empty-${i}`} className="flex-1 border my-1" style={{ padding: 8 }} />);
+    }
+    // Add the days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(
+        <TouchableOpacity
+          key={day}
+          className={`flex-1 items-center justify-center border my-1 ${moment(startDate).date() === day ? 'bg-blue-600' : ''}`}
+          style={{ padding: 8 }} // Uniform padding
+          onPress={() => {
+            const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
+            if (isStartCalendar) {
+              setStartDate(selectedDate);
+              // Reset end date if it is before the selected start date
+              if (endDate < selectedDate) {
+                setEndDate(selectedDate);
+              }
+            } else {
+              setEndDate(selectedDate);
+            }
+            setShowStartCalendar(false);
+            setShowEndCalendar(false);
+          }}
+        >
+          <Text className={`text-center ${moment(startDate).date() === day ? 'text-white' : 'text-black'}`}>{day}</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    // Create rows of 7 days (4 weeks minimum)
+    const rows = [];
+    const totalDays = Math.max(days.length, 35); // Ensure at least 35 days are displayed for 5 weeks
+    for (let i = 0; i < totalDays; i += 7) {
+      const weekDays = days.slice(i, i + 7);
+      // Fill empty days if the week has less than 7 days
+      while (weekDays.length < 7) {
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 border my-1" style={{ padding: 8 }} />);
+      }
+      rows.push(
+        <View key={`row-${i}`} className="flex-row">
+          {weekDays}
+        </View>
+      );
+    }
+
+    return (
+      <View className="flex-1">
+        {rows}
+      </View>
+    );
+  };
+
+  // Function to change the month
+  const changeMonth = (isStartCalendar: boolean, direction: 'next' | 'prev') => {
+    const currentMonth = moment(startDate).month();
+    const currentYear = moment(startDate).year();
+
+    if (isStartCalendar) {
+      const newStartDate = moment(startDate).add(direction === 'next' ? 1 : -1, 'months');
+      setStartDate(newStartDate.toDate());
+    } else {
+      const newEndDate = moment(endDate).add(direction === 'next' ? 1 : -1, 'months');
+      setEndDate(newEndDate.toDate());
+    }
   };
 
   return (
@@ -79,81 +177,125 @@ const SavingsPlanSetup = () => {
                   <TouchableOpacity 
                     key={item.id}
                     className={`flex-1 rounded-xl p-4 px-3 items-center justify-center mx-1 ${frequency === item.id ? 'bg-green-600' : 'bg-blue-600'}`}
-                    onPress={() => setFrequency(item.id)}
+                    onPress={() => {
+                      setFrequency(item.id);
+                      if (item.id === 'daily') {
+                        setShowEndCalendar(false); // Hide end date for daily
+                      } else {
+                        setShowEndCalendar(false); // Hide end date for other durations
+                      }
+                    }}
                   >
                     {frequency === item.id && (
                       <View className="absolute top-3 right-4">
                         <Ionicons name="checkmark-circle" size={16} color="white" />
                       </View>
                     )}
-                    <Text className="text-white  font-semibold">{item.label}</Text>
+                    <Text className="text-white font-semibold">{item.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
+
+            {/* Duration Dropdown */}
+            {frequency === 'weekly' && (
+              <View className='my-4'>
+                <Text className="text-gray-700 mb-2">Select Weeks</Text>
+                <NativePicker
+                  selectedValue={durationValue}
+                  style={{ height: 60, width: '100%' }} // Reduced height
+                  onValueChange={(itemValue) => setDurationValue(itemValue)}
+                >
+                  {[...Array(52).keys()].map(i => (
+                    <NativePicker.Item key={i + 1} label={`${i + 1}`} value={i + 1} style={{height: "60%"}}/>
+                  ))}
+                </NativePicker>
+              </View>
+            )}
+            {frequency === 'monthly' && (
+              <View className='my-4'>
+                <Text className="text-gray-700 mb-2">Select Months</Text>
+                <NativePicker
+                  selectedValue={durationValue}
+                  style={{ height: 60, width: '100%' }} // Reduced height
+                  onValueChange={(itemValue) => setDurationValue(itemValue)}
+                >
+                  {[...Array(12).keys()].map(i => (
+                    <NativePicker.Item key={i + 1} label={`${i + 1}`} value={i + 1} />
+                  ))}
+                </NativePicker>
+              </View>
+            )}
+            {frequency === 'yearly' && (
+              <View className='my-4'>
+                <Text className="text-gray-700 mb-2">Select Years</Text>
+                <NativePicker
+                  selectedValue={durationValue}
+                  style={{ height: 60, width: '100%' }} // Reduced height
+                  onValueChange={(itemValue) => setDurationValue(itemValue)}
+                >
+                  {[...Array(10).keys()].map(i => (
+                    <NativePicker.Item key={i + 1} label={`${i + 1}`} value={i + 1} />
+                  ))}
+                </NativePicker>
+              </View>
+            )}
             
             {/* Start Date */}
             <View className='my-3'>
               <Text className="text-gray-700 mb-2">Start Date</Text>
               <TouchableOpacity 
-                onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between bg-gray-100 p-4 rounded-xl"
+                onPress={() => setShowStartCalendar(true)}
+                className="flex-row items-center justify-between bg-gray-100 border border-gray-200 p-4 rounded-xl"
               >
-                <Text className="text-black">Starts Today: {startDate}</Text>
-                <Ionicons name="calendar" size={24} color="#0066FF" />
+                <Text className="text-blue-600">Starts Today: {moment(startDate).format('YYYY-MM-DD')}</Text>
+                <Ionicons name="calendar" size={24} color="#2563eb" />
               </TouchableOpacity>
             </View>
             
-            {/* End Date */}
-            <View className='my-3'>
-              <Text className="text-gray-700 mb-2">End Date</Text>
-              <TouchableOpacity 
-                onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between bg-gray-100 p-4 rounded-xl"
-              >
-                <Text className="text-black">Ends in 31days: {endDate}</Text>
-                <Ionicons name="calendar" size={24} color="#0066FF" />
-              </TouchableOpacity>
-            </View>
+            {/* End Date (conditionally rendered) */}
+            {frequency === 'daily' && (
+              <View className='my-3'>
+                <Text className="text-gray-700 mb-2">End Date</Text>
+                <TouchableOpacity 
+                  onPress={() => setShowEndCalendar(true)}
+                  className="flex-row items-center justify-between bg-gray-100 border border-gray-200 p-4 rounded-xl"
+                >
+                  <Text className="text-blue-600">Ends By: {moment(endDate).format('YYYY-MM-DD')}</Text>
+                  <Ionicons name="calendar" size={24} color="#2563eb" />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </ScrollView>
         
-        {/* Calendar Modal */}
-        {showCalendar && (
+        {/* Start Calendar Modal */}
+        {showStartCalendar && (
           <Modal
             transparent={true}
-            visible={showCalendar}
+            visible={showStartCalendar}
             animationType="slide"
-            onRequestClose={() => setShowCalendar(false)}
+            onRequestClose={() => setShowStartCalendar(false)}
           >
             <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl">
-                <View className="p-4 border-b border-gray-200">
-                  <Text className="text-xl font-bold text-center">March 2025</Text>
-                  <TouchableOpacity 
-                    onPress={() => setShowCalendar(false)}
-                    className="absolute right-4 top-4"
-                  >
-                    <Text className="text-xl">→</Text>
+              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}> {/* Reduced modal height */}
+                <View className="flex-row justify-between">
+                  <TouchableOpacity onPress={() => changeMonth(true, 'prev')}>
+                    <Text className="text-lg">{"<"}</Text>
+                  </TouchableOpacity>
+                  <Text className="text-xl font-bold text-center">{moment(startDate).format('MMMM YYYY')}</Text>
+                  <TouchableOpacity onPress={() => changeMonth(true, 'next')}>
+                    <Text className="text-lg">{">"}</Text>
                   </TouchableOpacity>
                 </View>
-                
-                {/* Calendar header */}
-                <View className="flex-row p-4">
+                <View className="flex-row p-2">
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
                     <Text key={day} className="flex-1 text-center font-medium">{day}</Text>
                   ))}
                 </View>
-                
-                {/* Calendar grid would go here - simplified for this example */}
-                <View className="p-4 items-center justify-center">
-                  <View className="w-16 h-16 rounded-full bg-blue-600 items-center justify-center">
-                    <Text className="text-white font-bold">1</Text>
-                  </View>
-                </View>
-                
+                {renderCalendar(true)}
                 <TouchableOpacity 
-                  onPress={() => setShowCalendar(false)}
+                  onPress={() => setShowStartCalendar(false)}
                   className="p-4 items-center border-t border-gray-200"
                 >
                   <Text className="text-lg">Cancel</Text>
@@ -162,7 +304,43 @@ const SavingsPlanSetup = () => {
             </View>
           </Modal>
         )}
-        
+
+        {/* End Calendar Modal */}
+        {showEndCalendar && (
+          <Modal
+            transparent={true}
+            visible={showEndCalendar}
+            animationType="slide"
+            onRequestClose={() => setShowEndCalendar(false)}
+          >
+            <View className="flex-1 justify-end bg-black bg-opacity-30">
+              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}> {/* Reduced modal height */}
+                <View className="flex-row justify-between">
+                  <TouchableOpacity onPress={() => changeMonth(false, 'prev')}>
+                    <Text className="text-lg">{"<"}</Text>
+                  </TouchableOpacity>
+                  <Text className="text-xl font-bold text-center">{moment(endDate).format('MMMM YYYY')}</Text>
+                  <TouchableOpacity onPress={() => changeMonth(false, 'next')}>
+                    <Text className="text-lg">{">"}</Text>
+                  </TouchableOpacity>
+                </View>
+                <View className="flex-row p-4">
+                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                    <Text key={day} className="flex-1 text-center font-medium">{day}</Text>
+                  ))}
+                </View>
+                {renderCalendar(false)}
+                <TouchableOpacity 
+                  onPress={() => setShowEndCalendar(false)}
+                  className="p-4 items-center border-t border-gray-200"
+                >
+                  <Text className="text-lg">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
+
         {/* Bottom Button */}
         <View className="p-4 border-t border-gray-200">
           <TouchableOpacity 
@@ -173,29 +351,6 @@ const SavingsPlanSetup = () => {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Reminder Modal */}
-      {showReminderModal && (
-        <Modal
-          transparent={true}
-          visible={showReminderModal}
-          animationType="slide"
-          onRequestClose={() => setShowReminderModal(false)}
-        >
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-30">
-            <View className="bg-white rounded-lg p-6 w-80">
-              <Text className="text-lg font-semibold">Reminder Sent!</Text>
-              <Text className="mt-2">A reminder has been sent to Adeimpe Adewale via SMS to not forget to contribute today.</Text>
-              <TouchableOpacity 
-                onPress={() => setShowReminderModal(false)}
-                className="bg-blue-600 p-2 rounded-lg mt-4"
-              >
-                <Text className="text-white text-center">Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 };
