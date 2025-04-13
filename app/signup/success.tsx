@@ -11,7 +11,7 @@ export default function Success() {
   const handleNext = () => {
     // Pass all data to the next page
     router.push({
-      pathname: "/signup/security",
+      pathname: "/settings",
       params, // Pass all data to the next page
     });
   };
