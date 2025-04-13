@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, SafeAreaView, Text, View, TouchableOpacity, Modal } from 'react-native';
 import UserCard from '../components/UserCard';
 import Footer from '../components/Footer';
@@ -7,12 +7,12 @@ import { Ionicons } from "@expo/vector-icons";
 import VerificationController from '../verification/VerificationController';
 import { useRouter } from 'expo-router';
 import { fetchUser } from '../../services/api';
+import LatestTransactions from '../components/LatestTransactions';
 
 interface User {
   firstname: string;
   email: string;
   id: string;
-
 }
 
 const HomeScreen = () => {
@@ -20,12 +20,14 @@ const HomeScreen = () => {
   const [showVerification, setShowVerification] = useState(false);
   const [userData, setUserData] = useState<User | null>(null);
   const userId = '62f2';
+  const [transactions, setTransactions] = useState([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUserDetails = async () => {
       try {
         const data = await fetchUser(userId);
         setUserData(data);
+        setTransactions(data.transactions || []);
         console.log(data);
       } catch (error) {
         console.error('Error fetching user details:', error);
@@ -51,14 +53,11 @@ const HomeScreen = () => {
         </TouchableOpacity>
         <RecentActivity 
           onVerifyNow={() => console.log('Verify Now clicked')}
-          onViewAllActivity={() => router.push('/transactions')} 
+       
         />
-        <TouchableOpacity 
-          onPress={() => router.push("/contributors/ContributorsScreen")}
-          className="bg-blue-500 p-4 rounded-xl mt-4 mb-4"
-        >
-          <Text className="text-white text-center font-bold">TEST: Open Verification</Text>
-        </TouchableOpacity>
+        <LatestTransactions transactions={transactions}
+          />
+ 
       </ScrollView>
       <Footer />
       <Modal

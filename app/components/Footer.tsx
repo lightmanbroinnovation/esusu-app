@@ -1,13 +1,33 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { useRouter } from 'expo-router';
 
 const Footer = () => {
   const [activePage, setActivePage] = useState("Home");
+  const router = useRouter();
 
-  const handlePress = (page: string) => {
+  const handlePress = (page: 'home' | 'contributors' | 'commission' | 'settings') => {
     setActivePage(page);
     console.log(`Navigating to ${page}`);
+    
+    // Use specific paths based on the page parameter
+    switch (page) {
+      case 'home':
+        router.push('/dashboard');
+        break;
+      case 'contributors':
+        router.push('/contributors/ContributorsScreen');
+        break;
+      case 'commission':
+        router.push('/commission');
+        break;
+      case 'settings':
+        router.push('/settings');
+        break;
+      default:
+        console.error("Unknown page:", page);
+    }
   };
 
   return (
@@ -15,7 +35,7 @@ const Footer = () => {
       {/* Home Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("../dashboard")}
+        onPress={() => handlePress("home")}
       >
         <View className={`p-2 ${activePage === "Home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
@@ -32,7 +52,7 @@ const Footer = () => {
       {/* Contributor Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("../contributors/ContributorsScreen")}
+        onPress={() => handlePress("contributors")}
       >
         <View className={`p-2 ${activePage === "Contributor" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
@@ -49,7 +69,7 @@ const Footer = () => {
       {/* Commission Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("Commission")}
+        onPress={() => handlePress("commission")}
       >
         <View className={`p-2 ${activePage === "Commission" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
@@ -66,7 +86,7 @@ const Footer = () => {
       {/* Profile Button */}
       <TouchableOpacity
         className="items-center"
-        onPress={() => handlePress("../settings/")}
+        onPress={() => handlePress("settings")}
       >
         <View className={`p-2 ${activePage === "Profile" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 

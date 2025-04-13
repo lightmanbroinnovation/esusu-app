@@ -9,7 +9,15 @@
       "address": "123",
       "city": "Main",
       "state": "Boston",
-      "photoUri": "https://randomuser.me/api/portraits/men/1.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/1.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "138e",
@@ -20,7 +28,15 @@
       "address": "123th street",
       "city": "Peckham",
       "state": "London",
-      "photoUri": "https://randomuser.me/api/portraits/men/2.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/2.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "5ac0",
@@ -31,7 +47,15 @@
       "address": "23, Main street",
       "city": "Sun City",
       "state": "Texas",
-      "photoUri": "https://randomuser.me/api/portraits/women/1.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/women/1.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "688f",
@@ -42,7 +66,15 @@
       "address": "Yuri street",
       "city": "Tokyo",
       "state": "Tokyo",
-      "photoUri": "https://randomuser.me/api/portraits/men/3.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/3.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "d3e1",
@@ -53,7 +85,15 @@
       "address": "456 Elm St",
       "city": "New York",
       "state": "NY",
-      "photoUri": "https://randomuser.me/api/portraits/women/2.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/women/2.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "3c54",
@@ -64,7 +104,15 @@
       "address": "789 Oak St",
       "city": "Los Angeles",
       "state": "CA",
-      "photoUri": "https://randomuser.me/api/portraits/men/4.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/4.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "fd82",
@@ -75,7 +123,15 @@
       "address": "321 Pine St",
       "city": "Chicago",
       "state": "IL",
-      "photoUri": "https://randomuser.me/api/portraits/men/5.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/5.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "28ed",
@@ -86,7 +142,15 @@
       "address": "654 Maple St",
       "city": "Houston",
       "state": "TX",
-      "photoUri": "https://randomuser.me/api/portraits/men/6.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/6.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "2831",
@@ -97,7 +161,15 @@
       "address": "987 Cedar St",
       "city": "Phoenix",
       "state": "AZ",
-      "photoUri": "https://randomuser.me/api/portraits/women/3.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/women/3.jpg",
+      "transactions": [
+        { "id": "1", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-10-01T10:00:00Z", "date": "2023-10-01" },
+        { "id": "2", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha Bello", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": "Ade Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ]
     },
     {
       "id": "62f2",
@@ -108,7 +180,62 @@
       "address": "Lafe inn street Akure",
       "city": "Akure",
       "state": "Ondo",
-      "photoUri": "https://randomuser.me/api/portraits/men/7.jpg"
+      "photoUri": "https://randomuser.me/api/portraits/men/7.jpg",
+      "transactions": [
+        { "id": "1", "name": " Bello", "type": "deposit", "amount": 5000, "timestamp": "2025-04-12T10:00:00Z", "date": "2025-04-12" },
+        { "id": "2", "name": "Ade ", "type": "withdrawal", "amount": 10000, "timestamp": "2023-10-01T11:00:00Z", "date": "2023-10-01" },
+        { "id": "3", "name": "Chioma", "type": "account_creation", "amount": 50, "timestamp": "2023-10-01T12:00:00Z", "date": "2023-10-01" },
+        { "id": "4", "name": "Aisha ", "type": "deposit", "amount": 5000, "timestamp": "2023-09-30T10:00:00Z", "date": "2023-09-30" },
+        { "id": "5", "name": " Martins", "type": "withdrawal", "amount": 10000, "timestamp": "2023-09-30T11:00:00Z", "date": "2023-09-30" },
+        { "id": "6", "name": "Chioma boss", "type": "account_creation", "amount": 50, "timestamp": "2023-09-30T12:00:00Z", "date": "2023-09-30" }
+      ],
+      "commissions":[
+        {
+          "id": "1",
+          "type": "Credit",
+          "amount": "2000",
+          "date": "Feb 6, 2025",
+          "time": "12:03 AM"
+        },
+        {
+          "id": "2",
+          "type": "Withdrawn",
+          "amount": "3500",
+          "date": "Feb 5, 2025",
+          "time": "12:03 AM"
+        },
+        {
+          "id": "3",
+          "type": "Withdrawn",
+          "amount": "2000",
+          "date": "Jan 29, 2025",
+          "time": "12:03 AM"
+        },
+        {
+          "id": "4",
+          "type": "Credit",
+          "amount": "2000",
+          "date": "Feb 6, 2025",
+          "time": "12:03 AM"
+         
+        },
+        {
+          "id": "5",
+          "type": "Withdrawn",
+          "amount": "3500",
+          "date": "Feb 5, 2025",
+          "time": "12:03 AM"
+        
+        },
+        {
+          "id": "6",
+          "type": "Withdrawn",
+          "amount": "2000",
+          "date": "Jan 29, 2025",
+          "time": "12:03 AM"
+         
+        }
+      ]
     }
   ],
   "contributors": [

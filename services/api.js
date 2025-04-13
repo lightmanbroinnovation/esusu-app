@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = 'http://192.168.100.62:8082'; // Ensure this is the correct base URL
+const API_BASE_URL = 'http://192.168.0.116:8082'; // Ensure this is the correct base URL
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -22,7 +22,7 @@ export const fetchUser = async (userId) => {
   try {
     const response = await axiosInstance.get(`/users/${userId}`);
     console.log("User details fetched successfully:", response.data);
-    return response.data; // Ensure this returns the user data directly
+    return response.data; // Ensure thisreturns the user data directly
   } catch (error) {
     console.error("Error fetching user details:", error);
     throw error;
@@ -48,6 +48,34 @@ export const fetchContributors = async (agentId) => {
     return response.data; // Return the list of contributors
   } catch (error) {
     console.error("Error fetching contributors:", error);
+    throw error;
+  }
+};
+
+// Function to fetch transactions for a user by userId
+export const fetchTransactions = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/users/${userId}`); // Fetch the user data
+    console.log("User fetched successfully:", response.data);
+    
+    // Return the transactions for the user
+    return response.data.transactions || []; // Return an empty array if no transactions
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    throw error;
+  }
+};
+
+// Function to fetch commissions for a user by userId
+export const fetchCommissions = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/users/${userId}`); // Adjust the endpoint as necessary
+    console.log("Commissions fetched successfully:", response.data);
+    
+    // Return the commissions for the user
+    return response.data.commissions || []; // Return an empty array if no commissions
+  } catch (error) {
+    console.error("Error fetching commissions:", error);
     throw error;
   }
 };

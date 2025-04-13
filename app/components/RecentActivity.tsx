@@ -57,25 +57,6 @@ const RecentActivity = ({ onVerifyNow, onViewAllActivity }: RecentActivityProps)
         </View>
       </View>
       
-      {/* Recent Activity Title */}
-      <View className="flex-row justify-between items-center">
-        <Text className="font-semibold text-base">Recent Activity</Text>
-        <TouchableOpacity 
-          onPress={onViewAllActivity}
-        >
-          <Text className="text-blue-600 text-sm">View all</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Empty State */}
-      <View className="bg-white py-10 rounded-xl mt-2">
-        <Text className="text-gray-400 text-lg font-medium text-center">
-          No Recent Activities
-        </Text>
-        <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-          It looks like you haven't made any transactions. Once you start, your activity will appear here.
-        </Text>
-      </View>
     </View>
   );
 };
