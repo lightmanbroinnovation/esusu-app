@@ -37,6 +37,23 @@ const ContributorsScreen = () => {
       try {
         const data = await fetchContributors(agentId);
         setAllContributors(data); // Store all contributors
+
+        // Group contributors by frequency
+        const groupedByFrequency = data.reduce((acc: Record<Frequency, Contributor[]>, contributor: Contributor) => {
+          const frequency = contributor.frequency as Frequency; // Cast to Frequency type
+          if (!acc[frequency]) {
+            acc[frequency] = []; // Initialize array if it doesn't exist
+          }
+          acc[frequency].push(contributor); // Push contributor to the corresponding frequency array
+          return acc;
+        }, {} as Record<Frequency, Contributor[]>);
+
+        // Log only the duration and contributor IDs for each duration
+        Object.keys(groupedByFrequency).forEach((key) => {
+          const ids = groupedByFrequency[key].map((contributor: Contributor) => contributor.id); // Explicitly define the type
+          console.log(`${key} Contributors IDs:`, ids); // Log each frequency group with IDs
+        });
+
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
@@ -72,12 +89,17 @@ const ContributorsScreen = () => {
   };
 
   const handleCardPress = (duration: string) => {
-    const filteredContributors = allContributors.filter(contributor => contributor.frequency === duration); // Filter based on frequency
-    console.log("Filtered Contributors for", duration, ":", filteredContributors); // Log the filtered contributors
-    const contributorIds = filteredContributors.map(contributor => contributor.id); // Extract IDs
+    const contributorIds = allContributors
+      .filter(contributor => contributor.frequency === duration)
+      .map(contributor => contributor.id); // Extract IDs
+
+    console.log("Navigating to ContributorListScreen with Duration:", duration); // Log duration
+    console.log("Contributor IDs:", contributorIds); // Log contributor IDs
+
+    // Pass the selected duration and contributor IDs to the next page
     router.push({
       pathname: '/contributors/ContributorListScreen',
-      params: { duration, contributorIds }, // Pass only the IDs
+      params: { duration, contributorIds }, // Ensure this is structured correctly
     });
   };
 
