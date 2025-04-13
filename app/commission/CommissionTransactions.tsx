@@ -1,0 +1,162 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { fetchCommissions } from '../../services/api'; // Import the fetchCommissions function
+import TransactionFilter, { FilterOptions } from '../commission/TransactionFilter'; // Import the filter component
+import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for icons
+import { useRouter } from 'expo-router';
+// Define the CommissionTransaction type
+interface CommissionTransaction {
+  id: string;
+  type: string;
+  amount: number;
+  date: string;
+  time: string;
+}
+
+const CommissionTransactions: React.FC = () => {
+  const router = useRouter();
+  const [transactions, setTransactions] = useState<CommissionTransaction[]>([]); // State to hold fetched commissions
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({}); // State for active filters
+  const [showFilter, setShowFilter] = useState(false); // State to control filter modal visibility
+  const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const userId = '62f2'; // Replace with the actual user ID
+
+  useEffect(() => {
+    const getCommissions = async () => {
+      try {
+        const commissions = await fetchCommissions(userId); // Fetch commissions
+        setTransactions(commissions); // Set the fetched commissions to state
+      } catch (error) {
+        console.error("Failed to fetch commissions:", error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching
+      }
+    };
+
+    getCommissions(); // Call the function to fetch commissions
+  }, [userId]);
+
+  // Function to group commissions by date
+  const groupCommissionsByDate = (transactions: CommissionTransaction[]) => {
+    return transactions.reduce((acc, transaction) => {
+      const dateKey = transaction.date; // Use the date as the key
+      if (!acc[dateKey]) {
+        acc[dateKey] = []; // Initialize an array for this date if it doesn't exist
+      }
+      acc[dateKey].push(transaction); // Push the transaction into the corresponding date array
+      return acc;
+    }, {} as Record<string, CommissionTransaction[]>);
+  };
+
+  // Apply filters to transactions
+  const applyFilters = (transactions: CommissionTransaction[], filters: FilterOptions) => {
+    return transactions.filter(transaction => {
+      const matchesType = filters.transactionType && filters.transactionType !== 'all'
+        ? transaction.type === filters.transactionType
+        : true;
+
+      const matchesMinAmount = filters.minAmount !== undefined
+        ? transaction.amount >= filters.minAmount
+        : true;
+
+      const matchesMaxAmount = filters.maxAmount !== undefined
+        ? transaction.amount <= filters.maxAmount
+        : true;
+
+      return matchesType && matchesMinAmount && matchesMaxAmount;
+    });
+  };
+
+  // Apply search query to transactions
+  const applySearch = (transactions: CommissionTransaction[], query: string) => {
+    return transactions.filter(transaction => 
+      transaction.type.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  const filteredTransactions = applyFilters(transactions, activeFilters); // Apply filters to transactions
+  const searchedTransactions = applySearch(filteredTransactions, searchQuery); // Apply search to filtered transactions
+  const groupedCommissions = groupCommissionsByDate(searchedTransactions); // Group the filtered and searched commissions
+
+
+  const navigateBack = () => {
+    router.back();
+  };
+
+
+  return (
+    <View className="flex-1 bg-white">
+      <ScrollView className="p-4">
+      <View className="flex-row items-center mb-4">
+          <TouchableOpacity 
+            onPress={navigateBack}
+            className="bg-gray-100 p-2 rounded-full mr-4"
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
+        </View>
+        <View className="flex-row items-center mb-4">
+          <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
+            <Ionicons name="search" size={20} color="#A0A0A0" />
+            <TextInput
+              className="flex-1 ml-2"
+              placeholder="Search...."
+              placeholderTextColor="#A0A0A0"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {(searchQuery || Object.keys(activeFilters).length > 0) && (
+              <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveFilters({}); }}>
+                <Ionicons name="close-circle" size={20} color="#A0A0A0" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity className="bg-gray-100 p-2 rounded-xl" onPress={() => setShowFilter(true)}>
+            <Ionicons name="options-outline" size={24} color={Object.keys(activeFilters).length > 0 ? "#0052CC" : "#000"} />
+          </TouchableOpacity>
+        </View>
+
+        <TransactionFilter
+          visible={showFilter}
+          onClose={() => setShowFilter(false)}
+          onApplyFilter={(filters) => {
+            setActiveFilters(filters);
+            setShowFilter(false);
+          }}
+        />
+        
+        {loading ? (
+          <Text>Loading...</Text> // Display loading text while fetching
+        ) : searchedTransactions.length === 0 ? (
+          <View className="bg-white py-10 rounded-xl mt-2">
+            <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
+            <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+              It looks like you haven't made any commission transactions yet.
+            </Text>
+          </View>
+        ) : (
+          Object.entries(groupedCommissions).map(([date, transactions]) => (
+            <View key={date} className="mb-4">
+              <Text className="text-gray-500 mb-2">{date}</Text>
+              {transactions.map(transaction => (
+                <View key={transaction.id} className="mb-4">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="font-medium">{transaction.type}</Text>
+                    <Text className={`font-semibold ${transaction.type === 'Withdrawn' ? 'text-red-600' : 'text-green-600'}`}>
+                      {transaction.amount > 0 ? `₦${transaction.amount.toLocaleString()}` : `-₦${Math.abs(transaction.amount).toLocaleString()}`}
+                    </Text>
+                  </View>
+                  <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
+                </View>
+              ))}
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+export default CommissionTransactions;

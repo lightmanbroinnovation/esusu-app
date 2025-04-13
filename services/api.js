@@ -1,15 +1,17 @@
 import axios from "axios";
-import { API_BASE_URL } from "@env"; // Import the environment variable
+
+const API_BASE_URL = 'http://192.168.0.116:8082'; // Ensure this is the correct base URL
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL, // Use the environment variable
-  timeout: 5000, // Timeout increased to 5 seconds (you can adjust as needed)
+  baseURL: API_BASE_URL,
+  timeout: 5000,
 });
 
 export const registerUser = async (userData) => {
   try {
     const response = await axiosInstance.post("/users", userData);
     console.log("User registered successfully:", response.data);
+    return response.data;
     return response.data;
   } catch (error) {
     console.error("Registration failed:", error);

@@ -3,10 +3,9 @@ export const options = {
 };
 
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration } from "react-native";
-import * as LocalAuthentication from "expo-local-authentication";
+import { View, Text, TouchableOpacity, Vibration } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router"; // Correct import
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 
 export default function PasscodeScreen() {
@@ -14,6 +13,7 @@ export default function PasscodeScreen() {
   const [showKeypad, setShowKeypad] = useState<boolean>(false); // State to toggle keypad visibility
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { phone } = useLocalSearchParams(); // Retrieve the phone number from query params
 
   const handleKeyPress = (digit: string) => {
     if (pin.length < 4) {
@@ -25,35 +25,21 @@ export default function PasscodeScreen() {
     setPin(pin.slice(0, -1));
   };
 
-  const handleFingerprintAuth = async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Authenticate with fingerprint",
-      fallbackLabel: "Use PIN",
-    });
-
-    if (result.success) {
-      alert("Authenticated successfully!");
-      // router.push("/dashboard/index"); // Optional navigation
-    } else {
-      alert("Authentication failed");
-    }
-  };
-
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-6">
+      <View className="flex-row items-center justify-center space-x-4 mt-6">
         {[0, 1, 2, 3].map((i) => (
-          <TextInput
+          <TouchableOpacity
             key={i}
-            value={pin[i] || ""}
-            editable={false}
-            className="w-12 h-12 text-center mr-2 p-1 text-xl text-primaryText font-bold border rounded-lg"
+            onPress={() => setShowKeypad(true)} // Show keypad when clicked
+            className="w-12 h-12 text-center mr-2 justify-center items-center border rounded-lg"
             style={{
               borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
-         
+              backgroundColor: "#F4F4F5",
             }}
-          />
+          >
+            <Text className="text-xl font-bold text-[#0072CE]">{pin[i] || ""}</Text>
+          </TouchableOpacity>
         ))}
       </View>
     );
@@ -62,7 +48,7 @@ export default function PasscodeScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "x", "0", "✓"];
     return (
-      <View className="mt-10 space-y-8 w-full">
+      <View className="mt-10 space-y-4 w-full">
         {Array(4)
           .fill(null)
           .map((_, rowIndex) => (
@@ -75,7 +61,6 @@ export default function PasscodeScreen() {
                     else if (key === "✓") {
                       if (pin.length === 4) {
                         alert("Passcode entered: " + pin);
-                        // router.push("/home");
                       } else {
                         Vibration.vibrate(100);
                       }
@@ -101,30 +86,45 @@ export default function PasscodeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-between pt-20 pb-10">
-      {/* Top section */}
-      <View className="items-center">
-        <Text className="text-2xl font-bold text-primaryText">Enter passcode</Text>
-        <Text className="text-gray-500 mt-2 mb-16">Enter your passcode to log in</Text>
+    <View className="flex-1 bg-white px-6 pb-10">
+      {/* Back Button */}
+      <View className="flex-row items-center p-4">
+      <TouchableOpacity
+          className="flex-row items-center"
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={28} />
+        </TouchableOpacity>
+          <Text className="text-xl font-bold flex-1 text-center mr-8">Withdraw</Text>
+        </View>
+
+      {/* Main Content */}
+      <View className="flex-1 mt-8">
+        <Text className="text-[24px] font-bold text-center text-primaryText">OTP Verification</Text>
+        <Text className="text-gray-500 text-center mt-2 mb-6">
+        Enter the OTP sent to your registered phone number to complete your withdrawal.
+        </Text>
 
         {renderPinInputs()}
 
-        <TouchableOpacity className="mt-2"
-          onPress={() => router.push("/reset/otp")}>
-          <Text className="text-sm text-primaryText">Forgot passcode?</Text>
+        <TouchableOpacity className="mt-2 text-center">
+          <Text className="text-primaryText text-xl text-center">Resend Code</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleFingerprintAuth} className="mt-6 items-center">
-          <MaterialIcons name="fingerprint" size={40} color="#0072CE" /> {/* Icon */}
-          <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="mt-2"
-          onPress={() => setShowKeypad(true)} // Show keypad when "Use PIN" is selected
-        >
-          <Text className="text-sm text-primaryText">Use PIN</Text>
-        </TouchableOpacity>
-
+     
+        <View className="flex-1 justify-end pb-4">
+          {/* Continue Button */}
+          <TouchableOpacity
+            className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+            onPress={() =>
+              router.push({
+                pathname: "/signup/userData",
+                params: { phone, pin }, // Pass both phone and pin to the next page
+              })
+            }
+          >
+            <Text className="text-white text-lg mr-2 font-semibold">Withdraw</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Keypad */}

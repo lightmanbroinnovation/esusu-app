@@ -82,7 +82,7 @@ export default function UploadDocumentScreen() {
           style={{
             backgroundColor: "#F4F4F5",
           }}
-          maxLength={15}
+          maxLength={5}
           placeholder="Enter BVN number"
           placeholderTextColor="#BDBDBD"
           value={bvn}
