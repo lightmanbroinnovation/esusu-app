@@ -41,7 +41,7 @@ export default function Index() {
 
         {/* Buttons */}
         <View className="flex-row justify-between px-6 mb-10 gap-4">
-          <Link href="/dashboard" asChild>
+          <Link href="/login" asChild>
             <TouchableOpacity className="flex-1 border border-white py-3 rounded-2xl items-center">
               <Text className="text-white font-semibold">LOG IN</Text>
             </TouchableOpacity>

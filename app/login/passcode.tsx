@@ -2,18 +2,34 @@ export const options = {
   headerShown: false, // Hide the header
 };
 
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
-  const [showKeypad, setShowKeypad] = useState<boolean>(false); // State to toggle keypad visibility
+  const [showKeypad, setShowKeypad] = useState<boolean>(true); // State to toggle keypad visibility
+  const [loading, setLoading] = useState<boolean>(false);
+  const [attempts, setAttempts] = useState<number>(0);
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+
+  // Extract needed params
+  const userPin = params.pin as string;
+  const userId = params.userId as string;
+  const phone = params.phone as string;
+
+  useEffect(() => {
+    // Check if PIN is complete (4 digits)
+    if (pin.length === 4) {
+      verifyPin();
+    }
+  }, [pin]);
 
   const handleKeyPress = (digit: string) => {
     if (pin.length < 4) {
@@ -25,17 +41,108 @@ export default function PasscodeScreen() {
     setPin(pin.slice(0, -1));
   };
 
-  const handleFingerprintAuth = async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Authenticate with fingerprint",
-      fallbackLabel: "Use PIN",
-    });
+  const verifyPin = () => {
+    setLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      if (pin === userPin) {
+        // Successful login - save user ID to AsyncStorage
+        saveUserSession(userId, phone);
+      } else {
+        // Failed login
+        Vibration.vibrate(300);
+        setAttempts(attempts + 1);
+        
+        if (attempts >= 2) {
+          // Too many attempts
+          Alert.alert(
+            "Too Many Attempts",
+            "You've made too many incorrect attempts. Please try again later or reset your PIN.",
+            [
+              {
+                text: "Reset PIN",
+                onPress: () => router.push({
+                  pathname: "/reset",
+                  params: { phone }
+                }),
+                style: "cancel"
+              },
+              {
+                text: "Try Again",
+                onPress: () => {
+                  setPin("");
+                  setAttempts(0);
+                }
+              }
+            ]
+          );
+        } else {
+          Alert.alert(
+            "Incorrect PIN",
+            `Incorrect PIN. You have ${3 - attempts - 1} attempts remaining.`,
+            [{ text: "Try Again" }]
+          );
+          setPin("");
+        }
+        
+        setLoading(false);
+      }
+    }, 1000);
+  };
 
-    if (result.success) {
-      alert("Authenticated successfully!");
-      // router.push("/dashboard/index"); // Optional navigation
-    } else {
-      alert("Authentication failed");
+  const saveUserSession = async (userId: string, phone: string) => {
+    try {
+      // Save user session data
+      await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem('userPhone', phone);
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      
+      console.log('User session saved successfully');
+      // Navigate to dashboard
+      navigateToDashboard();
+    } catch (error) {
+      console.error('Error saving user session:', error);
+      Alert.alert('Error', 'Failed to save session. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const navigateToDashboard = () => {
+    // Navigate to dashboard
+    router.replace("/dashboard");
+  };
+
+  const handleFingerprintAuth = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert("Error", "Your device doesn't support biometric authentication");
+        return;
+      }
+      
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert("Error", "No biometrics found. Please set up fingerprint authentication in your device settings.");
+        return;
+      }
+      
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate with fingerprint",
+        fallbackLabel: "Use PIN",
+      });
+
+      if (result.success) {
+        // Successful biometric authentication
+        saveUserSession(userId, phone);
+      } else if (result.error === "user_cancel") {
+        // User canceled, do nothing
+      } else {
+        Alert.alert("Authentication failed", "Please try again or use your PIN");
+      }
+    } catch (error) {
+      console.error("Biometric auth error:", error);
+      Alert.alert("Error", "An error occurred with biometric authentication. Please use your PIN instead.");
     }
   };
 
@@ -43,56 +150,57 @@ export default function PasscodeScreen() {
     return (
       <View className="flex-row justify-center space-x-8 mt-6">
         {[0, 1, 2, 3].map((i) => (
-          <TextInput
+          <View 
             key={i}
-            value={pin[i] || ""}
-            editable={false}
-            className="w-12 h-12 text-center mr-2 p-1 text-xl text-primaryText font-bold border rounded-lg"
+            className="w-12 h-12 items-center justify-center rounded-full border-2" 
             style={{
               borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
-         
+              backgroundColor: i < pin.length ? "#0072CE" : "transparent",
             }}
-          />
+          >
+            {i < pin.length && (
+              <View className="w-4 h-4 rounded-full bg-white" />
+            )}
+          </View>
         ))}
       </View>
     );
   };
 
   const renderKeypad = () => {
-    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "x", "0", "✓"];
+    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
     return (
       <View className="mt-10 space-y-8 w-full">
         {Array(4)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-between">
+            <View key={rowIndex} className="flex-row justify-around">
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => {
-                    if (key === "x") handleBackspace();
-                    else if (key === "✓") {
-                      if (pin.length === 4) {
-                        alert("Passcode entered: " + pin);
-                        // router.push("/home");
+                key ? (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => {
+                      if (key === "⌫") {
+                        handleBackspace();
                       } else {
-                        Vibration.vibrate(100);
+                        handleKeyPress(key);
                       }
-                    } else {
-                      handleKeyPress(key);
-                    }
-                  }}
-                  className="w-20 h-20 bg-white justify-center items-center"
-                >
-                  {key === "x" ? (
-                    <Ionicons name="backspace-outline" size={30} color="#0072CE" /> // Delete icon
-                  ) : key === "✓" ? (
-                    <MaterialIcons name="check-circle" size={30} color="#0072CE" /> // Enter icon
-                  ) : (
-                    <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text> // Regular number keys
-                  )}
-                </TouchableOpacity>
+                    }}
+                    className="w-20 h-20 bg-white justify-center items-center rounded-full"
+                    style={{ 
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                    disabled={loading}
+                  >
+                    {key === "⌫" ? (
+                      <Ionicons name="backspace-outline" size={28} color="#0072CE" />
+                    ) : (
+                      <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View key={`empty-${rowIndex}-${Math.random()}`} className="w-20 h-20" />
+                )
               ))}
             </View>
           ))}
@@ -109,22 +217,29 @@ export default function PasscodeScreen() {
 
         {renderPinInputs()}
 
-        <TouchableOpacity className="mt-2"
-          onPress={() => router.push("/reset/otp")}>
+        {loading && (
+          <ActivityIndicator size="large" color="#0072CE" className="mt-6" />
+        )}
+
+        <TouchableOpacity 
+          className="mt-4"
+          onPress={() => router.push({
+            pathname: "/reset",
+            params: { phone }
+          })}
+          disabled={loading}
+        >
           <Text className="text-sm text-primaryText">Forgot passcode?</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleFingerprintAuth} className="mt-6 items-center">
+        
+        <TouchableOpacity 
+          onPress={handleFingerprintAuth} 
+          className="mt-6 items-center"
+          disabled={loading}
+        >
           <MaterialIcons name="fingerprint" size={40} color="#0072CE" /> {/* Icon */}
           <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          className="mt-2"
-          onPress={() => setShowKeypad(true)} // Show keypad when "Use PIN" is selected
-        >
-          <Text className="text-sm text-primaryText">Use PIN</Text>
-        </TouchableOpacity>
-
       </View>
 
       {/* Keypad */}
