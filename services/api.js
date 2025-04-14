@@ -79,3 +79,56 @@ export const fetchCommissions = async (userId) => {
     throw error;
   }
 };
+
+// Function to fetch user by phone number for login
+export const fetchUserByPhone = async (phoneNumber) => {
+  try {
+    const response = await axiosInstance.get(`/users?phonenumber=${phoneNumber}`);
+    console.log("User lookup by phone completed:", response.data);
+    
+    // If no user found or empty array returned
+    if (!response.data || response.data.length === 0) {
+      throw new Error("User not found. Please register an account.");
+    }
+    
+    // Return the first user that matches the phone number
+    return response.data[0];
+  } catch (error) {
+    console.error("Error fetching user by phone:", error);
+    throw error;
+  }
+};
+
+// Function to update a user's information
+export const updateUser = async (userId, userData) => {
+  try {
+    const response = await axiosInstance.patch(`/users/${userId}`, userData);
+    console.log("User updated successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
+// Function to add PIN to a user if it doesn't exist
+export const addPinToUser = async (userId, pin) => {
+  try {
+    // Get current user data
+    const user = await fetchUser(userId);
+    
+    // Check if PIN already exists
+    if (user.pin) {
+      console.log("User already has a PIN");
+      return user;
+    }
+    
+    // Add PIN to user
+    const updatedUser = await updateUser(userId, { pin });
+    console.log("PIN added to user successfully");
+    return updatedUser;
+  } catch (error) {
+    console.error("Error adding PIN to user:", error);
+    throw error;
+  }
+};

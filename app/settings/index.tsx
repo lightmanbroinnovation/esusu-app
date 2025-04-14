@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { fetchUser } from "@/services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
 import Footer from "../components/Footer";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define the UserDetails type
 interface UserDetails {
@@ -75,16 +76,49 @@ const menuItems = [
 export default function Index() {
     const router = useRouter();
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
-    const id = "1a2i"; 
+    const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
+
+    // Get user ID from AsyncStorage
+    useEffect(() => {
+        const getUserId = async () => {
+            try {
+                const storedUserId = await AsyncStorage.getItem('userId');
+                const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+                
+                if (!isLoggedIn || !storedUserId) {
+                    // User is not logged in, redirect to login
+                    router.replace('/login');
+                    return;
+                }
+                
+                setUserId(storedUserId);
+            } catch (error) {
+                console.error('Error retrieving user ID:', error);
+                // Use a default ID as fallback
+                setUserId('62f2');
+            }
+        };
+        
+        getUserId();
+    }, []);
+
+    // Fetch user details when userId is available
+    useEffect(() => {
+        if (!userId) return;
+        fetchDetails();
+    }, [userId, retryCount]);
 
     const fetchDetails = async () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await fetchUser(id);
+            if (!userId) {
+                throw new Error("No user ID available");
+            }
+            const data = await fetchUser(userId);
             setUserDetails(data);
             setRetryCount(0); // Reset retry count on success
         } catch (error) {
@@ -92,7 +126,7 @@ export default function Index() {
             setError("Unable to load user details. Please try again.");
             // For demonstration - using mock data when API fails
             setUserDetails({
-                id: "62f2",
+                id: userId || "62f2",
                 phone: "08012345678",
                 pin: "1234",
                 firstname: "John",
@@ -112,16 +146,49 @@ export default function Index() {
         }
     };
 
-    useEffect(() => {
-        fetchDetails();
-    }, [id, retryCount]);
-
     const handleRetry = () => {
         setRetryCount(prevCount => prevCount + 1);
     };
 
+    const handleLogout = async () => {
+        try {
+            // Clear all user-related data from AsyncStorage
+            await AsyncStorage.removeItem('userId');
+            await AsyncStorage.removeItem('userPhone');
+            await AsyncStorage.removeItem('isLoggedIn');
+            
+            console.log("Successfully logged out");
+            
+            // Navigate to login screen
+            router.replace("/login");
+        } catch (error) {
+            console.error("Error during logout:", error);
+            Alert.alert("Error", "Failed to log out. Please try again.");
+        }
+    };
+
     const handlePress = (route: string) => {
-        router.push(route as any);
+        // Handle logout specially
+        if (route === "/logout") {
+            // Show confirmation dialog
+            Alert.alert(
+                "Logout",
+                "Are you sure you want to logout?",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Logout",
+                        onPress: handleLogout
+                    }
+                ]
+            );
+        } else {
+            // For all other routes, just navigate
+            router.push(route as any);
+        }
     };
 
     return (

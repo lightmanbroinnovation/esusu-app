@@ -8,16 +8,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+import { fetchUserByPhone } from "../../services/api"; // Import API function
 
-export default function Login() {
+export default function ResetPasscode() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(params.phone as string || "");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false); // State to track keyboard visibility
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     // Add event listeners for keyboard show and hide
@@ -34,6 +40,53 @@ export default function Login() {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  const handleContinue = async () => {
+    // Validate phone
+    if (!phone || phone.length < 10) {
+      setError("Please enter a valid phone number");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Check if user exists
+      const user = await fetchUserByPhone(phone);
+      
+      // Use user's PIN as OTP or generate a 4-digit OTP
+      let otp;
+      if (user.pin) {
+        // Use existing PIN as OTP for demo
+        otp = user.pin;
+      } else {
+        // Generate 4-digit OTP
+        otp = Math.floor(1000 + Math.random() * 9000).toString();
+      }
+      
+      console.log("OTP generated:", otp); // In real app, this would be sent via SMS
+      
+      // Proceed to OTP verification step
+      router.push({
+        pathname: "/reset/otp",
+        params: {
+          phone,
+          userId: user.id,
+          otp, // In production, don't pass OTP in params
+        }
+      });
+    } catch (error: any) {
+      console.error("Reset error:", error);
+      if (error.message && error.message.includes("User not found")) {
+        setError("User not found. Please register an account.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -55,7 +108,7 @@ export default function Login() {
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="font-semibold">Step 1 of 4</Text>
+          <Text className="font-semibold">Step 1 of 3</Text>
         </View>
 
         <View className="mt-8">
@@ -64,7 +117,7 @@ export default function Login() {
           </Text>
           <Text className="text-base text-[#4F4F4F]">
           Enter your registered phone number to receive a reset code.
-                    </Text>
+          </Text>
         </View>
 
         {/* Input */}
@@ -95,7 +148,10 @@ export default function Login() {
               placeholder="Enter phone number"
               keyboardType="phone-pad"
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(text) => {
+                setPhone(text);
+                setError("");
+              }}
               style={{
                 backgroundColor: "#F4F4F5",
               }}
@@ -103,12 +159,22 @@ export default function Login() {
               placeholderTextColor="#BDBDBD"
             />
           </View>
+          
+          {/* Error message */}
+          {error ? (
+            <Text className="text-red-500 mt-2">{error}</Text>
+          ) : null}
         </View>
 
-        {/* Sign up text */}
+        {/* Login text */}
         <Text className="text-[#4F4F4F] my-2">
-          Already have an account?{" "}
-          <Text className="text-[#0072CE] font-semibold">Login</Text>
+          Remember your passcode?{" "}
+          <Text 
+            className="text-[#0072CE] font-semibold"
+            onPress={() => router.push("/login")}
+          >
+            Login
+          </Text>
         </Text>
 
         {/* Spacer to push button down */}
@@ -117,10 +183,17 @@ export default function Login() {
           {!isKeyboardVisible && ( // Hide button when keyboard is visible
             <TouchableOpacity
               className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={() => router.push("/signup/otp")}
+              onPress={handleContinue}
+              disabled={loading}
             >
-              <Text className="text-white text-lg mr-2 font-semibold">Signup</Text>
-              <MaterialIcons name="arrow-forward" size={18} color="white" />
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
+                  <MaterialIcons name="arrow-forward" size={18} color="white" />
+                </>
+              )}
             </TouchableOpacity>
           )}
         </View>

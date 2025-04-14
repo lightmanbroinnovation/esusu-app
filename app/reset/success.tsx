@@ -1,56 +1,59 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity, ImageBackground } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+export const options = {
+  headerShown: false, // Hide the header
+};
 
-export default function Success() {
-  const insets = useSafeAreaInsets();
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialIcons } from "@expo/vector-icons";
+
+export default function SuccessScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
+  
+  // Get phone from params for login
+  const phone = params.phone as string;
+
+  const handleGoToLogin = () => {
+    // Replace the entire navigation stack with the login screen
+    // This prevents users from going back to the reset flow
+    router.replace({
+      pathname: "/login",
+      params: { phone }
+    });
+  };
 
   return (
     <View
-      className="flex-1 items-center bg-white px-4"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      className="flex-1 bg-white px-6 items-center justify-center"
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
     >
-        <View className=" flex-1 items-start p-0"
-        >
+      {/* Success animation or icon */}
+      <View className="items-center mb-8">
+        <MaterialIcons name="check-circle" size={120} color="#0072CE" />
+      </View>
 
-      <ImageBackground
-        source={require("../assets/images/success.png")} // Replace with the actual path to your background image
-        className="flex-1 justify-center items-center w-full "
-        resizeMode="contain"
-        style={{ height: 460 }} // Adjust padding for top and bottom
+      {/* Success message */}
+      <Text className="text-2xl font-bold text-primaryText text-center mb-4">
+        Passcode Reset Successfully!
+      </Text>
+      <Text className="text-base text-gray-600 text-center mb-12">
+        Your passcode has been reset successfully. You can now log in with your new passcode.
+      </Text>
 
-      >
-        <Image
-          source={require("../assets/images/check.png")} // Replace with the actual path to your check image
-          className="w-40 h-40 mb-4"
-          resizeMode="contain"
-        />
-        <View className="flex-row items-center justify-center my-2">
-
-        <Text className="text-3xl font-bold text-center text-primary mr-2"
-        style={{ color: '#0072CE' }} // Adjust the color as needed
-        >
-         HI!
-        </Text>
-        <Text 
-        className="text-3xl"
-          style={{ color: '#0072CE' }} // Adjust the color as needed
-        >
-          Timi
-        </Text>
-        </View>
-        <Text className="text-center text-gray-600 px-4">
-        You passcode has been reset, you can now log back into your esusu account.
-        </Text>
-      </ImageBackground>
-        </View>
+      {/* Go to login button */}
       <TouchableOpacity
-        className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
-        onPress={() => router.push("/login")} // Navigate to the login page
+        className="bg-[#0072CE] w-full py-4 rounded-lg"
+        onPress={handleGoToLogin}
       >
-        <Text className="text-white font-bold text-center">Go to Login</Text>
+        <Text className="text-white text-center font-semibold text-lg">
+          Go to Login
+        </Text>
       </TouchableOpacity>
     </View>
   );
