@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = 'http://192.168.100.62:8082'; // Ensure this is the correct base URL
+const API_BASE_URL = 'http://192.168.0.116:8082'; // Ensure this is the correct base URL
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -31,8 +31,37 @@ export const fetchUser = async (id) => {
 
 export const addContributor = async (contributorData) => {
   try {
+    // Log the complete incoming data
+    console.log("API SERVICE - CONTRIBUTOR DATA RECEIVED:", JSON.stringify({
+      ...contributorData,
+      photoUri: contributorData.photoUri ? (typeof contributorData.photoUri === 'string' ? contributorData.photoUri.substring(0, 30) + '...' : 'INVALID_URI') : 'MISSING',
+      imageUrl: contributorData.imageUrl ? (typeof contributorData.imageUrl === 'string' ? contributorData.imageUrl.substring(0, 30) + '...' : 'INVALID_URI') : 'MISSING'
+    }));
+    
+    // Make sure photoUri is properly included - ensure consistency between the two fields
+    if (!contributorData.photoUri && contributorData.imageUrl) {
+      contributorData.photoUri = contributorData.imageUrl;
+      console.log("Added missing photoUri from imageUrl");
+    } else if (!contributorData.imageUrl && contributorData.photoUri) {
+      contributorData.imageUrl = contributorData.photoUri;
+      console.log("Added missing imageUrl from photoUri");
+    }
+    
+    // Ensure both URLs are properly set
+    if (!contributorData.photoUri && !contributorData.imageUrl) {
+      console.warn("WARNING: No image URL provided for contributor!");
+    }
+    
+    // Log the final processed data being sent to the server (truncate long URLs)
+    const logData = {
+      ...contributorData,
+      photoUri: contributorData.photoUri ? contributorData.photoUri.substring(0, 30) + '...' : null,
+      imageUrl: contributorData.imageUrl ? contributorData.imageUrl.substring(0, 30) + '...' : null
+    };
+    console.log("PROCESSED CONTRIBUTOR DATA:", JSON.stringify(logData));
+    
     const response = await axiosInstance.post("/contributors", contributorData);
-    console.log("Contributor added successfully:", response.data);
+    console.log("API RESPONSE - Contributor added successfully:", response.data);
     return response.data; // Return the added contributor data
   } catch (error) {
     console.error("Error adding contributor:", error);
@@ -129,6 +158,72 @@ export const addPinToUser = async (userId, pin) => {
     return updatedUser;
   } catch (error) {
     console.error("Error adding PIN to user:", error);
+    throw error;
+  }
+};
+
+// Function to fetch transactions for a contributor by contributorId
+export const fetchContributorTransactions = async (contributorId) => {
+  try {
+    console.log(`Fetching transactions for contributor: ${contributorId}`);
+    const response = await axiosInstance.get(`/contributors/${contributorId}`);
+    console.log(response.data);
+    return response.data.transactions || [];
+  } catch (error) {
+    console.error('Error fetching contributor transactions:', error);
+    throw error;
+  }
+};
+
+// Function to submit business verification data
+export const submitBusinessVerification = async (userId, verificationData) => {
+  try {
+    console.log(`Submitting business verification for user ${userId}`);
+    
+    // First get the current user data
+    const userResponse = await axiosInstance.get(`/users/${userId}`);
+    const userData = userResponse.data;
+    
+    // Update the user with verification data
+    const updatedUserData = {
+      ...userData,
+      government_id: verificationData.documentImageUrl || verificationData.governmentIDImageUrl,
+      business_img: verificationData.businessLocationImageUrl,
+      verify_business: true,
+      verificationStatus: 'pending',
+      verification_data: verificationData // Store the full verification data as a nested object
+    };
+    
+    // Update the user record
+    const response = await axiosInstance.patch(`/users/${userId}`, updatedUserData);
+    console.log("Business verification submitted successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting business verification:", error);
+    throw error;
+  }
+};
+
+// Function to get verification status
+export const getVerificationStatus = async (userId) => {
+  try {
+    // Get the user data which now includes verification info
+    const response = await axiosInstance.get(`/users/${userId}`);
+    const userData = response.data;
+    
+    // Extract verification status
+    const verificationStatus = {
+      status: userData.verificationStatus || 'not_started',
+      government_id: userData.government_id,
+      business_img: userData.business_img,
+      verify_business: userData.verify_business || false,
+      verification_data: userData.verification_data || {}
+    };
+    
+    console.log("Verification status fetched successfully:", verificationStatus);
+    return verificationStatus;
+  } catch (error) {
+    console.error("Error fetching verification status:", error);
     throw error;
   }
 };

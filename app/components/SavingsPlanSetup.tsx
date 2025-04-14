@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -30,29 +31,82 @@ const SavingsPlanSetup = () => {
   };
 
   const handleNext = async () => {
-    // Prepare the parameters including entered details
-    const contributorData = {
-      agentName: params.agentName,
-      agentId: params.agentId,
-      firstName: params.firstName, // Pass original firstName
-      lastName: params.lastName, // Pass original lastName
-      phoneNumber: params.phoneNumber,
-      ninNumber: params.ninNumber,
-      language: params.language,
-      photoUri: params.photoUri,
-      depositAmount,
-      frequency,
-      startDate: moment(startDate).format('YYYY-MM-DD'),
-      endDate: moment(endDate).format('YYYY-MM-DD'),
-      durationValue,
-    };
-    console.log(contributorData); // Log the parameters
-
     try {
-      await addContributor(contributorData); // Send data to the endpoint
-      router.push('/contributor/profile'); // Navigate to the profile page after successful addition
+      // First check the params we received
+      console.log('SAVINGS PLAN SETUP - RECEIVED PARAMS:', JSON.stringify({
+        photoUri: params.photoUri,
+        imageUrl: params.imageUrl,
+        isCloudinaryUrl: params.isCloudinaryUrl,
+        allParams: params
+      }));
+
+      // Check if we already have a Cloudinary URL from previous steps
+      let finalImageUrl = null;
+      
+      // Priority: imageUrl from Cloudinary > photoUri as fallback
+      if (params.imageUrl && typeof params.imageUrl === 'string' && params.isCloudinaryUrl === "true") {
+        // Use the Cloudinary URL if available
+        finalImageUrl = params.imageUrl;
+        console.log('Using Cloudinary URL from previous step:', finalImageUrl);
+      } else if (params.photoUri && typeof params.photoUri === 'string') {
+        // Fallback to local URI if no Cloudinary URL
+        finalImageUrl = params.photoUri;
+        console.log('Falling back to local photo URI:', finalImageUrl);
+      } else {
+        console.warn('No photo URI found in params');
+      }
+      
+      console.log('FINAL IMAGE URL FOR DB:', finalImageUrl);
+      
+      // Prepare the parameters including entered details
+      const contributorData = {
+        agentName: params.agentName,
+        agentId: params.agentId,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        phoneNumber: params.phoneNumber,
+        ninNumber: params.ninNumber,
+        language: params.language,
+        photoUri: finalImageUrl, // Explicitly include the photo URI
+        imageUrl: finalImageUrl, // Add imageUrl field as well for compatibility
+        depositAmount,
+        frequency,
+        startDate: moment(startDate).format('YYYY-MM-DD'),
+        endDate: moment(endDate).format('YYYY-MM-DD'),
+        durationValue,
+        status: 'active',
+      };
+      
+      console.log('ADDING CONTRIBUTOR WITH DATA:', JSON.stringify(contributorData));
+
+      // Send data to the endpoint and get the response
+      const response = await addContributor(contributorData); 
+      
+      console.log('API RESPONSE:', JSON.stringify(response));
+      
+      // Check if we got a valid response with an ID
+      if (response && response.id) {
+        // Navigate to the profile page with the contributor ID
+        router.push({
+          pathname: '/contributor/profile',
+          params: { 
+            contributorId: response.id,
+            firstName: params.firstName,
+            lastName: params.lastName,
+            imageUrl: finalImageUrl
+          }
+        });
+      } else {
+        console.warn('No contributor ID returned from API');
+        router.push('/contributor/profile');
+      }
     } catch (error) {
       console.error("Error adding contributor:", error);
+      Alert.alert(
+        "Error",
+        "There was a problem adding the contributor. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 

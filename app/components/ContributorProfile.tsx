@@ -12,24 +12,114 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { fetchContributors } from '../../services/api';
+import { fetchContributors, fetchContributorTransactions } from '../../services/api';
 import { Contributor } from '../contributors/ContributorsScreen';
+
+// Define Transaction interface
+interface Transaction {
+  id: string;
+  name: string;
+  type: 'deposit' | 'withdrawal' | 'account_creation';
+  amount: number;
+  timestamp: string;
+  date: string;
+}
 
 interface ContributorProfileProps {
   contributorId: string;
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
 }
 
-const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
+const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName: propLastName, imageUrl: propImageUrl }: ContributorProfileProps) => {
   const router = useRouter();
   
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [contributor, setContributor] = useState<Contributor | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
   
+  // Use props or fallback to API data
+  const displayName = contributor ? 
+    `${contributor.firstName} ${contributor.lastName}` : 
+    (propFirstName && propLastName) ? 
+    `${propFirstName} ${propLastName}` : 
+    'Contributor';
+  
+  // Ensure we have a valid URL for the image
+  const getValidImageUri = (uri?: string) => {
+    if (!uri || imageLoadError) {
+      // Return null to indicate we should render a fallback UI instead
+      return null;
+    }
+    
+    // Handle file:// URIs properly
+    if (uri.startsWith('file://')) {
+      return { uri };
+    }
+    
+    // Handle http/https URLs
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      return { uri };
+    }
+    
+    // If it's just a path without protocol, assume it's a file path
+    return { uri: `file://${uri}` };
+  };
+  
+  // Process the image URI to ensure it's valid
+  const imageSource = getValidImageUri(propImageUrl || contributor?.photoUri);
+
+  // Generate initials for the fallback avatar
+  const getInitials = () => {
+    const first = propFirstName || contributor?.firstName || '';
+    const last = propLastName || contributor?.lastName || '';
+    
+    const firstInitial = first.length > 0 ? first[0].toUpperCase() : '';
+    const lastInitial = last.length > 0 ? last[0].toUpperCase() : '';
+    
+    return `${firstInitial}${lastInitial}`;
+  };
+
+  // Get a random background color based on the contributor's name
+  const getAvatarColor = () => {
+    const name = `${propFirstName || contributor?.firstName || ''}${propLastName || contributor?.lastName || ''}`;
+    if (!name) return '#3b82f6'; // Default blue if no name
+    
+    // Generate a consistent color based on name
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const colors = [
+      '#3b82f6', // blue-500
+      '#10b981', // emerald-500
+      '#f59e0b', // amber-500
+      '#ef4444', // red-500
+      '#8b5cf6', // violet-500
+      '#ec4899', // pink-500
+      '#06b6d4', // cyan-500
+    ];
+    
+    return colors[charSum % colors.length];
+  };
+
+  // Log the image source being used for debugging
+  useEffect(() => {
+    console.log('Using image source:', JSON.stringify(imageSource));
+  }, [imageSource]);
+
   useEffect(() => {
     const getContributorData = async () => {
       try {
+        // If we already have first name, last name, and image from props,
+        // we can skip the API call or set loading to false
+        if (propFirstName && propLastName && propImageUrl) {
+          setLoading(false);
+          // We can still fetch the other details in the background
+        }
+        
         // Fetch all contributors 
         const contributors = await fetchContributors("62f2");
         // Find the selected contributor by ID
@@ -40,11 +130,17 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
         if (selectedContributor) {
           setContributor(selectedContributor);
         } else {
-          setError("Contributor not found");
+          // Only show error if we don't have prop data to display
+          if (!(propFirstName && propLastName)) {
+            setError("Contributor not found");
+          }
         }
       } catch (err) {
         console.error("Error fetching contributor:", err);
-        setError("Failed to load contributor data");
+        // Only show error if we don't have prop data to display
+        if (!(propFirstName && propLastName)) {
+          setError("Failed to load contributor data");
+        }
       } finally {
         setLoading(false);
       }
@@ -53,13 +149,45 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
     if (contributorId) {
       getContributorData();
     } else {
-      setError("No contributor ID provided");
+      // Only show error if we don't have prop data to display
+      if (!(propFirstName && propLastName)) {
+        setError("No contributor ID provided");
+      }
       setLoading(false);
     }
+  }, [contributorId, propFirstName, propLastName, propImageUrl]);
+
+  // Fetch transactions for the contributor
+  useEffect(() => {
+    const getTransactions = async () => {
+      if (!contributorId) return;
+      
+      setTransactionsLoading(true);
+      try {
+        const transactionData = await fetchContributorTransactions(contributorId);
+        setTransactions(transactionData);
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+      } finally {
+        setTransactionsLoading(false);
+      }
+    };
+
+    getTransactions();
   }, [contributorId]);
 
   const navigateBack = () => {
-    router.back();
+  router.push('/dashboard');
+  };
+
+  const navigateToTransactions = () => {
+    router.push({
+      pathname: '/contributor/transactions',
+      params: { 
+        contributorId,
+        contributorName: displayName
+      }
+    });
   };
 
   const handleDeposit = () => {
@@ -100,8 +228,26 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
     return Math.ceil(timeDiff / (1000 * 3600 * 24));
   };
 
+  // Get transaction amount with appropriate format
+  const getTransactionAmount = (transaction: Transaction) => {
+    const prefix = transaction.type === 'withdrawal' ? '-' : '+';
+    return `${prefix}₦${transaction.amount.toLocaleString()}`;
+  };
+
+  // Get transaction color based on type
+  const getTransactionColor = (type: string) => {
+    switch(type) {
+      case 'deposit':
+        return 'text-green-600';
+      case 'withdrawal':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   // Loading state
-  if (loading) {
+  if (loading && !(propFirstName && propLastName)) {
     return (
       <SafeAreaView className="flex-1 bg-white justify-center items-center">
         <ActivityIndicator size="large" color="#0066FF" />
@@ -111,7 +257,7 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
   }
 
   // Error state
-  if (error || !contributor) {
+  if (error && !(propFirstName && propLastName)) {
     return (
       <SafeAreaView className="flex-1 bg-white justify-center items-center">
         <Ionicons name="alert-circle" size={48} color="red" />
@@ -126,16 +272,29 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
     );
   }
 
+  // Create a merged data object that uses props when available and falls back to API data
+  const contributorData = {
+    firstName: propFirstName || contributor?.firstName || '',
+    lastName: propLastName || contributor?.lastName || '',
+    photoUri: typeof imageSource === 'string' ? imageSource : imageSource?.uri,
+    depositAmount: contributor?.depositAmount || 0,
+    startDate: contributor?.startDate || new Date().toISOString(),
+    endDate: contributor?.endDate || new Date().toISOString(),
+    frequency: contributor?.frequency || 'daily',
+    language: contributor?.language || 'English',
+    status: contributor?.status || 'active'
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-    <View className="flex-1 px-4 mt-2">
-          {/* Header */}
-          <View className="flex-row items-center mb-4">
-            <TouchableOpacity onPress={navigateBack} className="bg-gray-100 p-2 rounded-full mr-4">
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
+      <View className="flex-1 px-4 mt-2">
+        {/* Header */}
+        <View className="flex-row items-center mb-4 mt-10">
+          <TouchableOpacity onPress={navigateBack} className="bg-gray-100 p-2 rounded-full mr-4">
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
           <Text className="text-lg font-semibold flex-1 text-center">
-            {contributor.firstName} {contributor.lastName}
+            {displayName}
           </Text>
           <View style={{ width: 40 }} />
         </View>
@@ -145,12 +304,25 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
           <View className="bg-blue-600 rounded-xl p-4">
             {/* Profile Image and Balance */}
             <View className="items-center mb-4">
-              <Image 
-                source={{ uri: contributor.photoUri }}
-                className="w-20 h-20 rounded-full"
-              />
+              {imageSource ? (
+                <Image
+                  source={imageSource}
+                  className="w-20 h-20 rounded-full"
+                  onError={(e) => {
+                    console.error('Error loading image:', e.nativeEvent.error);
+                    setImageLoadError(true);
+                  }}
+                />
+              ) : (
+                <View 
+                  className="w-20 h-20 rounded-full items-center justify-center"
+                  style={{ backgroundColor: getAvatarColor() }}
+                >
+                  <Text className="text-white text-xl font-bold">{getInitials()}</Text>
+                </View>
+              )}
               <Text className="text-white text-sm mt-2">Total Contributions Made</Text>
-              <Text className="text-white text-3xl font-bold">₦{contributor.depositAmount}</Text>
+              <Text className="text-white text-3xl font-bold">₦{contributorData.depositAmount}</Text>
             </View>
             
             {/* Action Buttons */}
@@ -171,7 +343,7 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
               </TouchableOpacity>
             </View>
           </View>
-
+          
           {/* Agent Notice */}
           <View className="bg-blue-50 mt-4 rounded-lg p-4">
             <Text className="text-blue-500 font-medium">Important Notice for Agents</Text>
@@ -186,23 +358,23 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Start Date</Text>
-                <Text className="font-medium">{formatDate(contributor.startDate)}</Text>
+                <Text className="font-medium">{formatDate(contributorData.startDate)}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">End Date</Text>
-                <Text className="font-medium">{formatDate(contributor.endDate)}</Text>
+                <Text className="font-medium">{formatDate(contributorData.endDate)}</Text>
               </View>
             </View>
             
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Frequency</Text>
-                <Text className="font-medium">₦{contributor.depositAmount} {contributor.frequency}</Text>
+                <Text className="font-medium">₦{contributorData.depositAmount} {contributorData.frequency}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Days Left</Text>
                 <Text className="font-medium">
-                  {calculateDaysLeft(contributor.startDate, contributor.endDate)}
+                  {calculateDaysLeft(contributorData.startDate, contributorData.endDate)} days
                 </Text>
               </View>
             </View>
@@ -210,16 +382,16 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Language</Text>
-                <Text className="font-medium">{contributor.language}</Text>
+                <Text className="font-medium">{contributorData.language}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Status</Text>
                 <Text className={`font-medium ${
-                  contributor.status === 'Active' ? 'text-green-600' : 
-                  contributor.status === 'Pending' ? 'text-yellow-600' : 
+                  contributorData.status === 'Active' ? 'text-green-600' : 
+                  contributorData.status === 'Pending' ? 'text-yellow-600' : 
                   'text-red-600'
                 }`}>
-                  {contributor.status}
+                  {contributorData.status || 'N/A'}
                 </Text>
               </View>
             </View>
@@ -229,27 +401,31 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
           <View className="mx-4 mt-4 mb-4">
             <View className="flex-row justify-between items-center mb-3">
               <Text className="font-semibold">Recent Activity</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={navigateToTransactions}>
                 <Text className="text-blue-600">View all</Text>
               </TouchableOpacity>
             </View>
             
             {/* Activity List */}
-            <View className="mb-3">
-              <View className="flex-row justify-between items-center">
-                <Text className="font-medium">Deposited</Text>
-                <Text className="text-green-600 font-semibold">₦5,000</Text>
+            {transactionsLoading ? (
+              <ActivityIndicator size="small" color="#0066FF" />
+            ) : transactions.length === 0 ? (
+              <View className="py-4">
+                <Text className="text-gray-500 text-center italic">No transactions found</Text>
               </View>
-              <Text className="text-gray-500 text-sm">14 March 2025 12:03 AM</Text>
-            </View>
-            
-            <View className="mb-3">
-              <View className="flex-row justify-between items-center">
-                <Text className="font-medium">Withdraw</Text>
-                <Text className="text-red-600 font-semibold">-₦10,000</Text>
-              </View>
-              <Text className="text-gray-500 text-sm">10 March 2025 12:03 AM</Text>
-            </View>
+            ) : (
+              transactions.slice(0, 5).map((transaction) => (
+                <View key={transaction.id} className="mb-3 pb-2 border-b border-gray-100">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="font-medium">{transaction.name}</Text>
+                    <Text className={`font-semibold ${getTransactionColor(transaction.type)}`}>
+                      {getTransactionAmount(transaction)}
+                    </Text>
+                  </View>
+                  <Text className="text-gray-500 text-sm">{transaction.date} • {transaction.timestamp}</Text>
+                </View>
+              ))
+            )}
           </View>
         </ScrollView>
         
@@ -275,7 +451,7 @@ const ContributorProfile = ({ contributorId }: ContributorProfileProps) => {
             <View className="bg-white rounded-xl w-10/12 p-6 relative">
               <Text className="text-blue-600 text-2xl font-bold text-center border-b border-gray-200 pb-4 mb-4">Reminder Sent!</Text>
               <Text className="text-center text-gray-700 text-base mb-6">
-                A reminder has been sent to <Text className="font-medium">{contributor.firstName} {contributor.lastName}</Text> via SMS to not forget to contribute today.
+                A reminder has been sent to <Text className="font-medium">{displayName}</Text> via SMS to not forget to contribute today.
               </Text>
               
               {/* Close Button */}

@@ -691,7 +691,49 @@
       "endDate": "2025-04-25",
       "durationValue": 1,
       "photoUri": "https://randomuser.me/api/portraits/men/8.jpg",
-      "status": "Active"
+      "status": "Active",
+      "transactions": [
+        {
+          "id": "c101",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:30 AM",
+          "date": "2025-04-12"
+        },
+        {
+          "id": "c102",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:45 AM",
+          "date": "2025-04-11"
+        },
+        {
+          "id": "c103",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "11:00 AM",
+          "date": "2025-04-10"
+        },
+        {
+          "id": "c104",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:30 AM",
+          "date": "2025-04-09"
+        },
+        {
+          "id": "c105",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:15 AM",
+          "date": "2025-04-08"
+        }
+      ]
     },
     {
       "id": "38bc",
@@ -708,7 +750,49 @@
       "endDate": "2025-04-30",
       "durationValue": 1,
       "photoUri": "https://randomuser.me/api/portraits/men/9.jpg",
-      "status": "Pending"
+      "status": "Pending",
+      "transactions": [
+        {
+          "id": "c201",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:15 AM",
+          "date": "2025-04-12"
+        },
+        {
+          "id": "c202",
+          "name": "Adebimpe Adewale",
+          "type": "withdrawal",
+          "amount": 5000,
+          "timestamp": "2:30 PM",
+          "date": "2025-04-11"
+        },
+        {
+          "id": "c203",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:20 AM",
+          "date": "2025-04-10"
+        },
+        {
+          "id": "c204",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "11:45 AM",
+          "date": "2025-04-09"
+        },
+        {
+          "id": "c205",
+          "name": "Adebimpe Adewale",
+          "type": "withdrawal",
+          "amount": 7000,
+          "timestamp": "3:15 PM",
+          "date": "2025-04-08"
+        }
+      ]
     },
     {
       "id": "1a2b",
@@ -725,7 +809,49 @@
       "endDate": "2025-04-25",
       "durationValue": 1,
       "photoUri": "https://randomuser.me/api/portraits/women/4.jpg",
-      "status": "Overdue"
+      "status": "Overdue",
+      "transactions": [
+        {
+          "id": "c301",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "8:30 AM",
+          "date": "2025-04-05"
+        },
+        {
+          "id": "c302",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:15 AM",
+          "date": "2025-03-29"
+        },
+        {
+          "id": "c303",
+          "name": "Adebimpe Adewale",
+          "type": "withdrawal",
+          "amount": 6000,
+          "timestamp": "2:45 PM",
+          "date": "2025-03-25"
+        },
+        {
+          "id": "c304",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:30 AM",
+          "date": "2025-03-22"
+        },
+        {
+          "id": "c305",
+          "name": "Adebimpe Adewale",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "11:00 AM",
+          "date": "2025-03-15"
+        }
+      ]
     },
     {
       "id": "1a2c",
@@ -742,7 +868,49 @@
       "endDate": "2025-04-25",
       "durationValue": 1,
       "photoUri": "https://randomuser.me/api/portraits/men/10.jpg",
-      "status": "Active"
+      "status": "Active",
+      "transactions": [
+        {
+          "id": "c401",
+          "name": "Bob Johnson",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:45 AM",
+          "date": "2025-04-01"
+        },
+        {
+          "id": "c402",
+          "name": "Bob Johnson",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:30 AM",
+          "date": "2025-03-01"
+        },
+        {
+          "id": "c403",
+          "name": "Bob Johnson",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "11:15 AM",
+          "date": "2025-02-01"
+        },
+        {
+          "id": "c404",
+          "name": "Bob Johnson",
+          "type": "withdrawal",
+          "amount": 8000,
+          "timestamp": "3:30 PM",
+          "date": "2025-01-15"
+        },
+        {
+          "id": "c405",
+          "name": "Bob Johnson",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:00 AM",
+          "date": "2025-01-01"
+        }
+      ]
     },
     {
       "id": "1a2d",
@@ -759,7 +927,49 @@
       "endDate": "2025-04-25",
       "durationValue": 1,
       "photoUri": "https://randomuser.me/api/portraits/men/11.jpg",
-      "status": "Active"
+      "status": "Active",
+      "transactions": [
+        {
+          "id": "c501",
+          "name": "Charlie Brown",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "10:00 AM",
+          "date": "2025-03-21"
+        },
+        {
+          "id": "c502",
+          "name": "Charlie Brown",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "11:30 AM",
+          "date": "2024-03-21"
+        },
+        {
+          "id": "c503",
+          "name": "Charlie Brown",
+          "type": "withdrawal",
+          "amount": 4000,
+          "timestamp": "2:15 PM",
+          "date": "2024-01-10"
+        },
+        {
+          "id": "c504",
+          "name": "Charlie Brown",
+          "type": "deposit",
+          "amount": 12000,
+          "timestamp": "9:30 AM",
+          "date": "2023-03-21"
+        },
+        {
+          "id": "c505",
+          "name": "Charlie Brown",
+          "type": "withdrawal",
+          "amount": 6000,
+          "timestamp": "3:45 PM",
+          "date": "2022-12-15"
+        }
+      ]
     },
     {
       "id": "1a2e",
@@ -847,49 +1057,70 @@
       "status": "Overdue"
     },
     {
-      "id": "3eb3",
+      "id": "f158",
       "agentName": "Taiwo Omotoso",
       "agentId": "62f2",
-      "firstName": "",
-      "lastName": "",
-      "phoneNumber": "",
-      "ninNumber": "",
+      "firstName": "Jude",
+      "lastName": "Lastman",
+      "phoneNumber": "08033771199",
+      "ninNumber": "56479432167",
       "language": "English",
       "depositAmount": "2,000",
-      "frequency": "daily",
-      "startDate": "2025-04-13",
-      "endDate": "2025-04-13",
-      "durationValue": 1
+      "frequency": "yearly",
+      "startDate": "2025-04-14",
+      "endDate": "2025-04-14",
+      "durationValue": 7,
+      "status": "active"
     },
     {
-      "id": "cf3b",
+      "id": "3501",
       "agentName": "Taiwo Omotoso",
       "agentId": "62f2",
-      "firstName": "",
-      "lastName": "",
-      "phoneNumber": "",
-      "ninNumber": "",
-      "language": "English",
-      "depositAmount": "2,000",
-      "frequency": "daily",
-      "startDate": "2025-04-13",
-      "endDate": "2025-04-13",
-      "durationValue": 1
-    },
-    {
-      "id": "d4c0",
-      "agentName": "Taiwo Omotoso",
-      "agentId": "62f2",
-      "firstName": "Omotayo ",
-      "lastName": "Omojowo",
-      "phoneNumber": "9035355746",
-      "ninNumber": "2342239994977",
+      "firstName": "Jude",
+      "lastName": "Dan",
+      "phoneNumber": "0801177332288",
+      "ninNumber": "13333544988",
       "language": "English",
       "depositAmount": "2,000",
       "frequency": "weekly",
       "startDate": "2025-04-14",
       "endDate": "2025-04-14",
-      "durationValue": 8
+      "durationValue": 12,
+      "status": "active"
+    },
+    {
+      "id": "65f9",
+      "agentName": "Taiwo Omotoso",
+      "agentId": "62f2",
+      "firstName": "Gufly",
+      "lastName": "Flews",
+      "phoneNumber": "09032170964",
+      "ninNumber": "111333896897",
+      "language": "English",
+      "depositAmount": "2,000",
+      "frequency": "daily",
+      "startDate": "2025-04-14",
+      "endDate": "2025-04-24",
+      "durationValue": 1,
+      "status": "active"
+    },
+    {
+      "id": "08be",
+      "agentName": "Taiwo Omotoso",
+      "agentId": "62f2",
+      "firstName": "Fast",
+      "lastName": "Bame",
+      "phoneNumber": "08099665544",
+      "ninNumber": "88866646646",
+      "language": "English",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744655670/contributor_profiles/suf9vkcfxsmtwjnkwps7.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744655670/contributor_profiles/suf9vkcfxsmtwjnkwps7.webp",
+      "depositAmount": "2,000",
+      "frequency": "daily",
+      "startDate": "2025-04-14",
+      "endDate": "2025-04-14",
+      "durationValue": 1,
+      "status": "active"
     }
   ]
 }

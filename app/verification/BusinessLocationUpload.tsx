@@ -1,13 +1,47 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+// Define location image interface to match the one in VerificationController
+interface LocationImage {
+  uri: string;
+  latitude?: number;
+  longitude?: number;
+  timestamp: number;
+}
 
 interface BusinessLocationUploadProps {
   onClose: () => void;
   onTakePhoto: () => void;
+  existingPhotos?: string[];
+  locationData?: LocationImage[];
 }
 
-const BusinessLocationUpload = ({ onClose, onTakePhoto }: BusinessLocationUploadProps) => {
+const BusinessLocationUpload = ({ 
+  onClose, 
+  onTakePhoto, 
+  existingPhotos = [], 
+  locationData = [] 
+}: BusinessLocationUploadProps) => {
+  
+  // Format coordinates to be human-readable
+  const formatCoordinates = (lat?: number, lng?: number) => {
+    if (lat === undefined || lng === undefined) return "No location data";
+    return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  };
+  
+  // Format timestamp to a readable date/time
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+  
+  // Find location data for a photo if available
+  const getLocationData = (photoUri: string) => {
+    const photo = locationData.find(p => p.uri === photoUri);
+    return photo;
+  };
+  
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1">
@@ -28,7 +62,44 @@ const BusinessLocationUpload = ({ onClose, onTakePhoto }: BusinessLocationUpload
             </Text>
           </View>
 
-          <View className="mt-8">
+          {/* Existing photos */}
+          {existingPhotos.length > 0 && (
+            <View className="mt-4 mb-8">
+              <Text className="text-gray-700 mb-4 font-semibold">Uploaded Photos ({existingPhotos.length})</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {existingPhotos.map((photo, index) => {
+                  const locationInfo = getLocationData(photo);
+                  return (
+                    <View key={index} className="mr-4 bg-gray-50 rounded-lg overflow-hidden pb-2 border border-gray-200">
+                      <Image
+                        source={{ uri: photo }}
+                        style={{ width: 180, height: 120 }}
+                        resizeMode="cover"
+                      />
+                      {locationInfo && (
+                        <View className="p-2">
+                          <View className="flex-row items-center mb-1">
+                            <Ionicons name="location" size={12} color="#0052CC" style={{ marginRight: 4 }} />
+                            <Text className="text-xs text-gray-600" numberOfLines={1}>
+                              {formatCoordinates(locationInfo.latitude, locationInfo.longitude)}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center">
+                            <Ionicons name="time-outline" size={12} color="#0052CC" style={{ marginRight: 4 }} />
+                            <Text className="text-xs text-gray-600" numberOfLines={1}>
+                              {formatTimestamp(locationInfo.timestamp)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          <View className="mt-4">
             <Text className="text-gray-700 mb-6 text-center">
               Please take photos that clearly show:
             </Text>
@@ -62,12 +133,23 @@ const BusinessLocationUpload = ({ onClose, onTakePhoto }: BusinessLocationUpload
             onPress={onTakePhoto}
           >
             <View className="bg-[#007BFF] rounded-full w-12 h-12 items-center justify-center mr-4">
-              <Ionicons name="add" size={24} color="white" />
+              <Ionicons name="camera" size={24} color="white" />
             </View>
             <Text className="text-[#007BFF] text-xl font-medium">
-              Select
+              Take Photo
             </Text>
           </TouchableOpacity>
+          
+          {existingPhotos.length > 0 && (
+            <TouchableOpacity 
+              className="py-4 rounded-xl mt-6 bg-[#007BFF]"
+              onPress={onClose}
+            >
+              <Text className="text-white text-center text-lg font-medium">
+                Done
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

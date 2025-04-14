@@ -46,7 +46,15 @@ const AgentVerification = () => {
       const agentName = `${userData.firstname} ${userData.lastname}`; // Combine first and last name
       const agentId = userData.id; // Use the user ID
 
-      // Navigate to the savings plan setup screen with agentName and agentId
+      // Log the image URLs we're passing
+      console.log('AGENT VERIFICATION - IMAGE DATA:', JSON.stringify({
+        photoUri: params.photoUri,
+        imageUrl: params.imageUrl,
+        isCloudinaryUrl: params.isCloudinaryUrl,
+        allParams: params
+      }));
+
+      // Navigate to the savings plan setup screen with all parameters
       router.push({
         pathname: '/contributor/savings-plan',
         params: {
@@ -57,7 +65,9 @@ const AgentVerification = () => {
           phoneNumber: params.phoneNumber,
           ninNumber: params.ninNumber,
           language: params.language,
-          photoUri: params.photoUri,
+          photoUri: params.photoUri || '',
+          imageUrl: params.imageUrl || '',
+          isCloudinaryUrl: params.isCloudinaryUrl || 'false'
         }
       });
     }
