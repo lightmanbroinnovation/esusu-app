@@ -75,7 +75,7 @@ const menuItems = [
 export default function Index() {
     const router = useRouter();
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
-    const id = "62f2"; 
+    const id = "1a2i"; 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
