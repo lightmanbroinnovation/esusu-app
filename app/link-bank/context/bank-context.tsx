@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 interface BankContextType {
     banks: { id?: string; accountNumber?: string | undefined; bankName: string; accountName: string; isPrimary?: boolean }[];
     primaryBankId: string | null;
-    addBank: (bank: {  bankName: string; accountName: string; isPrimary?: boolean }) => void;
+    addBank: (bank: {  bankName: string; accountName: string; accountNumber: string; isPrimary?: boolean }) => void;
     removeBank: (id: string) => void;
     setPrimary: (id: string) => void;
 }
@@ -25,7 +25,7 @@ export const BankProvider = ({ children }: any) => {
     const [banks, setBanks] = useState<{ id?: string; accountNumber?: string; bankName: string; accountName: string; isPrimary?: boolean }[]>([]);
     const [primaryBankId, setPrimaryBankId] = useState<string | null>(null);
 
-    const addBank = (bank: { id?: string; bankName: string; accountName: string; isPrimary?: boolean }) => {
+    const addBank = (bank: { id?: string; bankName: string; accountName: string; accountNumber: string; isPrimary?: boolean }) => {
         const newBank = { ...bank, id: Date.now().toString() };
         setBanks((prev) => [...prev, newBank]);
         if (bank.isPrimary) setPrimaryBankId(newBank.id);
