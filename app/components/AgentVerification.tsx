@@ -67,7 +67,7 @@ const AgentVerification = () => {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center px-4">
           <TouchableOpacity 
             onPress={navigateBack}
             className="bg-gray-100 p-2 rounded-full"

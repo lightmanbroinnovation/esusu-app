@@ -17,7 +17,7 @@ const SuccessScreen = () => {
   
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 justify-center items-center px-6">
+      <View className="flex-1 justify-center items-center px-4">
         {/* Confetti Background */}
         <View className="absolute top-0 left-0 right-0 bottom-0 items-center justify-center">
           {/* Light blue squiggle (top left) */}

@@ -8,6 +8,7 @@ import VerificationController from '../verification/VerificationController';
 import { useRouter } from 'expo-router';
 import { fetchUser } from '../../services/api';
 import LatestTransactions from '../components/LatestTransactions';
+import StatusBarAdapter from '../components/StatusBarAdapter';
 
 interface User {
   firstname: string;
@@ -21,6 +22,7 @@ const HomeScreen = () => {
   const [userData, setUserData] = useState<User | null>(null);
   const userId = '62f2';
   const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -28,9 +30,10 @@ const HomeScreen = () => {
         const data = await fetchUser(userId);
         setUserData(data);
         setTransactions(data.transactions || []);
-        console.log(data);
       } catch (error) {
         console.error('Error fetching user details:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -38,28 +41,35 @@ const HomeScreen = () => {
   }, [userId]);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 px-4">
-      <ScrollView>
-        {userData ? (
-          <UserCard user={userData} />
-        ) : (
-          <Text className="text-center">Loading user data...</Text>
-        )}
-        <TouchableOpacity onPress={() => router.push("/contributor/add")}>
-          <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]'>
-            <Ionicons name="person-add-outline" size={24} color="#0052CC" className="mr-2" />
-            <Text className="text-[#0052CC] font-medium">New User</Text>
-          </View>
-        </TouchableOpacity>
-        <RecentActivity 
-          onVerifyNow={() => console.log('Verify Now clicked')}
-       
-        />
-        <LatestTransactions transactions={transactions}
-          />
- 
-      </ScrollView>
-      <Footer />
+    <View className="flex-1 bg-gray-50">
+      <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4 mt-10">
+          <ScrollView 
+            showsVerticalScrollIndicator={false} 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 0 }} // Add padding for footer
+          >
+            {userData ? (
+              <UserCard user={userData} />
+            ) : (
+              <Text className="text-center">Loading user data...</Text>
+            )}
+            <TouchableOpacity onPress={() => router.push("/contributor/add")}>
+              <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]'>
+                <Ionicons name="person-add-outline" size={24} color="#0052CC" className="mr-2" />
+                <Text className="text-[#0052CC] font-medium">New User</Text>
+              </View>
+            </TouchableOpacity>
+            <RecentActivity 
+              onVerifyNow={() => router.push('/verification')}
+            />
+            <LatestTransactions transactions={transactions} />
+          </ScrollView>
+        </View>
+        <Footer />
+      </SafeAreaView>
+
       <Modal
         animationType="slide"
         transparent={false}
@@ -68,7 +78,7 @@ const HomeScreen = () => {
       >
         <VerificationController onClose={() => setShowVerification(false)} />
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

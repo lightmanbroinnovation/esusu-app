@@ -87,8 +87,8 @@ const CommissionTransactions: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView className="p-4">
-      <View className="flex-row items-center mb-4">
+      <ScrollView className="px-4 flex-1">
+      <View className="flex-row items-center mt-12 mb-4">
           <TouchableOpacity 
             onPress={navigateBack}
             className="bg-gray-100 p-2 rounded-full mr-4"

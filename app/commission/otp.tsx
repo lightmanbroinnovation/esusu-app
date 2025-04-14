@@ -86,9 +86,9 @@ export default function PasscodeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pb-10">
+    <View className="flex-1 bg-white px-4">
       {/* Back Button */}
-      <View className="flex-row items-center p-4">
+      <View className="flex-row items-center mt-10 p-4">
       <TouchableOpacity
           className="flex-row items-center"
           onPress={() => router.back()}

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, ScrollView, SafeAreaView, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import Footer from '../components/Footer';
 import { fetchContributors } from '../../services/api';
+import StatusBarAdapter from '../components/StatusBarAdapter';
 
 // Define the Contributor type
 export interface Contributor {
@@ -21,6 +22,7 @@ export interface Contributor {
   endDate: string;
   durationValue: number;
   photoUri: string;
+  status?: string; // Added status field
 }
 
 // Define a union type for frequency keys
@@ -31,29 +33,14 @@ const ContributorsScreen = () => {
   const [allContributors, setAllContributors] = useState<Contributor[]>([]); // Store all contributors
   const [loading, setLoading] = useState(true);
   const agentId = "62f2";
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [currentDuration, setCurrentDuration] = useState<string>('');
 
   useEffect(() => {
     const getContributors = async () => {
       try {
-        const data = await fetchContributors(agentId);
-        setAllContributors(data); // Store all contributors
-
-        // Group contributors by frequency
-        const groupedByFrequency = data.reduce((acc: Record<Frequency, Contributor[]>, contributor: Contributor) => {
-          const frequency = contributor.frequency as Frequency; // Cast to Frequency type
-          if (!acc[frequency]) {
-            acc[frequency] = []; // Initialize array if it doesn't exist
-          }
-          acc[frequency].push(contributor); // Push contributor to the corresponding frequency array
-          return acc;
-        }, {} as Record<Frequency, Contributor[]>);
-
-        // Log only the duration and contributor IDs for each duration
-        Object.keys(groupedByFrequency).forEach((key) => {
-          const ids = groupedByFrequency[key].map((contributor: Contributor) => contributor.id); // Explicitly define the type
-          console.log(`${key} Contributors IDs:`, ids); // Log each frequency group with IDs
-        });
-
+        const contributors = await fetchContributors(agentId); // Fetch contributors
+        setAllContributors(contributors);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
@@ -62,7 +49,46 @@ const ContributorsScreen = () => {
     };
 
     getContributors();
-  }, [agentId]);
+  }, []);
+
+  const navigateBack = () => {
+    router.back();
+  };
+
+  const navigateToContributorList = () => {
+    const contributorIds = allContributors.map((contributor) => contributor.id); // Extract contributor IDs
+    const duration = "12 Months"; // Example duration
+    router.push({
+      pathname: '/contributors/ContributorListScreen',
+      params: { contributorIds, duration }, // Pass contributorIds and duration as params
+    });
+  };
+
+  // Reminder modal functions
+  const openReminderModal = (duration: string) => {
+    setCurrentDuration(duration);
+    setReminderModalVisible(true);
+  };
+
+  const closeReminderModal = () => {
+    setReminderModalVisible(false);
+  };
+
+  // Get dynamic reminder message based on duration
+  const getReminderMessage = () => {
+    switch (currentDuration.toLowerCase()) {
+      case 'daily':
+        return 'A reminder has been sent to all daily contributors via SMS to not forget to contribute today.';
+      case 'weekly':
+        return 'A reminder has been sent to all weekly contributors via SMS to not forget to contribute this week.';
+      case 'monthly':
+        return 'A reminder has been sent to all monthly contributors via SMS to not forget to contribute this month.';
+      case 'yearly':
+        return 'A reminder has been sent to all yearly contributors via SMS to not forget to contribute this year.';
+      default:
+        return `A reminder has been sent to all ${currentDuration} contributors via SMS to not forget to contribute.`;
+    }
+  };
 
   // Define titles and descriptions based on frequency
   const frequencyDetails: Record<Frequency, { title: string; description: string }> = {
@@ -104,51 +130,93 @@ const ContributorsScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold mb-4">Contributors</Text>
-      <TextInput
-        placeholder="Enter phone number..."
-        className="border border-gray-300 rounded-lg p-2 mb-4"
-      />
-      {loading ? (
-        <Text>Loading contributors...</Text>
-      ) : (
-        <ScrollView>
-          {Object.keys(frequencyDetails).map((duration) => {
-            const { title, description } = frequencyDetails[duration as Frequency];
-            const totalCount = allContributors.filter(contributor => contributor.frequency === duration).length; // Get total count for this duration
-            return (
-              <TouchableOpacity
-                key={duration}
-                onPress={() => handleCardPress(duration)}
-                className="bg-primaryCard rounded-xl p-4 mb-4"
-              >
-                <Text className="text-lg font-semibold text-white">{title}</Text>
-                <Text className="text-white mb-2">{description}</Text>
-                <View className="flex-row mb-2 items-center">
-                  {allContributors.filter(contributor => contributor.frequency === duration).slice(0, 3).map((contributor, index) => (
-                    <View key={index} style={{ position: 'relative', marginLeft: index > 0 ? -15 : 0 }}>
-                      <Image 
-                        source={{ uri: contributor.photoUri }}
-                        style={{ width: 40, height: 40, borderRadius: 20 }} 
-                        className="rounded-full border border-white"
-                      />
+    <View className="flex-1 bg-white">
+      <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-4 mt-2">
+          {/* Header */}
+          <View className="flex-row items-center mb-4">
+            <TouchableOpacity onPress={navigateBack} className="bg-gray-100 p-2 rounded-full mr-4">
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
+          </View>
+      
+          {loading ? (
+            <Text>Loading contributors...</Text>
+          ) : (
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 80 }} // Add padding for footer
+            >
+              {Object.keys(frequencyDetails).map((duration) => {
+                const { title, description } = frequencyDetails[duration as Frequency];
+                const totalCount = allContributors.filter(contributor => contributor.frequency === duration).length; // Get total count for this duration
+                return (
+                  <TouchableOpacity
+                    key={duration}
+                    onPress={() => handleCardPress(duration)}
+                    className="bg-primaryCard rounded-xl p-4 mb-4"
+                  >
+                    <Text className="text-lg font-semibold text-white">{title}</Text>
+                    <Text className="text-white mb-2">{description}</Text>
+                    <View className="flex-row mb-2 items-center">
+                      {allContributors.filter(contributor => contributor.frequency === duration).slice(0, 3).map((contributor, index) => (
+                        <View key={index} style={{ position: 'relative', marginLeft: index > 0 ? -15 : 0 }}>
+                          <Image 
+                            source={{ uri: contributor.photoUri }}
+                            style={{ width: 40, height: 40, borderRadius: 20 }} 
+                            className="rounded-full border border-white"
+                          />
+                        </View>
+                      ))}
+                      {totalCount > 3 && (
+                        <Text className="text-white ml-2">+{totalCount - 3}</Text> // Show remaining count
+                      )}
                     </View>
-                  ))}
-                  {totalCount > 3 && (
-                    <Text className="text-white ml-2">+{totalCount - 3}</Text> // Show remaining count
-                  )}
-                </View>
-                <TouchableOpacity className="bg-blue-600 p-2 rounded-lg mt-2 flex-row items-center justify-center">
-                  <MaterialIcons name="notifications" size={20} color="#fff" />
-                  <Text className="text-white text-center ml-2">Send Reminder</Text>
-                </TouchableOpacity>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      )}
-      <Footer />
+                    <TouchableOpacity 
+                      className="bg-blue-600 p-2 rounded-lg mt-2 flex-row items-center justify-center"
+                      onPress={() => openReminderModal(duration)}
+                    >
+                      <MaterialIcons name="notifications" size={20} color="#fff" />
+                      <Text className="text-white text-center ml-2">Send Reminder</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+        <Footer />
+      </SafeAreaView>
+
+      {/* Reminder Modal */}
+      <Modal 
+        animationType="slide" 
+        transparent={true} 
+        visible={reminderModalVisible} 
+        onRequestClose={closeReminderModal}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white rounded-xl w-10/12 p-6 relative">
+            <Text className="text-blue-600 text-2xl font-bold text-center border-b border-gray-200 pb-4 mb-4">
+              Reminder Sent!
+            </Text>
+            <Text className="text-center text-gray-700 text-base mb-6">
+              {getReminderMessage()}
+            </Text>
+            {/* Close Button */}
+            <TouchableOpacity 
+              className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[30%]"
+              style={{ width: '40%' }}
+              onPress={closeReminderModal}
+            >
+              <Text className="text-white font-semibold text-center">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

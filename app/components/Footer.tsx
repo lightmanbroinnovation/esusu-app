@@ -1,14 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
-import { useRouter } from 'expo-router';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter, usePathname } from 'expo-router';
 
 const Footer = () => {
-  const [activePage, setActivePage] = useState("Home");
   const router = useRouter();
+  const pathname = usePathname();
+
+  const getActivePageFromPath = () => {
+    if (pathname.includes('/dashboard')) return 'home';
+    if (pathname.includes('/contributors')) return 'contributors';
+    if (pathname.includes('/commission')) return 'commission';
+    if (pathname.includes('/settings') || pathname.includes('/profile')) return 'settings';
+    return 'home'; // Default fallback
+  };
+  
+  const activePage = getActivePageFromPath();
 
   const handlePress = (page: 'home' | 'contributors' | 'commission' | 'settings') => {
-    setActivePage(page);
     console.log(`Navigating to ${page}`);
     
     // Use specific paths based on the page parameter
@@ -37,14 +46,14 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("home")}
       >
-        <View className={`p-2 ${activePage === "Home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
             name="home"
             size={22} 
-            color={activePage === "Home" ? "#0052CC" : "#8F92A1"}
+            color={activePage === "home" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "Home" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+        <Text className={`text-xs mt-1 ${activePage === "home" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
           Home
         </Text>
       </TouchableOpacity>
@@ -54,14 +63,14 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("contributors")}
       >
-        <View className={`p-2 ${activePage === "Contributor" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "contributors" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
             name="people-outline"
             size={22}
-            color={activePage === "Contributor" ? "#0052CC" : "#8F92A1"}
+            color={activePage === "contributors" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "Contributor" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+        <Text className={`text-xs mt-1 ${activePage === "contributors" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
           Contributor
         </Text>
       </TouchableOpacity>
@@ -71,14 +80,14 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("commission")}
       >
-        <View className={`p-2 ${activePage === "Commission" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "commission" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
             name="wallet-outline"
             size={22}
-            color={activePage === "Commission" ? "#0052CC" : "#8F92A1"}
+            color={activePage === "commission" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "Commission" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+        <Text className={`text-xs mt-1 ${activePage === "commission" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
           Commission
         </Text>
       </TouchableOpacity>
@@ -88,14 +97,14 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("settings")}
       >
-        <View className={`p-2 ${activePage === "Profile" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "settings" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
           <Ionicons 
             name="person-outline"
             size={22}
-            color={activePage === "Profile" ? "#0052CC" : "#8F92A1"}
+            color={activePage === "settings" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "Profile" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
+        <Text className={`text-xs mt-1 ${activePage === "settings" ? "text-[#0052CC] font-medium" : "text-gray-500"}`}>
           Profile
         </Text>
       </TouchableOpacity>

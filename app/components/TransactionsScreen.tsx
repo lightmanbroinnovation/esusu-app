@@ -4,7 +4,7 @@ import {
   Text, 
   SafeAreaView, 
   TouchableOpacity, 
-  TextInput, 
+  TextInput,
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import TransactionItem from './TransactionItem';
 import TransactionFilter, { FilterOptions } from './TransactionFilter';
 import { Transaction } from './types';
 import { getUserTransactions } from './transactionData';
+import StatusBarAdapter from './StatusBarAdapter';
 
 // Use a more consistent date format for cross-platform compatibility
 const formatDate = (date: Date): string => {
@@ -59,15 +60,25 @@ const TransactionsScreen = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [groupedTransactions, setGroupedTransactions] = useState<Record<string, Transaction[]>>({});
+  const [loading, setLoading] = useState(true);
 
   // Fetch transactions from db.json
   useEffect(() => {
-    const userId = "62f2"; // Replace with the actual user ID you want to fetch
-    getUserTransactions(userId).then(fetchedTransactions => {
-      setTransactions(fetchedTransactions);
-      setFilteredTransactions(fetchedTransactions);
-      setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
-    });
+    const fetchTransactions = async () => {
+      try {
+        const userId = "62f2"; // Replace with the actual user ID you want to fetch
+        const fetchedTransactions = await getUserTransactions(userId);
+        setTransactions(fetchedTransactions);
+        setFilteredTransactions(fetchedTransactions);
+        setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTransactions();
   }, []);
 
   // Apply both search and filters
@@ -135,91 +146,104 @@ const TransactionsScreen = () => {
     setActiveFilters({});
   };
 
-  const forceReloadTransactions = () => {
-    getUserTransactions("62f2").then(fetchedTransactions => {
+  const forceReloadTransactions = async () => {
+    try {
+      setLoading(true);
+      const fetchedTransactions = await getUserTransactions("62f2");
       setTransactions(fetchedTransactions);
       setFilteredTransactions(fetchedTransactions);
       setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
-    });
+    } catch (error) {
+      console.error("Error reloading transactions:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="p-4 flex-1">
-        <View className="flex-row items-center mb-4">
-          <TouchableOpacity 
-            onPress={navigateBack}
-            className="bg-gray-100 p-2 rounded-full mr-4"
+    <View className="flex-1 bg-white">
+      <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark" />
+      <SafeAreaView className="flex-1">
+        <View className="p-4 flex-1 mt-10">
+          <View className="flex-row items-center mb-4">
+            <TouchableOpacity 
+              onPress={navigateBack}
+              className="bg-gray-100 p-2 rounded-full mr-4"
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold flex-1 text-center mr-8">Activities</Text>
+          </View>
+
+          {/* Transactions list */}
+          <ScrollView 
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 80 }} // Add padding for footer
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold flex-1 text-center mr-8">Activities</Text>
+            <View className="flex-row items-center mb-4">
+              <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
+                <Ionicons name="search" size={20} color="#A0A0A0" />
+                <TextInput
+                  className="flex-1 ml-2"
+                  placeholder="Search...."
+                  placeholderTextColor="#A0A0A0"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {(searchQuery || hasActiveFilters()) && (
+                  <TouchableOpacity onPress={clearAllFilters}>
+                    <Ionicons name="close-circle" size={20} color="#A0A0A0" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity 
+                className="bg-gray-100 p-2 rounded-xl"
+                onPress={() => setShowFilter(true)}
+              >
+                <Ionicons 
+                  name="options-outline" 
+                  size={24} 
+                  color={hasActiveFilters() ? "#0052CC" : "#000"} 
+                />
+              </TouchableOpacity>
+            </View>
+            {Object.keys(groupedTransactions).length === 0 ? (
+              <View className="bg-white py-10 rounded-xl mt-2">
+                <Text className="text-gray-400 text-lg font-medium text-center">No Recent Activities</Text>
+                <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+                  It looks like you haven't made any transactions. Once you start, your activity will appear here.
+                </Text>
+              </View>
+            ) : (
+              <>
+                {Object.keys(groupedTransactions).map(date => (
+                  <View key={date} className="mb-4">
+                    <Text className="text-gray-400 text-lg mt-2 mb-2">
+                      {getDateHeading(date)}
+                    </Text>
+                    {groupedTransactions[date].map((transaction: Transaction) => (
+                      <TransactionItem 
+                        key={transaction.id} 
+                        transaction={transaction}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
         </View>
 
-        {/* Transactions list */}
-        <ScrollView className="flex-1">
-          <View className="flex-row items-center mb-4">
-            <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
-              <Ionicons name="search" size={20} color="#A0A0A0" />
-              <TextInput
-                className="flex-1 ml-2"
-                placeholder="Search...."
-                placeholderTextColor="#A0A0A0"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {(searchQuery || hasActiveFilters()) && (
-                <TouchableOpacity onPress={clearAllFilters}>
-                  <Ionicons name="close-circle" size={20} color="#A0A0A0" />
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity 
-              className="bg-gray-100 p-2 rounded-xl"
-              onPress={() => setShowFilter(true)}
-            >
-              <Ionicons 
-                name="options-outline" 
-                size={24} 
-                color={hasActiveFilters() ? "#0052CC" : "#000"} 
-              />
-            </TouchableOpacity>
-          </View>
-          {Object.keys(groupedTransactions).length === 0 ? (
-            <View className="bg-white py-10 rounded-xl mt-2">
-              <Text className="text-gray-400 text-lg font-medium text-center">No Recent Activities</Text>
-              <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-                It looks like you haven't made any transactions. Once you start, your activity will appear here.
-              </Text>
-            </View>
-          ) : (
-            <>
-              {Object.keys(groupedTransactions).map(date => (
-                <View key={date} className="mb-4">
-                  <Text className="text-gray-400 text-lg mt-2 mb-2">
-                    {getDateHeading(date)}
-                  </Text>
-                  {groupedTransactions[date].map((transaction: Transaction) => (
-                    <TransactionItem 
-                      key={transaction.id} 
-                      transaction={transaction}
-                    />
-                  ))}
-                </View>
-              ))}
-            </>
-          )}
-          <View className="h-20" />
-        </ScrollView>
-      </View>
-
-      {/* Filter Modal */}
-      <TransactionFilter 
-        visible={showFilter} 
-        onClose={() => setShowFilter(false)}
-        onApplyFilter={handleApplyFilter}
-      />
-    </SafeAreaView>
+        {/* Filter Modal */}
+        <TransactionFilter 
+          visible={showFilter} 
+          onClose={() => setShowFilter(false)}
+          onApplyFilter={handleApplyFilter}
+        />
+      </SafeAreaView>
+    </View>
   );
 };
 

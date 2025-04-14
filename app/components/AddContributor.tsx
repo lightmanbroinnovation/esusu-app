@@ -7,7 +7,8 @@ import {
   TextInput,
   Image,
   ScrollView,
-  StyleSheet
+  StyleSheet,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -42,11 +43,14 @@ const AddContributor = () => {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
       if (status === 'granted') {
-        // Open camera
+        // Open camera with improved options
         const result = await ImagePicker.launchCameraAsync({
           allowsEditing: true,
           aspect: [1, 1],
           quality: 1,
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          exif: true,
+          cameraType: ImagePicker.CameraType.front, // Default to front camera for user photos
         });
         
         if (!result.canceled) {
@@ -57,12 +61,61 @@ const AddContributor = () => {
           });
         }
       } else {
-        alert('Camera permission is required to take pictures');
+        // Show proper permission alert
+        Alert.alert(
+          "Permission Required",
+          "Camera permission is required to take pictures. Please enable it in your device settings.",
+          [
+            { 
+              text: "Cancel", 
+              style: "cancel" 
+            },
+            { 
+              text: "Open Settings", 
+              onPress: () => {
+                // This would ideally open settings, but for now just log
+                console.log("User should be directed to settings");
+              }
+            }
+          ]
+        );
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      // If camera fails, just navigate to photo quality check
-      router.push('/contributor/photo-quality');
+      Alert.alert(
+        "Camera Error",
+        "There was a problem accessing your camera. Would you like to select from your gallery instead?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Select from Gallery",
+            onPress: async () => {
+              try {
+                const galleryResult = await ImagePicker.launchImageLibraryAsync({
+                  allowsEditing: true,
+                  aspect: [1, 1],
+                  quality: 1,
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                });
+                
+                if (!galleryResult.canceled) {
+                  router.push({
+                    pathname: '/contributor/photo-quality',
+                    params: { photoUri: galleryResult.assets[0].uri }
+                  });
+                }
+              } catch (galleryError) {
+                console.error('Error selecting from gallery:', galleryError);
+                // Navigate to photo quality check without an image
+                router.push('/contributor/photo-quality');
+              }
+            }
+          }
+        ]
+      );
     }
   };
 
@@ -91,7 +144,7 @@ const AddContributor = () => {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center px-4">
           <TouchableOpacity 
             onPress={navigateBack}
             className="bg-gray-200 p-2 rounded-full"
