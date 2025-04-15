@@ -394,7 +394,7 @@ const AddContributor = () => {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 mt-10">
+        <View className="flex-row items-center px-4 mt-16">
           <TouchableOpacity 
             onPress={navigateBack}
             className="bg-gray-200 p-2 rounded-full"

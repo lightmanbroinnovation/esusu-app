@@ -46,14 +46,14 @@ const FAQ = () => {
     return (
         <View className="flex-1 bg-[#007BFF]">
             {/* Header */}
-            <View className="px-5 pt-12 pb-6 flex flex-col items-center mt-20 gap-10 w-full">
+            <View className="px-5 pt-12 pb-2 flex flex-col items-center mt-16 gap-10 w-full">
                 <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3 absolute left-4 top-0'>
                     <Image
                         source={require('../assets/images/back-arrow.png')}
                     />
                 </TouchableOpacity>
                 <Text className="text-white text-[32px] mt-2 font-semibold mb-2">Have a burning Question?</Text>
-                <View  className="bg-white rounded-full w-full px-4 py-5 flex flex-row gap-4">
+                <View  className="bg-white rounded-full w-full px-4 py-5 flex flex-row gap-4 items-center">
                     <Image source={require('../assets/images/Search.png')} />
                     <TextInput
                         placeholder="Search transactions"

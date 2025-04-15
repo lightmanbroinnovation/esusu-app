@@ -8,6 +8,8 @@ interface User {
   email: string;
   id: string;
   userImg?: string; // Add user image property
+  balance: string;
+  weeklyEarnings: string;
 }
 
 interface UserCardProps {
@@ -51,13 +53,13 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
       <View className="flex-row justify-between mt-4">
         <View>
           <Text className="text-white text-xs mb-2">Total Balance</Text>
-          <Text className="text-white text-3xl font-bold">₦ 0.00</Text>
+          <Text className="text-white text-3xl font-bold">{user.balance}</Text>
         </View>
         <View>
           <Text className="text-white text-xs mb-2">Commission</Text>
           <View className="flex-row items-center bg-white rounded-full px-2 py-0.5">
             <Ionicons name="arrow-up" size={14} color="green" />
-            <Text className="text-green-600 text-xs font-bold ml-1">₦0.00</Text>
+            <Text className="text-green-600 text-xs font-bold ml-1">{user.weeklyEarnings}</Text>
           </View>
         </View>
       </View>

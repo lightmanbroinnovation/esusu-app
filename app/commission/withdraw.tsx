@@ -16,13 +16,14 @@ import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUser } from '../../services/api';
 
-// Define the Account type
+// Define the Account type to match the structure in user details
 type Account = {
-  bank: string;
+  id: string;
+  bankName: string;
+  accountName: string;
   accountNumber: string;
-  agent: string;
   isPrimary: boolean;
-  image: any; // Adjust the type as necessary for your image
+  createdAt: string;
 };
 
 // Define user details interface
@@ -37,6 +38,7 @@ interface UserDetails {
   totalWithdraw?: number;
   weeklyEarnings?: number;
   commissions?: any[];
+  bankAccounts?: Account[];
 }
 
 const WithdrawScreen = () => {
@@ -46,6 +48,7 @@ const WithdrawScreen = () => {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -86,6 +89,17 @@ const WithdrawScreen = () => {
         const userData = await fetchUser(userId);
         setUserDetails(userData);
         
+        // Get bank accounts from user data
+        if (userData.bankAccounts && userData.bankAccounts.length > 0) {
+          setAccounts(userData.bankAccounts);
+          
+          // Set selected account to primary account or first account
+          const primaryAccount = userData.bankAccounts.find((acc: Account) => acc.isPrimary);
+          setSelectedAccount(primaryAccount || userData.bankAccounts[0]);
+        } else {
+          console.log('No bank accounts found in user data');
+        }
+        
         console.log('User data fetched successfully');
       } catch (error) {
         console.error("Failed to fetch user data:", error);
@@ -100,6 +114,10 @@ const WithdrawScreen = () => {
   
   const navigateBack = () => {
     router.back();
+  };
+
+  const navigateToAddBank = () => {
+    router.push('/link-bank/add-bank' as any);
   };
   
   const handleAmountSelection = (value: string) => {
@@ -123,6 +141,15 @@ const WithdrawScreen = () => {
   };
   
   const handleContinue = () => {
+    // Check if a bank account is selected
+    if (!selectedAccount) {
+      Alert.alert('No Bank Account', 'Please add a bank account to continue.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Add Bank Account', onPress: navigateToAddBank }
+      ]);
+      return;
+    }
+    
     // Make sure we have user data and valid amount
     if (!userDetails) {
       Alert.alert('Error', 'User data not available. Please try again.');
@@ -141,39 +168,32 @@ const WithdrawScreen = () => {
       return;
     }
     
-    // Save withdrawal amount to AsyncStorage for the OTP screen
-    AsyncStorage.setItem('withdrawAmount', amount).then(() => {
+    // Save withdrawal amount and selected account to AsyncStorage for the OTP screen
+    Promise.all([
+      AsyncStorage.setItem('withdrawAmount', amount),
+      AsyncStorage.setItem('selectedAccount', JSON.stringify(selectedAccount))
+    ]).then(() => {
       router.push('/commission/otp' as any);
     }).catch(error => {
-      console.error('Error saving withdrawal amount:', error);
+      console.error('Error saving withdrawal data:', error);
       Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
     });
   };
-  
-  const accounts: Account[] = [
-    { 
-      bank: 'First Bank', 
-      accountNumber: '2345678901', 
-      agent: 'AjoMarket Agent', 
-      isPrimary: true, 
-      image: require('../../assets/images/icon.png') 
-    },
-    { 
-      bank: 'UBA', 
-      accountNumber: '8765432109', 
-      agent: 'AjoMarket Agent', 
-      isPrimary: false, 
-      image: require('../../assets/images/icon.png') 
-    },
-  ];
-  
-  // Set default account
-  React.useEffect(() => {
-    if (!selectedAccount && accounts.length > 0) {
-      const primaryAccount = accounts.find(acc => acc.isPrimary) || accounts[0];
-      setSelectedAccount(primaryAccount);
+
+  // Helper function to get bank logo
+  const getBankLogo = (bankName: string) => {
+    const name = (bankName || '').toLowerCase();
+    
+    if (name.includes('first') || name.includes('firstbank')) {
+      return require('../../assets/images/icon.png'); // Replace with actual First Bank logo
+    } else if (name.includes('uba')) {
+      return require('../../assets/images/icon.png'); // Replace with actual UBA logo
+    } else if (name.includes('gtb') || name.includes('guaranty')) {
+      return require('../../assets/images/icon.png'); // Replace with actual GTBank logo
+    } else {
+      return require('../../assets/images/icon.png'); // Default bank logo
     }
-  }, []);
+  };
 
   // Safely get balance with fallback value
   const userBalance = userDetails?.balance?.toLocaleString() || '0';
@@ -182,6 +202,7 @@ const WithdrawScreen = () => {
   const isContinueEnabled = !loading && 
     Number(amount) > 0 && 
     userDetails && 
+    selectedAccount && 
     Number(amount) <= (userDetails.balance || 0);
 
   return (
@@ -224,38 +245,51 @@ const WithdrawScreen = () => {
             </View>
             
             {/* Account Selection */}
-            <TouchableOpacity 
-              className="bg-blue-50 rounded-xl p-4 mb-4"
-              onPress={() => setShowAccountModal(true)}
-            >
-              <View className="flex-row justify-between items-center mt-1">
-                <View className="flex-row items-center">
-              <Text className="text-gray-600 mr-2">To:</Text>
-                  <Text className="text-lg font-semibold mr-2">
-                    {selectedAccount?.agent || 'AjoMarket Agent'}
+            {accounts.length > 0 ? (
+              <TouchableOpacity 
+                className="bg-blue-50 rounded-xl p-4 mb-4"
+                onPress={() => setShowAccountModal(true)}
+              >
+                <View className="flex-row justify-between items-center mt-1">
+                  <View className="flex-row items-center">
+                    <Text className="text-gray-600 mr-2">To:</Text>
+                    <Text className="text-lg font-semibold mr-2">
+                      {selectedAccount?.bankName || 'Select Bank'}
+                    </Text>
+                    {selectedAccount && (
+                      <Image 
+                        source={getBankLogo(selectedAccount.bankName)}
+                        className="w-8 h-8 rounded"
+                        style={{height: 30, width: 30}}
+                      />
+                    )}
+                  </View>
+                  <Ionicons name="chevron-down" size={24} color="#000" />
+                </View>
+                <View className="flex-row items-center mt-2">
+                  <Ionicons name="card-outline" size={18} color="#0099FF" />
+                  <Text className="text-blue-600 ml-2">
+                    {selectedAccount?.accountNumber || ''}
                   </Text>
-                  {selectedAccount && (
-                    <Image 
-                      source={selectedAccount.image}
-                      className="w-8 h-8 rounded"
-                      style={{height: 30, width: 30}}
-                    />
+                  {selectedAccount?.isPrimary && (
+                    <View className="bg-blue-100 rounded-full px-2 py-0.5 ml-2">
+                      <Text className="text-blue-600 text-xs">Primary Account</Text>
+                    </View>
                   )}
                 </View>
-                <Ionicons name="chevron-down" size={24} color="#000" />
-              </View>
-              <View className="flex-row items-center mt-2">
-                <Ionicons name="person" size={18} color="#0099FF" />
-                <Text className="text-blue-600 ml-2">
-                  {selectedAccount?.accountNumber || '2345678901'}
-                </Text>
-                {selectedAccount?.isPrimary && (
-                  <View className="bg-blue-100 rounded-full px-2 py-0.5 ml-2">
-                    <Text className="text-blue-600 text-xs">Primary Account</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                className="bg-blue-50 rounded-xl p-4 mb-4 flex-row justify-between items-center"
+                onPress={navigateToAddBank}
+              >
+                <View>
+                  <Text className="text-lg font-semibold">Add Bank Account</Text>
+                  <Text className="text-gray-600 mt-1">You need to add a bank account to withdraw</Text>
+                </View>
+                <Ionicons name="add-circle" size={32} color="#0074FF" />
+              </TouchableOpacity>
+            )}
             
             {/* Amount Entry */}
             <View className="items-center mb-6">
@@ -406,32 +440,60 @@ const WithdrawScreen = () => {
               </TouchableOpacity>
             </View>
             
-            {accounts.map((account, index) => (
+            {accounts.length > 0 ? (
+              accounts.map((account) => (
+                <TouchableOpacity 
+                  key={account.id}
+                  className={`flex-row items-center p-4 rounded-xl mb-3 ${
+                    selectedAccount?.id === account.id ? 'bg-blue-50' : 'bg-gray-50'
+                  }`}
+                  onPress={() => {
+                    setSelectedAccount(account);
+                    setShowAccountModal(false);
+                  }}
+                >
+                  <Image 
+                    source={getBankLogo(account.bankName)}
+                    className="w-12 h-12 rounded-md mr-4"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-lg font-semibold">{account.bankName}</Text>
+                    <Text className="text-gray-600">{account.accountName}</Text>
+                    <Text className="text-gray-600">Account: {account.accountNumber}</Text>
+                  </View>
+                  {account.isPrimary && (
+                    <View className="bg-blue-100 rounded-full px-2 py-1">
+                      <Text className="text-blue-600 text-xs">Primary</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View className="items-center py-6">
+                <Text className="text-gray-500 mb-4">No bank accounts found</Text>
+                <TouchableOpacity 
+                  className="bg-blue-600 px-6 py-3 rounded-full"
+                  onPress={() => {
+                    setShowAccountModal(false);
+                    navigateToAddBank();
+                  }}
+                >
+                  <Text className="text-white font-medium">Add Bank Account</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {accounts.length > 0 && (
               <TouchableOpacity 
-                key={index}
-                className={`flex-row items-center p-4 rounded-xl mb-3 ${
-                  selectedAccount?.accountNumber === account.accountNumber ? 'bg-blue-50' : 'bg-gray-50'
-                }`}
+                className="mt-4 bg-blue-600 p-4 rounded-xl"
                 onPress={() => {
-                  setSelectedAccount(account);
                   setShowAccountModal(false);
+                  navigateToAddBank();
                 }}
               >
-                <Image 
-                  source={account.image}
-                  className="w-12 h-12 rounded-md mr-4"
-                />
-                <View className="flex-1">
-                  <Text className="text-lg font-semibold">{account.bank}</Text>
-                  <Text className="text-gray-600">Account: {account.accountNumber}</Text>
-                </View>
-                {account.isPrimary && (
-                  <View className="bg-blue-100 rounded-full px-2 py-1">
-                    <Text className="text-blue-600 text-xs">Primary</Text>
-                  </View>
-                )}
+                <Text className="text-white font-semibold text-center">+ Add New Bank Account</Text>
               </TouchableOpacity>
-            ))}
+            )}
           </View>
         </View>
       </Modal>

@@ -153,21 +153,21 @@ export default function OTPScreen() {
   const formattedAmount = Number(withdrawAmount).toLocaleString();
 
   return (
-    <View className="flex-1 bg-white px-4">
+    <View className="flex-1 bg-white">
       {/* Back Button */}
-      <View className="flex-row items-center mt-10 p-4">
+      <View className="flex-row items-center mt-10 px-4 pt-4">
       <TouchableOpacity
           className="flex-row items-center"
           onPress={() => router.back()}
           disabled={loading}
         >
-          <Ionicons name="arrow-back" size={28} />
+          <Ionicons name="arrow-back" size={28} className="bg-gray-100 p-2 rounded-full" />
         </TouchableOpacity>
           <Text className="text-xl font-bold flex-1 text-center mr-8">Withdraw</Text>
         </View>
 
       {/* Main Content */}
-      <View className="flex-1 mt-8">
+      <View className="flex-1 mt-8 px-4">
         <Text className="text-[24px] font-bold text-center text-primaryText">OTP Verification</Text>
         <Text className="text-gray-500 text-center mt-2 mb-2">
         Enter the OTP sent to your registered phone number to complete your withdrawal.

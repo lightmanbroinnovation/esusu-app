@@ -80,7 +80,7 @@ export default function LinkBankScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0074FF]">
       {/* Header */}
-      <View className="pt-5 px-6">
+      <View className="mt-12 pt-4 px-6">
         <TouchableOpacity
           onPress={handlePreviousPage}
           className="bg-[#F2F8FF] h-8 w-8 rounded-full items-center justify-center p-3"
@@ -99,10 +99,13 @@ export default function LinkBankScreen() {
 
         <TouchableOpacity
           onPress={handleAddBank}
-          className="bg-white rounded-full py-3 px-6 mx-auto mt-6 mb-2 w-[280px] flex-row justify-center items-center"
+          className={`bg-white rounded-full py-3 px-6 mx-auto mt-6 mb-2 w-[280px] flex-row justify-center items-center ${banks?.length === 2 ? 'opacity-60' : ''}`}
+          disabled={banks?.length === 2}
         >
           <Text className="text-[#0074ff] font-semibold text-center text-base">
-            {banks && banks.length > 0 ? "+ Add New Bank" : "+ Add Bank Account"}
+            {banks?.length === 0 ? "+ Add Bank Account" : 
+             banks?.length === 2 ? "Accounts below" : 
+             "+ Add New Bank"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -111,22 +114,13 @@ export default function LinkBankScreen() {
       <View className="flex-1 bg-white rounded-t-[32px] mt-6 overflow-hidden">
         {banks && banks.length > 0 ? (
           <FlatList
-            data={banks}
+            data={banks.filter(bank => !!bank.id)}
             keyExtractor={(item) => item.id || ''}
             renderItem={({ item }) => (
               <BankCard
-                bank={item}
+                bank={item as import('./types').Bank}
                 isPrimary={item.isPrimary}
-                onPress={() =>
-                  item.id &&
-                  setSelectedBank({
-                    id: item.id,
-                    accountNumber: item.accountNumber || '',
-                    bankName: item.bankName,
-                    accountName: item.accountName,
-                    isPrimary: item.isPrimary,
-                  })
-                }
+                onPress={() => setSelectedBank(item as import('./types').Bank)}
               />
             )}
             contentContainerStyle={{
