@@ -2,7 +2,7 @@ export const options = {
   headerShown: false, // Hide the header
 };
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput, Vibration } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
@@ -15,6 +15,17 @@ export default function PasscodeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams(); // Retrieve params from the previous page
+
+  // Log params when component mounts
+  useEffect(() => {
+    console.log('===== PASSCODE SCREEN - RECEIVED DATA =====');
+    console.log('Params received from document screen:', JSON.stringify({
+      ...params,
+      idImage: params.idImage ? String(params.idImage).substring(0, 30) + "..." : "missing",
+      cacImage: params.cacImage ? String(params.cacImage).substring(0, 30) + "..." : "missing",
+    }, null, 2));
+    console.log('==========================================');
+  }, []);
 
   const handleKeyPress = (digit: string) => {
     if (!isConfirming && pin.length < 4) {
@@ -107,14 +118,33 @@ export default function PasscodeScreen() {
       }
     } else {
       if (confirmPin === pin) {
+        // Make sure we have all the required data before proceeding
         const passcodeData = {
           ...params, // Include data from the previous page
           pin, // Add the confirmed PIN
         };
 
+        console.log('===== PASSCODE SCREEN - PASSING DATA =====');
+        console.log('Final passcode data prepared:', JSON.stringify({
+          ...passcodeData,
+          pin: passcodeData.pin,
+          idImage: passcodeData.idImage ? String(passcodeData.idImage).substring(0, 30) + "..." : "missing",
+          cacImage: passcodeData.cacImage ? String(passcodeData.cacImage).substring(0, 30) + "..." : "missing",
+        }, null, 2));
+        
+        // Check if we have all the required fields for registration
+        const requiredFields = ['firstname', 'lastname', 'email', 'phone', 'pin', 'idImage', 'cacImage'];
+        const missingFields = requiredFields.filter(field => !passcodeData[field]);
+        
+        if (missingFields.length > 0) {
+          console.warn('Missing required fields:', missingFields);
+        }
+        
+        console.log('==========================================');
+
         // Navigate to the success page with the combined data
         router.push({
-          pathname: "/signup/success",
+          pathname: "/signup/security",
           params: passcodeData, // Pass all data to the next page
         });
       } else {
@@ -144,7 +174,7 @@ export default function PasscodeScreen() {
         </Text>
         <Text className="text-gray-500 mt-2 mb-16">
           {isConfirming
-            ? "Re-enter your PIN to make sure it’s correct."
+            ? "Re-enter your PIN to make sure it's correct."
             : "Set a 4-digit PIN to protect your account"}
         </Text>
 

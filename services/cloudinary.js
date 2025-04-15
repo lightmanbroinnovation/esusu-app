@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 // Cloudinary configuration
 const CLOUD_NAME = 'daskmqzyy';
@@ -17,43 +18,71 @@ export const uploadImage = async (imageUri, folder = 'esusu', metadata = {}) => 
   try {
     console.log(`Uploading image to Cloudinary folder: ${folder}`);
     
-    // Verify image exists and get info
-    const fileInfo = await FileSystem.getInfoAsync(imageUri);
-    if (!fileInfo.exists) {
-      throw new Error(`Image file does not exist at path: ${imageUri}`);
-    }
-    
-    // Log file info
-    console.log(`Image file size: ${(fileInfo.size / 1024).toFixed(2)}KB`);
-    
-    // Check file size (10MB max)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-    if (fileInfo.size > MAX_FILE_SIZE) {
-      console.warn(`File too large (${(fileInfo.size / 1024 / 1024).toFixed(2)}MB). Will resize before upload.`);
-      // We'll continue and let the base64 encoding handle it, but it might be slow
-    }
-    
-    // Read the file as base64
-    console.log('Reading file as base64...');
-    let base64;
-    try {
-      base64 = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-    } catch (readError) {
-      console.error('Error reading file as base64:', readError);
-      throw new Error(`Failed to read image file: ${readError.message}`);
-    }
-    
-    if (!base64 || base64.length === 0) {
-      throw new Error('Failed to read image file as base64 - empty result');
-    }
-    
-    console.log(`Base64 encoding successful, length: ${base64.length} characters`);
-    
-    // Create FormData
+    // Create FormData for the upload
     const formData = new FormData();
-    formData.append('file', `data:image/jpeg;base64,${base64}`);
+    
+    // Handle differently based on platform
+    if (Platform.OS === 'web') {
+      // On web, we'll use fetch to get the image as a blob
+      console.log('Running on web platform, using web-specific upload method');
+      
+      try {
+        // For web testing, since we might be using a data URI directly
+        if (imageUri.startsWith('data:')) {
+          console.log('Using data URI directly');
+          formData.append('file', imageUri);
+        } else {
+          // Convert the image to a blob for upload
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          formData.append('file', blob);
+          console.log('Fetched image as blob for upload');
+        }
+      } catch (webError) {
+        console.error('Error preparing image for web upload:', webError);
+        throw new Error(`Failed to prepare image for web upload: ${webError.message}`);
+      }
+    } else {
+      // Native platforms (iOS/Android) - use FileSystem
+      console.log('Running on native platform, using FileSystem');
+      
+      // Verify image exists and get info
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      if (!fileInfo.exists) {
+        throw new Error(`Image file does not exist at path: ${imageUri}`);
+      }
+      
+      // Log file info
+      console.log(`Image file size: ${(fileInfo.size / 1024).toFixed(2)}KB`);
+      
+      // Check file size (10MB max)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      if (fileInfo.size > MAX_FILE_SIZE) {
+        console.warn(`File too large (${(fileInfo.size / 1024 / 1024).toFixed(2)}MB). Will resize before upload.`);
+        // We'll continue and let the base64 encoding handle it, but it might be slow
+      }
+      
+      // Read the file as base64
+      console.log('Reading file as base64...');
+      let base64;
+      try {
+        base64 = await FileSystem.readAsStringAsync(imageUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      } catch (readError) {
+        console.error('Error reading file as base64:', readError);
+        throw new Error(`Failed to read image file: ${readError.message}`);
+      }
+      
+      if (!base64 || base64.length === 0) {
+        throw new Error('Failed to read image file as base64 - empty result');
+      }
+      
+      console.log(`Base64 encoding successful, length: ${base64.length} characters`);
+      formData.append('file', `data:image/jpeg;base64,${base64}`);
+    }
+    
+    // Common form data for all platforms
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('folder', folder);
     
@@ -71,8 +100,6 @@ export const uploadImage = async (imageUri, folder = 'esusu', metadata = {}) => 
       headers: {
         'Content-Type': 'multipart/form-data'
       },
-      // Retry configuration if available in your axios version
-      // If not available, our retry logic in the calling functions will handle it
     };
     
     console.log('Sending request to Cloudinary...');

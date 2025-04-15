@@ -8,12 +8,14 @@ import {
   ScrollView,
   Modal,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { fetchContributors, fetchContributorTransactions } from '../../services/api';
 import { Contributor } from '../contributors/ContributorsScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define Transaction interface
 interface Transaction {
@@ -30,6 +32,10 @@ interface ContributorProfileProps {
   firstName?: string;
   lastName?: string;
   imageUrl?: string;
+  phoneNumber?: string;
+  depositAmount?: string;
+  frequency?: string;
+  status?: string;
 }
 
 const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName: propLastName, imageUrl: propImageUrl }: ContributorProfileProps) => {
@@ -120,8 +126,38 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
           // We can still fetch the other details in the background
         }
         
+        // First, try to get contributor data from AsyncStorage
+        try {
+          const storedContributorData = await AsyncStorage.getItem('selectedContributor');
+          if (storedContributorData) {
+            const parsedData = JSON.parse(storedContributorData);
+            if (parsedData && parsedData.id === contributorId) {
+              console.log('Found contributor data in storage:', parsedData.id);
+              setContributor(parsedData);
+              setLoading(false);
+              return; // We have the data, no need to fetch from API
+            }
+          }
+        } catch (storageError) {
+          console.error('Error reading from AsyncStorage:', storageError);
+          // Continue to API call if AsyncStorage fails
+        }
+        
+        // Get userId from AsyncStorage
+        const userId = await AsyncStorage.getItem('userId');
+        if (!userId) {
+          console.error('User ID not found in AsyncStorage');
+          if (!(propFirstName && propLastName)) {
+            setError('User ID not found. Please log in again.');
+          }
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Fetching contributors using user ID:', userId);
+        
         // Fetch all contributors 
-        const contributors = await fetchContributors("62f2");
+        const contributors = await fetchContributors(userId);
         // Find the selected contributor by ID
         const selectedContributor = contributors.find(
           (c: Contributor) => c.id === contributorId
@@ -129,6 +165,14 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
         
         if (selectedContributor) {
           setContributor(selectedContributor);
+          
+          // Save to AsyncStorage for future use
+          try {
+            await AsyncStorage.setItem('selectedContributor', JSON.stringify(selectedContributor));
+          } catch (saveError) {
+            console.error('Error saving contributor to AsyncStorage:', saveError);
+            // Continue anyway, this is just a cache optimization
+          }
         } else {
           // Only show error if we don't have prop data to display
           if (!(propFirstName && propLastName)) {

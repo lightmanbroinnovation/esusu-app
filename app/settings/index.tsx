@@ -22,6 +22,7 @@ interface UserDetails {
     idImage: string;
     cacImage: string;
     isVerified: boolean;
+    userImg?: string;
 }
 
 export const options = {
@@ -139,7 +140,8 @@ export default function Index() {
                 bvn: "12345678901",
                 idImage: "",
                 cacImage: "",
-                isVerified: true
+                isVerified: true,
+                userImg: undefined
             });
         } finally {
             setLoading(false);
@@ -168,6 +170,8 @@ export default function Index() {
     };
 
     const handlePress = (route: string) => {
+        console.log("Navigating to:", route);
+
         // Handle logout specially
         if (route === "/logout") {
             // Show confirmation dialog
@@ -186,8 +190,14 @@ export default function Index() {
                 ]
             );
         } else {
-            // For all other routes, just navigate
-            router.push(route as any);
+            try {
+                // For all other routes, just navigate
+                router.push(route as any);
+                console.log("Navigation successful to:", route);
+            } catch (error) {
+                console.error("Navigation error:", error);
+                Alert.alert("Error", "Failed to navigate. Please try again.");
+            }
         }
     };
 
@@ -199,7 +209,9 @@ export default function Index() {
             <View className="py-8 items-center mb-5 mt-10">
                 <View className="rounded-full overflow-hidden bg-white justify-center items-center">
                     <Image
-                        source={require("../assets/images/user.png")}
+                        source={userDetails?.userImg 
+                            ? { uri: userDetails.userImg } 
+                            : require("../assets/images/user.png")}
                         style={{ width: 80, height: 80 }}
                         resizeMode="contain"
                     />
