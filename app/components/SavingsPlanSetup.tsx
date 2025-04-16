@@ -17,7 +17,7 @@ import { addContributor } from '../../services/api'; // Import the addContributo
 
 const SavingsPlanSetup = () => {
   const router = useRouter();
-  const [depositAmount, setDepositAmount] = useState('2,000');
+  const [depositAmount, setDepositAmount] = useState('');
   const [frequency, setFrequency] = useState('daily');
   const [startDate, setStartDate] = useState(moment().startOf('day').toDate()); // Default to today's date
   const [endDate, setEndDate] = useState(moment().startOf('day').toDate()); // Default to today's date
@@ -242,7 +242,7 @@ const SavingsPlanSetup = () => {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center p-4 mt-10">
           <TouchableOpacity 
             onPress={navigateBack}
             className="bg-gray-100 p-2 rounded-full"

@@ -466,3 +466,50 @@ export const addBankAccount = async (userId, bankAccount) => {
     throw error;
   }
 };
+
+// Function to fetch contributor by phone number for a specific agent
+export const fetchContributorByPhone = async (agentId, phoneNumber) => {
+  try {
+    console.log(`Looking for contributor with phone ${phoneNumber} for agent ${agentId}`);
+    
+    // First fetch all contributors for this agent
+    const contributors = await fetchContributors(agentId);
+    
+    // Make sure contributors is an array before using find
+    if (!Array.isArray(contributors)) {
+      console.warn("No contributors array returned for agent:", agentId);
+      throw new Error(`No contributors found for agent`);
+    }
+    
+    console.log(`Found ${contributors.length} total contributors for agent ${agentId}`);
+    
+    // Format phone number to remove country code if present
+    let formattedPhoneNumber = phoneNumber;
+    if (phoneNumber.startsWith('+234')) {
+      formattedPhoneNumber = phoneNumber.replace('+234', '0');
+    }
+    
+    console.log("Searching with formatted phone:", formattedPhoneNumber);
+    
+    // Find the contributor with matching phone number
+    const contributor = contributors.find(c => 
+      c.phonenumber === formattedPhoneNumber || 
+      c.phoneNumber === formattedPhoneNumber || 
+      c.phone === formattedPhoneNumber
+    );
+    
+    // Log all contributor phone numbers for debugging
+    console.log("Available phone numbers:", contributors.map(c => c.phonenumber || c.phoneNumber || c.phone));
+    
+    if (!contributor) {
+      console.warn(`No contributor found with phone number ${formattedPhoneNumber} among ${contributors.length} contributors`);
+      throw new Error(`No contributor found with phone number ${phoneNumber}`);
+    }
+    
+    console.log("Contributor found:", contributor);
+    return contributor;
+  } catch (error) {
+    console.error("Error fetching contributor by phone:", error);
+    throw error;
+  }
+};

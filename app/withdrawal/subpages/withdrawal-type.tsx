@@ -1,0 +1,314 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface UserDetails {
+  id: string;
+  firstname: string;
+  lastname: string;
+  phonenumber: string;
+  balance: number;
+  imageUrl?: string;
+}
+
+const WithdrawalTypeScreen = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [amount, setAmount] = useState('0');
+  const [showOptions, setShowOptions] = useState(false);
+
+  useEffect(() => {
+    if (params.userDataString) {
+      try {
+        const parsedData = JSON.parse(params.userDataString as string);
+        setUserDetails(parsedData);
+      } catch (err) {
+        console.error("Error parsing user data:", err);
+      }
+    }
+  }, [params.userDataString]);
+
+  const handleNumberPress = (num: string) => {
+    setAmount(prev => {
+      if (prev === '0') {
+        return num;
+      }
+      // Handle '00' special case
+      if (num === '00') {
+        return prev === '0' ? '0' : prev + '00';
+      }
+      return prev + num;
+    });
+  };
+
+  const handleBackspace = () => {
+    setAmount(prev => {
+      if (prev.length <= 1) return '0';
+      return prev.slice(0, -1);
+    });
+  };
+
+  const handleDone = async () => {
+    if (!amount || parseFloat(amount) <= 0) return;
+    if (!userDetails) return;
+    
+    if (parseFloat(amount) > (userDetails.balance || 0)) {
+      Alert.alert('Error', 'Amount exceeds available balance');
+      return;
+    }
+
+    try {
+      // Save withdrawal amount and user details
+      await AsyncStorage.setItem('withdrawalAmount', amount);
+      await AsyncStorage.setItem('withdrawalUserData', JSON.stringify(userDetails));
+      
+      // Show withdrawal options modal
+      setShowOptions(true);
+    } catch (error) {
+      console.error('Error saving withdrawal data:', error);
+    }
+  };
+
+  const handleOptionSelect = async (type: 'cash' | 'transfer') => {
+    try {
+      await AsyncStorage.setItem('withdrawalType', type);
+      if (type === 'transfer') {
+        router.push({
+          pathname: '/withdrawal/subpages/recipient',
+          params: { amount }
+        });
+      } else {
+        router.push({
+          pathname: '/withdrawal/subpages/otp',
+          params: { amount }
+        });
+      }
+    } catch (error) {
+      console.error('Error saving withdrawal type:', error);
+    }
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row items-center pt-4 justify-between px-4 mt-10">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+        >
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text className="text-lg font-semibold">Withdraw</Text>
+        <View className="w-10" />
+      </View>
+
+      {/* User Card */}
+      {userDetails && (
+        <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3">
+            {userDetails.imageUrl ? (
+              <Image
+                source={{ uri: userDetails.imageUrl }}
+                className="w-12 h-12 rounded-full"
+              />
+            ) : (
+              <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
+                <Text className="text-lg font-semibold">
+                  {userDetails.firstname[0]}
+                </Text>
+              </View>
+            )}
+            <View>
+              <Text className="text-lg font-semibold">{userDetails.firstname}</Text>
+              <Text className="text-gray-600">{userDetails.lastname}</Text>
+            </View>
+          </View>
+          <View>
+            <Text className="text-sm text-gray-500">Current Balance</Text>
+            <Text className="text-lg font-semibold">₦{userDetails.balance?.toLocaleString() || '0'}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Amount Display */}
+      <View className="items-center mt-8">
+        <Text className="text-gray-500 mb-2">Enter Amount</Text>
+        <Text className="text-5xl font-semibold">₦{parseInt(amount).toLocaleString()}</Text>
+      </View>
+
+      {/* Quick Amount Buttons */}
+      <View className="flex-row justify-between mb-4">
+        <TouchableOpacity 
+          onPress={() => setAmount('5000')}
+          className="px-6 py-2 rounded-full bg-gray-100"
+        >
+          <Text>₦5,000</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setAmount('15000')}
+          className="px-6 py-2 rounded-full bg-gray-100"
+        >
+          <Text>₦15,000</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setAmount('25000')}
+          className="px-6 py-2 rounded-full bg-gray-100"
+        >
+          <Text>₦25,000</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View className="flex-1 justify-between px-4 mt-8">
+        {/* Keypad */}
+        <View className="mt-8">
+          {/* Row 1 */}
+          <View className="flex-row justify-around mb-4">
+            <TouchableOpacity
+              onPress={() => handleNumberPress('1')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">1</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('2')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">2</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('3')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">3</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 2 */}
+          <View className="flex-row justify-around mb-4">
+            <TouchableOpacity
+              onPress={() => handleNumberPress('4')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">4</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('5')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">5</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('6')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">6</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 3 */}
+          <View className="flex-row justify-around mb-4">
+            <TouchableOpacity
+              onPress={() => handleNumberPress('7')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">7</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('8')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">8</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('9')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">9</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 4 */}
+          <View className="flex-row justify-around mb-4">
+            <TouchableOpacity
+              onPress={() => handleNumberPress('00')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">00</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleNumberPress('0')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Text className="text-xl font-medium">0</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleBackspace}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Ionicons name="backspace-outline" size={24} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Done Button */}
+        <View className="mb-8">
+          <TouchableOpacity
+            onPress={handleDone}
+            disabled={!amount || amount === '0'}
+            className={`p-4 rounded-xl ${
+              !amount || amount === '0' ? 'bg-blue-300' : 'bg-blue-600'
+            } items-center`}
+          >
+            <Text className="text-white font-medium text-base">Done</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Withdrawal Options Modal */}
+      {showOptions && (
+        <View className="absolute inset-0 bg-black/50 items-center justify-center">
+          <View className="bg-white m-4 p-6 rounded-2xl w-[90%]">
+            <Text className="text-xl font-semibold mb-4">Select Withdrawal Method</Text>
+            
+            <TouchableOpacity
+              onPress={() => handleOptionSelect('cash')}
+              className="flex-row items-center p-4 border border-gray-200 rounded-xl mb-3"
+            >
+              <Ionicons name="cash-outline" size={24} color="#0066FF" className="mr-3" />
+              <Text className="text-lg">Cash Withdrawal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleOptionSelect('transfer')}
+              className="flex-row items-center p-4 border border-gray-200 rounded-xl mb-4"
+            >
+              <Ionicons name="card-outline" size={24} color="#0066FF" className="mr-3" />
+              <Text className="text-lg">Bank Transfer</Text>
+            </TouchableOpacity>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setShowOptions(false)}
+              className="bg-gray-100 p-4 rounded-xl"
+            >
+              <Text className="text-center text-gray-600 font-medium">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
+  );
+};
+
+export default WithdrawalTypeScreen; 

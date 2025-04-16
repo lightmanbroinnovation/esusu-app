@@ -1262,6 +1262,26 @@
       "verificationStatus": "pending",
       "verify_business": true,
       "transactions": []
+    },
+    {
+      "id": "i1xh",
+      "firstname": "Kenny",
+      "lastname": "Blessing ",
+      "email": "KennyB@gmail.com",
+      "phonenumber": "8144478662",
+      "pin": "2222",
+      "business": "KennyBee",
+      "address": "Ikeja ",
+      "city": "Ikeja ",
+      "state": "Lagos",
+      "gender": "Male",
+      "dob": "2007-04-16",
+      "bvn": "555555555",
+      "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744841713/user_documents/ffyc4bd2f2tr6ntsz9p4.webp",
+      "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744841713/user_documents/ffyc4bd2f2tr6ntsz9p4.webp",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": []
     }
   ],
   "contributors": [
@@ -1701,6 +1721,7 @@
       "lastName": "Bame",
       "phoneNumber": "08099665544",
       "ninNumber": "88866646646",
+      "balance": 2000,
       "language": "English",
       "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744655670/contributor_profiles/suf9vkcfxsmtwjnkwps7.webp",
       "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744655670/contributor_profiles/suf9vkcfxsmtwjnkwps7.webp",
@@ -1807,6 +1828,7 @@
       "agentId": "62f2",
       "firstName": "John",
       "lastName": "Doe",
+      "balance": 20000,
       "phoneNumber": "9035354623",
       "ninNumber": "555555555",
       "language": "Hausa",
@@ -1835,6 +1857,24 @@
       "startDate": "2025-04-16",
       "endDate": "2025-07-31",
       "durationValue": 1,
+      "status": "active"
+    },
+    {
+      "id": "10cc",
+      "agentName": "Kenny Blessing ",
+      "agentId": "i1xh",
+      "firstName": "Emma",
+      "lastName": "Jesuit",
+      "phoneNumber": "080123456789",
+      "ninNumber": "",
+      "language": "English",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744845088/contributor_profiles/or7ci2jcksci52xfrzbf.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744845088/contributor_profiles/or7ci2jcksci52xfrzbf.webp",
+      "depositAmount": "5000",
+      "frequency": "weekly",
+      "startDate": "2025-04-17",
+      "endDate": "2025-04-17",
+      "durationValue": 8,
       "status": "active"
     }
   ]

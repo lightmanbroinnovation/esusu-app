@@ -313,7 +313,7 @@ export const PhotoQualityCheck = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 p-6">
+      <View className="flex-1 p-6 mt-10">
         {/* Header with back button */}
         <TouchableOpacity 
           onPress={() => router.back()}

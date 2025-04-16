@@ -24,6 +24,7 @@ export interface Contributor {
   durationValue: number;
   photoUri: string;
   status?: string; // Added status field
+  balance?: string; // Added balance field
 }
 
 // Define a union type for frequency keys

@@ -24,7 +24,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
   };
 
   const handleWithdraw = () => {
-    router.push('/withdrawal');
+    router.push('../../withdrawal');
   };
 
   return (
@@ -41,6 +41,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
             <Text className="text-white text-xs opacity-70">Agent ID: {user.id}</Text>
           </View>
         </View>
+        
         <Ionicons
           className='border rounded-full p-1 border-white'
           name="notifications-outline"

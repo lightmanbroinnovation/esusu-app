@@ -34,7 +34,7 @@ const RecentActivity = ({ onVerifyNow, onViewAllActivity }: RecentActivityProps)
           </View>
 
           <View className="flex-1 pr-20">
-            <Text className="text-white text-xl font-bold mb-1">Complete Your KYB</Text>
+            <Text className="text-white text-xl font-bold mb-1">Complete Your Verification</Text>
             <Text className="text-white opacity-70 text-sm">
               Ensure you verify your business and identity. This ensures security and trust for all contributors.
             </Text>

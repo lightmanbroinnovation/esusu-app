@@ -17,12 +17,18 @@ export default function Success() {
 
   // Register user and fetch user data when component mounts
   useEffect(() => {
+    let isSubscribed = true; // For cleanup
+
     const registerAndGetUserData = async () => {
+      // Prevent multiple simultaneous calls
+      if (loading || registering) return;
+      
       try {
         console.log('===== SUCCESS SCREEN - REGISTRATION PROCESS =====');
         
         // Check if we need to register the user
         if (!params.registered && Object.keys(params).length > 0) {
+          if (!isSubscribed) return;
           setRegistering(true);
           
           // Parse verification data if it was passed as a string
@@ -62,14 +68,10 @@ export default function Success() {
             }
           };
           
-          console.log('Registering user with data:', JSON.stringify({
-            ...userRegistrationData,
-            idImage: userRegistrationData.idImage ? String(userRegistrationData.idImage).substring(0, 30) + "..." : "missing",
-            cacImage: userRegistrationData.cacImage ? String(userRegistrationData.cacImage).substring(0, 30) + "..." : "missing",
-          }, null, 2));
-          
           // Register the user
           const registeredUser = await registerUser(userRegistrationData);
+          if (!isSubscribed) return;
+          
           console.log('User registered successfully with ID:', registeredUser.id);
           
           // Set the user data
@@ -79,14 +81,20 @@ export default function Success() {
           await AsyncStorage.setItem('userId', registeredUser.id);
           
           // Start auto-login countdown
-          startAutoLogin();
-          setRegistering(false);
+          if (isSubscribed) {
+            startAutoLogin();
+            setRegistering(false);
+          }
         } else if (params.userId) {
           // If user is already registered, just fetch their data
+          if (!isSubscribed) return;
           setLoading(true);
+          
           console.log('User already registered with ID:', params.userId);
           const userId = params.userId as string;
           const fetchedUserData = await fetchUser(userId);
+          
+          if (!isSubscribed) return;
           setUserData(fetchedUserData);
           
           // Start auto-login countdown
@@ -94,7 +102,7 @@ export default function Success() {
         } else {
           console.warn('No user ID or registration data received, checking AsyncStorage');
           const storedUserId = await AsyncStorage.getItem('userId');
-          if (storedUserId) {
+          if (storedUserId && isSubscribed) {
             console.log('Found user ID in AsyncStorage:', storedUserId);
             setUserData({ id: storedUserId });
           } else {
@@ -103,20 +111,29 @@ export default function Success() {
         }
       } catch (error) {
         console.error('Error during registration or fetching user data:', error);
-        Alert.alert(
-          "Registration Error", 
-          "There was a problem completing your registration. Please try again.",
-          [{ text: "OK" }]
-        );
+        if (isSubscribed) {
+          Alert.alert(
+            "Registration Error", 
+            "There was a problem completing your registration. Please try again.",
+            [{ text: "OK" }]
+          );
+        }
       } finally {
-        setLoading(false);
-        setRegistering(false);
+        if (isSubscribed) {
+          setLoading(false);
+          setRegistering(false);
+        }
       }
       console.log('============================================');
     };
     
     registerAndGetUserData();
-  }, [params]);
+
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
+    };
+  }, []); // Empty dependency array since we only want this to run once on mount
 
   // Start auto-login countdown
   const startAutoLogin = () => {

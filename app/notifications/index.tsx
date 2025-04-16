@@ -29,7 +29,7 @@ export default function Notifications() {
     }
 
     return (
-        <ScrollView className="px-4 pt-10">
+        <ScrollView className="px-4 pt-10 bg-white">
             {/* Header */}
             <View className="flex-row items-center gap-[100px] mt-6">
                 <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>

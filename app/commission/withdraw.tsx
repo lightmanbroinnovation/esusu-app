@@ -353,66 +353,74 @@ const WithdrawScreen = () => {
               {/* Row 1 */}
               <View className="flex-row justify-around w-full my-4">
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
-                  onPress={() => handleButtonPress('1')}
+              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              onPress={() => handleButtonPress('1')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">1</Text>
+                  <Text className="text-xl font-medium text-blue-950">1</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('2')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">2</Text>
+                  <Text className="text-xl font-medium text-blue-950">2</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('3')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">3</Text>
+                  <Text className="text-xl font-medium text-blue-950">3</Text>
                 </TouchableOpacity>
               </View>
               
               {/* Row 2 */}
               <View className="flex-row justify-around w-full mb-6">
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('4')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">4</Text>
+                  <Text className="text-xl font-medium text-blue-950">4</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('5')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">5</Text>
+                  <Text className="text-xl font-medium text-blue-950">5</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('6')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">6</Text>
+                  <Text className="text-xl font-medium text-blue-950">6</Text>
                 </TouchableOpacity>
               </View>
               
               {/* Row 3 */}
               <View className="flex-row justify-around w-full mb-6">
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('7')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">7</Text>
+                  <Text className="text-xl font-medium text-blue-950">7</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('8')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">8</Text>
+                  <Text className="text-xl font-medium text-blue-950">8</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('9')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">9</Text>
+                  <Text className="text-xl font-medium text-blue-950">9</Text>
                 </TouchableOpacity>
               </View>
               
@@ -420,13 +428,15 @@ const WithdrawScreen = () => {
               <View className="flex-row justify-around w-full">
                 <View className="w-16 h-16" />
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={() => handleButtonPress('0')}
                 >
-                  <Text className="text-3xl font-medium text-blue-950">0</Text>
+                  <Text className="text-xl font-medium text-blue-950">0</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-16 h-16 items-center justify-center"
+                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+
                   onPress={handleBackspace}
                 >
                   <Ionicons name="backspace-outline" size={28} color="#374151" />

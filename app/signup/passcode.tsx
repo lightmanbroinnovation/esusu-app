@@ -8,21 +8,35 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 
+// Define interfaces for type safety
+interface RegistrationParams {
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  phone?: string;
+  idImage?: string;
+  cacImage?: string;
+  verification_data_string?: string;
+  bvn?: string;
+  [key: string]: string | undefined; // Index signature for dynamic access
+}
+
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
   const [confirmPin, setConfirmPin] = useState<string>(""); // State for the confirmed PIN
   const [isConfirming, setIsConfirming] = useState<boolean>(false); // State to toggle between "Enter PIN" and "Confirm PIN"
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams(); // Retrieve params from the previous page
+  const params = useLocalSearchParams();
+  const registrationParams = params as unknown as RegistrationParams;
 
   // Log params when component mounts
   useEffect(() => {
     console.log('===== PASSCODE SCREEN - RECEIVED DATA =====');
     console.log('Params received from document screen:', JSON.stringify({
-      ...params,
-      idImage: params.idImage ? String(params.idImage).substring(0, 30) + "..." : "missing",
-      cacImage: params.cacImage ? String(params.cacImage).substring(0, 30) + "..." : "missing",
+      ...registrationParams,
+      idImage: registrationParams.idImage ? String(registrationParams.idImage).substring(0, 30) + "..." : "missing",
+      cacImage: registrationParams.cacImage ? String(registrationParams.cacImage).substring(0, 30) + "..." : "missing",
     }, null, 2));
     console.log('==========================================');
   }, []);
@@ -119,8 +133,8 @@ export default function PasscodeScreen() {
     } else {
       if (confirmPin === pin) {
         // Make sure we have all the required data before proceeding
-        const passcodeData = {
-          ...params, // Include data from the previous page
+        const passcodeData: RegistrationParams & { pin: string } = {
+          ...registrationParams, // Include data from the previous page
           pin, // Add the confirmed PIN
         };
 
@@ -133,11 +147,13 @@ export default function PasscodeScreen() {
         }, null, 2));
         
         // Check if we have all the required fields for registration
-        const requiredFields = ['firstname', 'lastname', 'email', 'phone', 'pin', 'idImage', 'cacImage'];
+        const requiredFields = ['firstname', 'lastname', 'email', 'phone', 'pin'] as const;
         const missingFields = requiredFields.filter(field => !passcodeData[field]);
         
         if (missingFields.length > 0) {
           console.warn('Missing required fields:', missingFields);
+          alert(`Missing required fields: ${missingFields.join(', ')}`);
+          return;
         }
         
         console.log('==========================================');

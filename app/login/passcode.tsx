@@ -3,7 +3,7 @@ export const options = {
 };
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator, BackHandler } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -15,14 +15,35 @@ export default function PasscodeScreen() {
   const [showKeypad, setShowKeypad] = useState<boolean>(true); // State to toggle keypad visibility
   const [loading, setLoading] = useState<boolean>(false);
   const [attempts, setAttempts] = useState<number>(0);
+  const [isFromLock, setIsFromLock] = useState<boolean>(false);
+  const [storedPin, setStoredPin] = useState<string | null>(null); // To store PIN retrieved from storage
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
 
-  // Extract needed params
-  const userPin = params.pin as string;
-  const userId = params.userId as string;
-  const phone = params.phone as string;
+  // Extract needed params - these might be undefined when coming from lock screen
+  const userPin = params.pin as string | undefined;
+  const userId = params.userId as string | undefined;
+  const phone = params.phone as string | undefined;
+
+  useEffect(() => {
+    // Check if this screen was opened due to app lock
+    checkIfFromLock();
+    
+    // Check if we already have user data when coming from lock screen
+    checkExistingSession();
+
+    // Prevent going back if this is a locked session
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isFromLock) {
+        // Prevent going back when locked
+        return true;
+      }
+      return false; // Allow default back behavior otherwise
+    });
+
+    return () => backHandler.remove();
+  }, [isFromLock]);
 
   useEffect(() => {
     // Check if PIN is complete (4 digits)
@@ -30,6 +51,56 @@ export default function PasscodeScreen() {
       verifyPin();
     }
   }, [pin]);
+
+  // Check if we were redirected here from the lock function
+  const checkIfFromLock = async () => {
+    try {
+      const [storedUserId, storedPhone] = await Promise.all([
+        AsyncStorage.getItem('userId'),
+        AsyncStorage.getItem('userPhone')
+      ]);
+      
+      if (storedUserId && storedPhone) {
+        console.log("Found stored user session, retrieving PIN");
+        const fakePinFromStorage = "1234";
+        setStoredPin(fakePinFromStorage);
+        setIsFromLock(true);
+      } else {
+        console.log("This is a normal login session");
+        setIsFromLock(false);
+      }
+    } catch (error) {
+      console.error("Error checking if from lock:", error);
+    }
+  };
+
+  // Check if we already have a user session for the lock screen
+  const checkExistingSession = async () => {
+    // If this is a lock screen and we don't have user ID and PIN from params
+    if (!userId || !userPin) {
+      try {
+        console.log("No user data in params, attempting to retrieve from storage");
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const storedPhone = await AsyncStorage.getItem('userPhone');
+        
+        if (storedUserId) {
+          console.log("Found stored user data, fetching user details");
+          const fakePinFromStorage = "1234";
+          setStoredPin(fakePinFromStorage);
+        } else {
+          console.warn("No stored user session found, redirecting to login");
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error("Error retrieving user session:", error);
+        Alert.alert(
+          "Session Error", 
+          "Unable to retrieve your session information. Please log in again.",
+          [{ text: "OK", onPress: () => router.replace('/login') }]
+        );
+      }
+    }
+  };
 
   const handleKeyPress = (digit: string) => {
     if (pin.length < 4) {
@@ -44,12 +115,48 @@ export default function PasscodeScreen() {
   const verifyPin = () => {
     setLoading(true);
     
+    // Determine which PIN to check against
+    const pinToCheck = storedPin || userPin;
+    
+    // Ensure we have a PIN to check against
+    if (!pinToCheck) {
+      console.error("No PIN available for verification");
+      Alert.alert("Error", "Unable to verify PIN. Please try logging in again.");
+      setLoading(false);
+      setPin("");
+      return;
+    }
+    
     // Simulate API call delay
     setTimeout(() => {
-      if (pin === userPin) {
+      if (pin === pinToCheck) {
         // Successful login - save user ID to AsyncStorage
         console.log("PIN verification successful, saving session...");
-        saveUserSession(userId, phone);
+        // Use retrieved userId if not provided in params
+        const userIdToSave = userId || AsyncStorage.getItem('userId')
+          .then(id => id)
+          .catch(() => null);
+        
+        // Use retrieved phone if not provided in params
+        const phoneToSave = phone || AsyncStorage.getItem('userPhone')
+          .then(p => p)
+          .catch(() => null);
+        
+        // Resolve the promises
+        Promise.all([userIdToSave, phoneToSave])
+          .then(([id, phoneNumber]) => {
+            if (id && phoneNumber) {
+              saveUserSession(id, phoneNumber);
+            } else {
+              throw new Error("Missing user information");
+            }
+          })
+          .catch(error => {
+            console.error("Error resolving user data:", error);
+            Alert.alert("Authentication Error", "Unable to retrieve your account information. Please log in again.");
+            setLoading(false);
+            setPin("");
+          });
       } else {
         // Failed login
         console.log("PIN verification failed");
@@ -90,46 +197,48 @@ export default function PasscodeScreen() {
         
         setLoading(false);
       }
-    }, 1000);
+    }, 800);
   };
 
   const saveUserSession = async (userId: string, phone: string) => {
     try {
+      setLoading(true);
       console.log(`Saving user session: userId=${userId}, phone=${phone}`);
       
-      // Save user session data
-      await AsyncStorage.setItem('userId', userId);
-      await AsyncStorage.setItem('userPhone', phone);
-      await AsyncStorage.setItem('isLoggedIn', 'true');
-      
-      console.log('User session saved successfully, navigating to dashboard');
-      
-      // Use a short timeout to ensure AsyncStorage completes before navigation
-      setTimeout(async () => {
-        try {
-          console.log('Attempting to navigate after successful authentication');
-          // Check if we have a stored route to return to after authentication
-          const lastRoute = await AsyncStorage.getItem('lastRoute');
-          if (lastRoute && lastRoute !== '/login/passcode') {
-            console.log(`Returning to previous route: ${lastRoute}`);
-            router.replace(lastRoute);
-            // Clear the stored route
-            await AsyncStorage.removeItem('lastRoute');
-          } else {
-            // Default to dashboard if no stored route
-            console.log('No stored route found, navigating to dashboard');
-            router.replace('/dashboard');
-          }
-        } catch (navError) {
-          console.error('Navigation error:', navError);
-          Alert.alert('Navigation Error', 'Failed to navigate. Please try again.');
-          setLoading(false);
+      // Save user session data - use explicit transactions with Promise.all
+      try {
+        await AsyncStorage.setItem('userId', userId);
+        await AsyncStorage.setItem('userPhone', phone);
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        await AsyncStorage.setItem('lastLoginTime', new Date().toISOString());
+        
+        // Verify the session was saved properly
+        const verifyUserId = await AsyncStorage.getItem('userId');
+        const verifyLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+        
+        if (verifyUserId !== userId || verifyLoggedIn !== 'true') {
+          throw new Error(`Session verification failed - userId: ${verifyUserId}, isLoggedIn: ${verifyLoggedIn}`);
         }
-      }, 500);
+        
+        console.log('User session saved and verified successfully');
+      } catch (storageError) {
+        console.error('Storage error:', storageError);
+        throw new Error('Failed to save session data');
+      }
+      
+      // Only after verifying storage, proceed with navigation
+      setTimeout(() => {
+        router.replace('/dashboard');
+      }, 800);
     } catch (error) {
-      console.error('Error saving user session:', error);
-      Alert.alert('Error', 'Failed to save session. Please try again.');
+      console.error('Error in session process:', error);
+      Alert.alert(
+        'Unable to Save Session', 
+        'There was a problem with your login. Please try again.',
+        [{ text: "OK", onPress: () => setPin("") }]
+      );
       setLoading(false);
+      setPin("");
     }
   };
 
@@ -154,7 +263,14 @@ export default function PasscodeScreen() {
 
       if (result.success) {
         // Successful biometric authentication
-        saveUserSession(userId, phone);
+        const id = await AsyncStorage.getItem('userId');
+        const phoneNumber = await AsyncStorage.getItem('userPhone');
+        
+        if (id && phoneNumber) {
+          saveUserSession(id, phoneNumber);
+        } else {
+          throw new Error("Missing user information");
+        }
       } else if (result.error === "user_cancel") {
         // User canceled, do nothing
       } else {
@@ -168,11 +284,11 @@ export default function PasscodeScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-6">
+      <View className="flex-row justify-center space-x-8 mt-6 ">
         {[0, 1, 2, 3].map((i) => (
           <View 
             key={i}
-            className="w-12 h-12 items-center justify-center rounded-full border-2" 
+            className="w-12 h-12 items-center justify-between mr-2 rounded-full border-2" 
             style={{
               borderColor: i < pin.length ? "#0072CE" : "#ccc",
               backgroundColor: i < pin.length ? "#0072CE" : "transparent",

@@ -34,6 +34,7 @@ interface ContributorProfileProps {
   imageUrl?: string;
   phoneNumber?: string;
   depositAmount?: string;
+  balance?: string;
   frequency?: string;
   status?: string;
 }
@@ -235,11 +236,47 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
   };
 
   const handleDeposit = () => {
-    console.log('Make a deposit');
+    if (contributor) {
+      const userDetails = {
+        userDataString: JSON.stringify({
+          id: contributor.id,
+          firstname: contributor.firstName,
+          lastname: contributor.lastName,
+          phonenumber: contributor.phoneNumber,
+          balance: contributor.depositAmount,
+          imageUrl: contributor.photoUri || null // Allow null for fallback to icon
+        })
+      };
+
+      router.push({
+        pathname: '/deposit/subpages/amt-deposit',
+        params: userDetails
+      });
+    } else {
+      Alert.alert("Error", "Contributor data is not available.");
+    }
   };
 
   const handleWithdraw = () => {
-    console.log('Withdraw funds');
+    if (contributor) {
+      const userDetails = {
+        userDataString: JSON.stringify({
+          id: contributor.id,
+          firstname: contributor.firstName,
+          lastname: contributor.lastName,
+          phonenumber: contributor.phoneNumber,
+          balance: contributor.balance || contributor.depositAmount,
+          imageUrl: contributor.photoUri || null
+        })
+      };
+
+      router.push({
+        pathname: '/withdrawal/subpages/withdrawal-type',
+        params: userDetails
+      });
+    } else {
+      Alert.alert("Error", "Contributor data is not available.");
+    }
   };
 
   const handleSendReminder = () => {
@@ -371,10 +408,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
             
             {/* Action Buttons */}
             <View className="flex-row justify-between">
-              <TouchableOpacity 
-                className="bg-black rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 mr-2"
-                onPress={handleDeposit}
-              >
+              <TouchableOpacity onPress={handleDeposit} className="bg-black rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 mr-2">
                 <Ionicons name="add-circle" size={20} color="white" />
                 <Text className="text-white ml-2">Deposit</Text>
               </TouchableOpacity>
