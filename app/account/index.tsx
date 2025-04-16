@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 
-import { fetchUser } from '@/services/api';
+import { fetchUser, updateUser } from '@/services/api';
+import { uploadUserDocument } from '../utils/documentUtils';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 
 interface UserDetails {
@@ -23,17 +26,18 @@ interface UserDetails {
     idImage: string;
     cacImage: string;
     isVerified: boolean;
+    gender?: string;
+    dob?: string;
+    userImg?: string;
 }
 
-// Mock data as fallback
-
-
-export default function MyAccount() {
+function MyAccount() {
     const [dob, setDob] = useState<Date | undefined>();
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [gender, setGender] = useState<string | undefined>(undefined);
     const [showGenderPicker, setShowGenderPicker] = useState<boolean>(false);
     const [address, setAddress] = useState('');
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const router = useRouter();
 
@@ -46,19 +50,33 @@ export default function MyAccount() {
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     
-    const id = "62f2"; // Using the same ID as in other screens
-
+    // Fetch user ID from AsyncStorage instead of hardcoding
     const fetchUserDetails = async () => {
         setLoading(true);
         setError(null);
         try {
-            console.log("Fetching user with ID:", id);
-            const data = await fetchUser(id);
+            // Get user ID from AsyncStorage
+            const userId = await AsyncStorage.getItem('userId');
+            if (!userId) {
+                throw new Error("User ID not found in storage");
+            }
+            
+            console.log("Fetching user with ID:", userId);
+            const data = await fetchUser(userId);
             console.log("Fetched user data:", data);
             
             if (data) {
                 setUserDetails(data);
                 setAddress(data.address || '');
+                
+                // Set gender and dob from user data if available
+                if (data.gender) {
+                    setGender(data.gender);
+                }
+                
+                if (data.dob) {
+                    setDob(new Date(data.dob));
+                }
             } else {
                 throw new Error("No data returned from API");
             }
@@ -74,7 +92,7 @@ export default function MyAccount() {
 
     useEffect(() => {
         fetchUserDetails();
-    }, [id, retryCount]);
+    }, [retryCount]);
 
     const handleRetry = () => {
         setRetryCount(prev => prev + 1);
@@ -88,6 +106,82 @@ export default function MyAccount() {
         } else {
             setShowDatePicker(false);
         }
+    };
+    
+    // Handle image upload
+    const handleImageUpload = async () => {
+        try {
+            // Request permissions
+            if (Platform.OS !== 'web') {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== 'granted') {
+                    Alert.alert('Permission needed', 'We need access to your media library to upload photos');
+                    return;
+                }
+            }
+            
+            // Launch image picker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+            
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const selectedImage = result.assets[0];
+                
+                // Upload to Cloudinary
+                setUploadingImage(true);
+                
+                try {
+                    if (!userDetails?.id) {
+                        throw new Error("User ID not available");
+                    }
+                    
+                    console.log("Uploading profile image to Cloudinary...");
+                    const cloudinaryUrl = await uploadUserDocument(
+                        selectedImage.uri, 
+                        'profile_image', 
+                        userDetails.id
+                    );
+                    
+                    if (cloudinaryUrl) {
+                        // Update user data with new image URL
+                        const updatedUser = await updateUser(userDetails.id, {
+                            ...userDetails,
+                            userImg: cloudinaryUrl
+                        });
+                        
+                        // Update local state
+                        setUserDetails({
+                            ...userDetails,
+                            userImg: cloudinaryUrl
+                        });
+                        
+                        Alert.alert("Success", "Profile photo updated successfully");
+                    }
+                } catch (error) {
+                    console.error("Error uploading image:", error);
+                    Alert.alert("Upload Failed", "There was a problem uploading your image. Please try again.");
+                } finally {
+                    setUploadingImage(false);
+                }
+            }
+        } catch (error) {
+            console.error("Error picking image:", error);
+            Alert.alert("Error", "There was a problem selecting your image.");
+        }
+    };
+    
+    // Since all fields are read-only, we only show the user profile
+    // We don't need a save button functionality
+    const handleSaveProfile = () => {
+        Alert.alert(
+            "View Only Mode", 
+            "Profile information can only be viewed, not edited.",
+            [{ text: "OK" }]
+        );
     };
 
     return (
@@ -125,11 +219,24 @@ export default function MyAccount() {
                     {/* Avatar */}
                     <View className="items-center mt-8 mb-6">
                         <View className="relative">
-                            <Image
-                                source={require('../assets/images/user.png')}
-                                className="w-28 h-28 rounded-full"
-                            />
-                            <TouchableOpacity className="absolute bottom-0 right-0 bg-[#928FFF] rounded-full p-1">
+                            {uploadingImage ? (
+                                <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center">
+                                    <ActivityIndicator size="large" color="#0052CC" />
+                                </View>
+                            ) : (
+                                <Image
+                                    source={userDetails?.userImg 
+                                        ? { uri: userDetails.userImg } 
+                                        : require('../assets/images/user.png')}
+                                    className="w-28 h-28 rounded-full"
+                                    style={{ width: 112, height: 112, borderRadius: 56 }}
+                                />
+                            )}
+                            <TouchableOpacity 
+                                className="absolute bottom-0 right-0 bg-[#928FFF] rounded-full p-1"
+                                onPress={handleImageUpload}
+                                disabled={uploadingImage}
+                            >
                                 <Ionicons name="camera" size={18} color="white" />
                             </TouchableOpacity>
                         </View>
@@ -206,14 +313,14 @@ export default function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={dob ? dob.toLocaleDateString() : ''}
+                                    value={dob ? dob.toLocaleDateString() : userDetails?.dob || ''}
                                     editable={false}
-                                    placeholder="Select Date of Birth"
+                                    placeholder="Date of Birth"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-                                    <Image source={require('../assets/images/calendar.png')} />
-                                </TouchableOpacity>
+                                <Image
+                                    source={require('../assets/images/lock.png')}
+                                />
                             </View>
 
                             {showDatePicker && (
@@ -232,14 +339,14 @@ export default function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={gender || ''} 
+                                    value={gender || userDetails?.gender || ''} 
                                     editable={false}
-                                    placeholder="Select Gender"
+                                    placeholder="Gender"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <TouchableOpacity onPress={() => setShowGenderPicker(true)}>
-                                    <Image source={require('../assets/images/arrow-down.png')} />
-                                </TouchableOpacity>
+                                <Image
+                                    source={require('../assets/images/lock.png')}
+                                />
                             </View>
 
                             {showGenderPicker && (
@@ -277,12 +384,22 @@ export default function MyAccount() {
                     </View>
 
                     {/* Save Button */}
-                    <TouchableOpacity className="bg-blue-600 mx-4 mt-8 mb-10 py-3 rounded-md items-center">
-                        <Text className="text-white font-semibold">Save</Text>
+                    <TouchableOpacity 
+                        className="bg-blue-600 mx-4 mt-8 mb-10 py-3 rounded-md items-center"
+                        onPress={handleSaveProfile}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator size="small" color="white" />
+                        ) : (
+                            <Text className="text-white font-semibold">Back to Dashboard</Text>
+                        )}
                     </TouchableOpacity>
                 </>
             )}
         </ScrollView>
     );
 }
+
+export default MyAccount;
 

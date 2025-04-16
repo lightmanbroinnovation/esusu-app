@@ -12,10 +12,10 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const WithdrawalSuccessScreen = () => {
+const DepositSuccessScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [withdrawAmount, setWithdrawAmount] = useState<string>('0');
+  const [depositAmount, setDepositAmount] = useState<string>('0');
   const [transactionDate, setTransactionDate] = useState<string>('');
   
   useEffect(() => {
@@ -24,7 +24,7 @@ const WithdrawalSuccessScreen = () => {
         // Get withdrawal amount from AsyncStorage
         const amount = await AsyncStorage.getItem('withdrawAmount');
         if (amount) {
-          setWithdrawAmount(amount);
+          setDepositAmount(amount);
           // Clear the stored amount after retrieving
           await AsyncStorage.removeItem('withdrawAmount');
         }
@@ -83,16 +83,16 @@ const WithdrawalSuccessScreen = () => {
       </View>
       
       {/* Success Text */}
-      <Text style={styles.title}>Withdrawal Successful!</Text>
+      <Text style={styles.title}>Deposit Successful!</Text>
       <Text style={styles.subtitle}>
-        Your commission has been sent to your bank account.
+      ₦{Number(depositAmount).toLocaleString()} has been successfully withdrawn for [Contributor’s Name]. The contributor has been notified.
       </Text>
       
       {/* Transaction Details */}
       <View style={styles.detailsCard}>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Amount:</Text>
-          <Text style={styles.detailValue}>₦{Number(withdrawAmount).toLocaleString()}</Text>
+          <Text style={styles.detailValue}>₦{Number(depositAmount).toLocaleString()}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.detailRow}>
@@ -110,17 +110,11 @@ const WithdrawalSuccessScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.primaryButton}
-          onPress={handleGoToCommission}
-        >
-          <Text style={styles.primaryButtonText}>Commission Dashboard</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.secondaryButton}
           onPress={handleGoHome}
         >
-          <Text style={styles.secondaryButtonText}>Go to Home</Text>
+          <Text style={styles.primaryButtonText}>Go To Dashboard</Text>
         </TouchableOpacity>
+        
       </View>
     </View>
   );
@@ -259,4 +253,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WithdrawalSuccessScreen; 
+export default DepositSuccessScreen; 

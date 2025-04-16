@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Contributor } from './ContributorsScreen';
 import { fetchContributors } from '../../services/api';
 import StatusBarAdapter from '../components/StatusBarAdapter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const ContributorListScreen = () => {
@@ -12,6 +13,7 @@ const ContributorListScreen = () => {
   const params = useLocalSearchParams();
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   
   // Extract duration and contributorIds from params
   const duration = params.duration as string || "Unknown";
@@ -30,10 +32,38 @@ const ContributorListScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch user ID from AsyncStorage
   useEffect(() => {
+    const getUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (!storedUserId) {
+          console.error('User ID not found in AsyncStorage');
+          setError('User ID not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
+        setUserId(storedUserId);
+        console.log('Retrieved user ID from storage:', storedUserId);
+      } catch (error) {
+        console.error('Error retrieving user ID:', error);
+        setError('Failed to retrieve user ID');
+        setLoading(false);
+      }
+    };
+    
+    getUserId();
+  }, []);
+
+  // Fetch contributors when user ID is available
+  useEffect(() => {
+    if (!userId) return;
+    
     const getContributors = async () => {
       try {
-        const allContributors = await fetchContributors("62f2");
+        console.log('Fetching contributors for agent ID:', userId);
+        const allContributors = await fetchContributors(userId);
         
         // Filter contributors based on their IDs
         const filteredContributors = allContributors.filter((contributor: Contributor) => 
@@ -41,6 +71,7 @@ const ContributorListScreen = () => {
         );
         
         setContributors(filteredContributors);
+        setError(null);
       } catch (err) {
         console.error("Error fetching contributors:", err);
         setError("Failed to load contributors.");
@@ -50,7 +81,33 @@ const ContributorListScreen = () => {
     };
 
     getContributors();
-  }, [contributorIds]);
+  }, [userId, contributorIds]);
+
+  // Handle retry button press
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    
+    // Try to fetch the user ID again
+    const getUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (!storedUserId) {
+          setError('User ID not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
+        setUserId(storedUserId);
+      } catch (error) {
+        console.error('Error retrieving user ID:', error);
+        setError('Failed to retrieve user ID. Please try again.');
+        setLoading(false);
+      }
+    };
+    
+    getUserId();
+  };
 
   // Helper function to get status color based on contributor status
   const getStatusColor = (status: string) => {
@@ -67,11 +124,29 @@ const ContributorListScreen = () => {
   };
 
   // Add this function to handle contributor selection
-  const handleContributorPress = (contributor: Contributor) => {
-    router.push({
-      pathname: '/contributor/profile',
-      params: { contributorId: contributor.id }
-    });
+  const handleContributorPress = async (contributor: Contributor) => {
+    try {
+      // Store complete contributor data in AsyncStorage for profile page to access
+      await AsyncStorage.setItem('selectedContributor', JSON.stringify(contributor));
+      
+      // Navigate to profile with more complete data
+      router.push({
+        pathname: '/contributor/profile',
+        params: { 
+          contributorId: contributor.id,
+          firstName: contributor.firstName,
+          lastName: contributor.lastName,
+          phoneNumber: contributor.phoneNumber || '',
+          depositAmount: contributor.depositAmount?.toString() || '',
+          frequency: contributor.frequency || '',
+          photoUri: contributor.photoUri || '',
+          status: contributor.status || 'active'
+        }
+      });
+    } catch (error) {
+      console.error('Error navigating to profile:', error);
+      Alert.alert('Error', 'Could not open contributor profile');
+    }
   };
   
   // Filter contributors based on search query
@@ -117,9 +192,20 @@ const ContributorListScreen = () => {
 
       {/* Contributors list */}
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" className="mt-4" />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#0052CC" />
+          <Text className="mt-4 text-gray-600">Loading contributors...</Text>
+        </View>
       ) : error ? (
-        <Text className="text-red-500 text-center mt-4">{error}</Text>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-red-500 text-center mb-4">{error}</Text>
+          <TouchableOpacity 
+            onPress={handleRetry}
+            className="bg-blue-600 px-6 py-2 rounded-md"
+          >
+            <Text className="text-white font-semibold">Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <ScrollView className="p-4">
           {filteredContributors.length > 0 ? (

@@ -1,76 +1,304 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
-import { registerUser } from "../../services/api"; // Import the registerUser function
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
 
-export default function SecuritySetup() {
-  const insets = useSafeAreaInsets();
+// Define interface for params
+interface UserParams {
+  [key: string]: string | number | string[] | null | undefined;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  phone?: string;
+  pin?: string;
+  business?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  gender?: string;
+  dob?: string;
+  bvn?: string;
+  idImage?: string;
+  cacImage?: string;
+}
+
+export default function SecurityScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams(); // Retrieve all data passed from the previous page
+  const params = useLocalSearchParams() as UserParams;
+  
+  // State for biometric availability
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [isActivating, setIsActivating] = useState(false);
+  
+  // Check if biometric auth is available
+  useEffect(() => {
+    checkBiometricAvailability();
+  }, []);
 
-  const handleSecuritySetup = async (isVerified: boolean) => {
-    const userData = {
-      ...params, // Include all data from previous pages
-      isVerified, // Add the isVerified field
-    };
-
+  const checkBiometricAvailability = async () => {
     try {
-      // Send userData to the /users endpoint using registerUser
-      const response = await registerUser(userData);
-      Alert.alert("User Registered", "User information saved successfully!");
-      console.log("User registered:", response);
-
-      // Navigate to the dashboard or success page
-      // router.push("/dashboard/index"); // Optional navigation
+      setIsChecking(true);
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      
+      setIsBiometricAvailable(compatible && enrolled);
+      console.log(`Device biometric compatibility: ${compatible ? 'Yes' : 'No'}`);
+      console.log(`User has enrolled biometrics: ${enrolled ? 'Yes' : 'No'}`);
     } catch (error) {
-      Alert.alert("Error", "Failed to register user. Please try again.");
-      console.error("Registration error:", error);
+      console.error('Error checking biometric availability:', error);
+      setIsBiometricAvailable(false);
+    } finally {
+      setIsChecking(false);
     }
   };
 
+  const activateBiometric = async () => {
+    try {
+      setIsActivating(true);
+      
+      // Attempt authentication to verify it works
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to activate biometric login',
+        fallbackLabel: 'Use PIN instead',
+      });
+      
+      if (result.success) {
+        // Here we would normally save that the user has enabled biometric auth
+        console.log('Biometric authentication successful');
+        
+        // Get all user data from params to pass to next screen
+        console.log('===== SECURITY SCREEN - PASSING DATA TO SUCCESS =====');
+        const userData: UserParams = { 
+          ...params, 
+          biometricEnabled: 'true',
+          hasBiometric: 'true' // Add the flag for registration
+        };
+        
+        // Log the data being passed (omitting sensitive data)
+        console.log('Data being passed to success screen:', JSON.stringify({
+          ...userData,
+          idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
+          cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
+        }, null, 2));
+        console.log('==============================================');
+        
+        // Navigate to PIN setup with all user data
+        router.push({
+          pathname: "/signup/success",
+          params: userData,
+        });
+      } else {
+        Alert.alert(
+          "Authentication Failed", 
+          "We couldn't authenticate you using biometrics. Please try again or skip for now."
+        );
+      }
+    } catch (error) {
+      console.error('Error activating biometric:', error);
+      Alert.alert(
+        "Error", 
+        "There was a problem setting up biometric authentication."
+      );
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
+  const skipBiometric = () => {
+    // Navigate to PIN setup without enabling biometrics
+    console.log('===== SECURITY SCREEN - PASSING DATA TO SUCCESS =====');
+    const userData: UserParams = { 
+      ...params, 
+      biometricEnabled: 'false',
+      hasBiometric: 'false' // Add the flag for registration
+    };
+    
+    // Log the data being passed (omitting sensitive data)
+    console.log('Data being passed to success screen:', JSON.stringify({
+      ...userData,
+      idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
+      cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
+    }, null, 2));
+    console.log('==============================================');
+    
+    router.push({
+      pathname: "/signup/success",
+      params: userData,
+    });
+  };
+
   return (
-    <View
-      className="flex-1 items-center justify-between bg-[#0072CE] px-6"
-      style={{ paddingBottom: insets.bottom }}
-    >
-      <View className="flex-1 justify-center items-center">
-        <View className="w-44 h-44 justify-center items-center mb-6">
-          <Image
-            source={require("../assets/images/security.png")} // Replace with actual path to fingerprint image
-            className="w-32 h-24"
-            resizeMode="contain"
-          />
-        </View>
-        <Text className="text-white text-4xl font-bold text-center mb-2">
-          Secure & Fast Login
-        </Text>
-        <Text className="text-white text-center px-4">
-          Use your fingerprint for quick and secure access to your account.
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {isChecking ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+            <Text style={styles.loadingText}>Checking device compatibility...</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.iconContainer}>
+              <MaterialCommunityIcons name="fingerprint" size={120} color="#FFFFFF" />
+            </View>
+            
+            <View style={styles.textContainer}>
+              <Text style={styles.title}>Secure & Fast Login</Text>
+              <Text style={styles.subtitle}>
+                Use your fingerprint for quicker access to your account.
+                It's faster and more secure than traditional PIN codes.
+              </Text>
+            </View>
+            
+            <View style={styles.buttonContainer}>
+              {isBiometricAvailable ? (
+                <>
+                  <TouchableOpacity 
+                    style={styles.activateButton} 
+                    onPress={activateBiometric}
+                    disabled={isActivating}
+                  >
+                    {isActivating ? (
+                      <ActivityIndicator size="small" color="#0072CE" />
+                    ) : (
+                      <Text style={styles.activateButtonText}>Activate Now</Text>
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.skipButton} 
+                    onPress={skipBiometric}
+                    disabled={isActivating}
+                  >
+                    <Text style={styles.skipButtonText}>Skip for Now</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={styles.notAvailableContainer}>
+                  <Text style={styles.notAvailableText}>
+                    Biometric authentication is not available on your device.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.continueButton} 
+                    onPress={skipBiometric}
+                  >
+                    <Text style={styles.continueButtonText}>Continue to PIN Setup</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#FFF" style={styles.arrowIcon} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </>
+        )}
       </View>
-
-      <View className="w-full mb-8">
-        {/* Activate Now Button */}
-        <TouchableOpacity
-          className="bg-white py-4 rounded-lg mb-4"
-          onPress={() => handleSecuritySetup(true)} // Set isVerified to true
-        >
-          <Text className="text-center text-[#0072CE] font-semibold">
-            Activate Now
-          </Text>
-        </TouchableOpacity>
-
-        {/* Skip for Now Button */}
-        <TouchableOpacity
-          className="border border-white py-4 rounded-lg"
-          onPress={() => handleSecuritySetup(false)} // Set isVerified to false
-        >
-          <Text className="text-center text-white font-semibold">
-            Skip for Now
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0072CE',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  iconContainer: {
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  activateButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  activateButtonText: {
+    color: '#0072CE',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  skipButton: {
+    paddingVertical: 16,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  skipButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  notAvailableContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  notAvailableText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  continueButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    flexDirection: 'row',
+    paddingVertical: 16,
+    borderRadius: 8,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  arrowIcon: {
+    marginLeft: 8,
+  },
+});

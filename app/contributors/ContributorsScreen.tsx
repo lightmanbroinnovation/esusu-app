@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, ScrollView, SafeAreaView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, ScrollView, SafeAreaView, Modal, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import Footer from '../components/Footer';
 import { fetchContributors } from '../../services/api';
 import StatusBarAdapter from '../components/StatusBarAdapter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define the Contributor type
 export interface Contributor {
@@ -32,24 +33,78 @@ const ContributorsScreen = () => {
   const router = useRouter();
   const [allContributors, setAllContributors] = useState<Contributor[]>([]); // Store all contributors
   const [loading, setLoading] = useState(true);
-  const agentId = "62f2";
+  const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [currentDuration, setCurrentDuration] = useState<string>('');
 
+  // Fetch user ID from AsyncStorage
   useEffect(() => {
+    const getUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (!storedUserId) {
+          console.error('User ID not found in AsyncStorage');
+          setError('User ID not found. Please log in again.');
+          return;
+        }
+        
+        setUserId(storedUserId);
+        console.log('Retrieved user ID from storage:', storedUserId);
+      } catch (error) {
+        console.error('Error retrieving user ID:', error);
+        setError('Failed to retrieve user ID');
+      }
+    };
+    
+    getUserId();
+  }, []);
+
+  // Fetch contributors when user ID is available
+  useEffect(() => {
+    if (!userId) return;
+    
     const getContributors = async () => {
       try {
-        const contributors = await fetchContributors(agentId); // Fetch contributors
+        console.log('Fetching contributors for agent ID:', userId);
+        const contributors = await fetchContributors(userId);
         setAllContributors(contributors);
+        setError(null);
       } catch (error) {
         console.error("Error fetching contributors:", error);
+        setError("Unable to load contributors. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     getContributors();
-  }, []);
+  }, [userId]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    
+    // Try to fetch the user ID again
+    const getUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (!storedUserId) {
+          setError('User ID not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
+        setUserId(storedUserId);
+      } catch (error) {
+        console.error('Error retrieving user ID:', error);
+        setError('Failed to retrieve user ID. Please try again.');
+        setLoading(false);
+      }
+    };
+    
+    getUserId();
+  };
 
   const navigateBack = () => {
     router.back();
@@ -143,7 +198,20 @@ const ContributorsScreen = () => {
           </View>
       
           {loading ? (
-            <Text>Loading contributors...</Text>
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color="#0052CC" />
+              <Text className="mt-4 text-gray-600">Loading contributors...</Text>
+            </View>
+          ) : error ? (
+            <View className="flex-1 items-center justify-center">
+              <Text className="text-red-500 text-center mb-4">{error}</Text>
+              <TouchableOpacity 
+                onPress={handleRetry}
+                className="bg-blue-600 px-6 py-2 rounded-md"
+              >
+                <Text className="text-white font-semibold">Retry</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <ScrollView 
               showsVerticalScrollIndicator={false}

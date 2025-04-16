@@ -36,6 +36,7 @@ export default function UserData() {
   const [dob, setDob] = useState(moment().subtract(18, 'years').toDate()); // Default to 18 years ago
   const [showCalendar, setShowCalendar] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
   
   // Available years (going back 100 years from minimum age)
   const availableYears = Array.from({length: 82}, (_, i) => minBirthYear - i).sort((a, b) => b - a);
@@ -81,6 +82,11 @@ export default function UserData() {
       gender,
       dob: moment(dob).format('YYYY-MM-DD'),
     };
+
+    // Log data being passed to the next screen
+    console.log('===== USER DATA SCREEN - PASSING DATA =====');
+    console.log('Data being passed to document screen:', JSON.stringify(userData, null, 2));
+    console.log('=============================================');
 
     // Navigate to the next page with the user data
     router.push({
@@ -286,16 +292,63 @@ export default function UserData() {
             {/* Gender Selection */}
             <View className="my-2">
               <Text className="text-[#4F4F4F] mb-2">Gender</Text>
-              <TextInput
-                value={gender}
-                onChangeText={setGender}
-                placeholder="Enter your gender"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
-              />
+              <TouchableOpacity 
+                onPress={() => setShowGenderPicker(true)}
+                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+              >
+                <Text>{gender || "Select your gender"}</Text>
+                <Ionicons name="chevron-down" size={24} color="#0072CE" />
+              </TouchableOpacity>
             </View>
+
+            {/* Gender Picker Modal */}
+            {showGenderPicker && (
+              <Modal
+                transparent={true}
+                visible={showGenderPicker}
+                animationType="slide"
+                onRequestClose={() => setShowGenderPicker(false)}
+              >
+                <View className="flex-1 justify-end bg-black bg-opacity-30">
+                  <View className="bg-white rounded-t-3xl p-4">
+                    <Text className="text-xl font-bold text-center mb-4">Select Gender</Text>
+                    <TouchableOpacity
+                      className="py-3 px-4 mb-1 rounded-lg"
+                      onPress={() => {
+                        setGender('Male');
+                        setShowGenderPicker(false);
+                      }}
+                    >
+                      <Text className="text-center text-lg">Male</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="py-3 px-4 mb-1 rounded-lg"
+                      onPress={() => {
+                        setGender('Female');
+                        setShowGenderPicker(false);
+                      }}
+                    >
+                      <Text className="text-center text-lg">Female</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      className="py-3 px-4 mb-1 rounded-lg"
+                      onPress={() => {
+                        setGender('Other');
+                        setShowGenderPicker(false);
+                      }}
+                    >
+                      <Text className="text-center text-lg">Other</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setShowGenderPicker(false)}
+                      className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                    >
+                      <Text className="text-white font-bold text-lg">Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+            )}
 
             {/* Date of Birth */}
             <View className="my-2">

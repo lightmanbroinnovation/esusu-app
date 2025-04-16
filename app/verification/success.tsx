@@ -79,7 +79,7 @@ const VerificationSuccess = () => {
   };
 
   const navigateToLogin = () => {
-    router.replace('/login');
+    router.replace('/dashboard');
   };
 
   return (

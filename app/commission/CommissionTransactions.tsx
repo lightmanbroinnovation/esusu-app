@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { fetchCommissions } from '../../services/api'; // Import the fetchCommissions function
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { fetchCommissions, fetchUser } from '../../services/api'; // Import the fetchUser function
 import TransactionFilter, { FilterOptions } from '../commission/TransactionFilter'; // Import the filter component
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for icons
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // Define the CommissionTransaction type
 interface CommissionTransaction {
   id: string;
@@ -20,22 +22,110 @@ const CommissionTransactions: React.FC = () => {
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({}); // State for active filters
   const [showFilter, setShowFilter] = useState(false); // State to control filter modal visibility
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
-  const userId = '62f2'; // Replace with the actual user ID
+  const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch user ID from AsyncStorage
   useEffect(() => {
-    const getCommissions = async () => {
+    const getUserId = async () => {
       try {
-        const commissions = await fetchCommissions(userId); // Fetch commissions
-        setTransactions(commissions); // Set the fetched commissions to state
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (!storedUserId) {
+          console.error('User ID not found in AsyncStorage');
+          setError('User ID not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
+        setUserId(storedUserId);
+        console.log('Retrieved user ID from storage:', storedUserId);
       } catch (error) {
-        console.error("Failed to fetch commissions:", error);
+        console.error('Error retrieving user ID:', error);
+        setError('Failed to retrieve user ID');
+        setLoading(false);
+      }
+    };
+    
+    getUserId();
+  }, []);
+
+  // Fetch user details and commissions when userId is available
+  useEffect(() => {
+    if (!userId) return;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch user details to get commissions
+        const userData = await fetchUser(userId);
+        
+        // Get commissions from user data or from dedicated API function
+        const commissions = userData.commissions || await fetchCommissions(userId);
+        setTransactions(commissions);
+        
+        console.log('User data and commissions fetched successfully');
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setError("Failed to load data. Please try again.");
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
       }
     };
 
-    getCommissions(); // Call the function to fetch commissions
+    fetchData();
   }, [userId]);
+
+  const handleRetry = () => {
+    if (userId) {
+      // Re-fetch data if userId is available
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Fetch user details
+          const userData = await fetchUser(userId);
+          
+          // Get commissions from user data or from dedicated API function
+          const commissions = userData.commissions || await fetchCommissions(userId);
+          setTransactions(commissions);
+          
+          console.log('User data and commissions fetched successfully');
+        } catch (error) {
+          console.error("Failed to fetch data:", error);
+          setError("Failed to load data. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    } else {
+      // Retry getting userId from AsyncStorage
+      const getUserId = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const storedUserId = await AsyncStorage.getItem('userId');
+          if (!storedUserId) {
+            setError('User ID not found. Please log in again.');
+            setLoading(false);
+            return;
+          }
+          
+          setUserId(storedUserId);
+        } catch (error) {
+          console.error('Error retrieving user ID:', error);
+          setError('Failed to retrieve user ID. Please try again.');
+          setLoading(false);
+        }
+      };
+      
+      getUserId();
+    }
+  };
 
   // Function to group commissions by date
   const groupCommissionsByDate = (transactions: CommissionTransaction[]) => {
@@ -128,7 +218,20 @@ const CommissionTransactions: React.FC = () => {
         />
         
         {loading ? (
-          <Text>Loading...</Text> // Display loading text while fetching
+          <View className="flex-1 items-center justify-center py-10">
+            <ActivityIndicator size="large" color="#0052CC" />
+            <Text className="mt-4 text-gray-600">Loading your commission data...</Text>
+          </View>
+        ) : error ? (
+          <View className="flex-1 items-center justify-center py-10">
+            <Text className="text-red-500 text-center mb-4">{error}</Text>
+            <TouchableOpacity 
+              onPress={handleRetry}
+              className="bg-blue-600 px-6 py-2 rounded-md"
+            >
+              <Text className="text-white font-semibold">Retry</Text>
+            </TouchableOpacity>
+          </View>
         ) : searchedTransactions.length === 0 ? (
           <View className="bg-white py-10 rounded-xl mt-2">
             <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>

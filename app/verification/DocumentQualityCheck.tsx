@@ -99,27 +99,70 @@ const DocumentQualityCheck = ({
       
       // Get user ID from AsyncStorage
       const userId = await AsyncStorage.getItem('userId');
-      console.log('DocumentQualityCheck - Retrieved userId from AsyncStorage:', userId);
-      
-      // If userId is not found, try to get it from userData
       if (!userId) {
-        console.log('No userId found, trying to extract from userData');
-        const userDataString = await AsyncStorage.getItem('userData');
-        if (userDataString) {
-          const userData = JSON.parse(userDataString);
-          if (userData.id) {
-            console.log('Found userId in userData:', userData.id);
-            // Use the id from userData
-            const url = await uploadWithUserId(userData.id);
-            setCloudinaryUrl(url);
-            setUploadStatus('success');
-            return;
-          }
-        }
         throw new Error('User ID not found. Please log in again.');
       }
       
-      const url = await uploadWithUserId(userId);
+      let url: string;
+      
+      // Upload based on document type
+      if (documentType === 'business_location') {
+        console.log("Uploading business location to Cloudinary...");
+        
+        // For business location photos, try to get location data
+        try {
+          // Get location directly if available
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          
+          let locationInfo = {};
+          
+          if (status === 'granted') {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High
+            });
+            
+            if (location && location.coords) {
+              locationInfo = {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                timestamp: new Date().getTime()
+              };
+              console.log("Retrieved current location data:", locationInfo);
+            }
+          } else {
+            console.log("Location permission not granted");
+          }
+          
+          url = await uploadBusinessLocationPhoto(
+            documentImage,
+            userId,
+            locationInfo
+          );
+        } catch (error) {
+          console.log("Error getting location data:", error);
+          // Upload without location data if there's an error
+          url = await uploadBusinessLocationPhoto(
+            documentImage,
+            userId,
+            {}
+          );
+        }
+      } else {
+        console.log(`Uploading ${documentType} to Cloudinary...`);
+        url = await uploadVerificationDocument(
+          documentImage,
+          documentType,
+          userId
+        );
+      }
+      
+      // Log the Cloudinary response
+      console.log(`CLOUDINARY RESPONSE - ${documentType === 'business_location' ? 'Business Location' : 'Government ID'}:`, JSON.stringify({
+        success: true,
+        url: url,
+        documentType: documentType
+      }));
+      
       setCloudinaryUrl(url);
       setUploadStatus('success');
     } catch (error) {
@@ -132,87 +175,6 @@ const DocumentQualityCheck = ({
         "There was a problem uploading your image. Please try again.",
         [{ text: "OK" }]
       );
-    }
-  };
-  
-  // Helper function to upload with userId
-  const uploadWithUserId = async (userId: string) => {
-    // Upload based on document type
-    if (documentType === 'business_location') {
-      console.log("Uploading business location to Cloudinary...");
-      
-      // For business location photos, try to get location data
-      try {
-        // Get location directly if available
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        
-        let locationInfo = {};
-        
-        if (status === 'granted') {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High
-          });
-          
-          if (location && location.coords) {
-            locationInfo = {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              timestamp: new Date().getTime()
-            };
-            console.log("Retrieved current location data:", locationInfo);
-          }
-        } else {
-          console.log("Location permission not granted");
-        }
-        
-        const url = await uploadBusinessLocationPhoto(
-          documentImage,
-          userId,
-          locationInfo
-        );
-        
-        // Log the Cloudinary response
-        console.log(`CLOUDINARY RESPONSE - Business Location:`, JSON.stringify({
-          success: true,
-          url: url,
-          documentType: documentType
-        }));
-        
-        return url;
-      } catch (error) {
-        console.log("Error getting location data:", error);
-        // Upload without location data if there's an error
-        const url = await uploadBusinessLocationPhoto(
-          documentImage,
-          userId,
-          {}
-        );
-        
-        // Log the Cloudinary response
-        console.log(`CLOUDINARY RESPONSE - Business Location (no location):`, JSON.stringify({
-          success: true,
-          url: url,
-          documentType: documentType
-        }));
-        
-        return url;
-      }
-    } else {
-      console.log(`Uploading ${documentType} to Cloudinary...`);
-      const url = await uploadVerificationDocument(
-        documentImage,
-        documentType,
-        userId
-      );
-      
-      // Log the Cloudinary response
-      console.log(`CLOUDINARY RESPONSE - ${documentType}:`, JSON.stringify({
-        success: true,
-        url: url,
-        documentType: documentType
-      }));
-      
-      return url;
     }
   };
   

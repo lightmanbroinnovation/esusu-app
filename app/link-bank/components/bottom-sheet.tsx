@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,13 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBank } from "../context/bank-context";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateUser } from "../../../services/api";
 
 interface Bank {
   id: string;
@@ -29,9 +33,19 @@ export default function BankBottomSheet({
   bank: Bank;
   onClose: () => void;
 }) {
-  const { removeBank, primaryBankId, setPrimary } = useBank();
+  const { banks, primaryBankId, refreshBanks } = useBank();
+  const [loading, setLoading] = useState(false);
+  const [isPrimary, setIsPrimary] = useState(bank.isPrimary || false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  // Get user ID from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem('userId').then(id => {
+      if (id) setUserId(id);
+    });
+  }, []);
 
   useEffect(() => {
     // Slide up when modal opens
@@ -52,6 +66,86 @@ export default function BankBottomSheet({
     });
   };
 
+  const handleSetPrimary = async (value: boolean) => {
+    if (!userId) {
+      Alert.alert("Error", "User not logged in");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      setIsPrimary(value);
+      
+      // Update all bank accounts to set primary status
+      const updatedBanks = banks.map(item => ({
+        ...item,
+        isPrimary: item.id === bank.id ? value : false
+      }));
+      
+      // Update user with new bank accounts
+      await updateUser(userId, { bankAccounts: updatedBanks });
+      
+      // Refresh the bank accounts list
+      await refreshBanks();
+      
+      if (value) {
+        Alert.alert("Success", "This account has been set as your primary account");
+      }
+    } catch (error) {
+      console.error("Error updating primary account:", error);
+      setIsPrimary(!value); // Revert switch if failed
+      Alert.alert("Error", "Failed to update account status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveBank = async () => {
+    if (!userId) {
+      Alert.alert("Error", "User not logged in");
+      return;
+    }
+
+    Alert.alert(
+      "Remove Bank Account",
+      "Are you sure you want to remove this bank account?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              // Filter out the bank to be removed
+              const updatedBanks = banks.filter(item => item.id !== bank.id);
+              
+              // If removing the primary account, set a new primary if available
+              if (bank.isPrimary && updatedBanks.length > 0) {
+                updatedBanks[0].isPrimary = true;
+              }
+              
+              // Update user with new bank accounts
+              await updateUser(userId, { bankAccounts: updatedBanks });
+              
+              // Refresh and close
+              await refreshBanks();
+              handleClose();
+            } catch (error) {
+              console.error("Error removing bank account:", error);
+              Alert.alert("Error", "Failed to remove bank account");
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <Modal visible={true} transparent animationType="none" onRequestClose={handleClose}>
       {/* Overlay */}
@@ -60,6 +154,7 @@ export default function BankBottomSheet({
         <TouchableOpacity
           onPress={handleClose}
           className="absolute top-10 right-5 z-20"
+          disabled={loading}
         >
           <Ionicons name="close" size={28} color="white" />
         </TouchableOpacity>
@@ -71,41 +166,54 @@ export default function BankBottomSheet({
           }}
           className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6"
         >
-          <View className="mb-4 flex flex-col gap-4 py-4">
-            <Text className="capitalize text-[#52515E] text-[14px]">bank name</Text>
-            <Text className="text-[18px] font-semibold capitalize">{bank.bankName}</Text>
+          {loading && (
+            <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/10 z-10 justify-center items-center rounded-t-[32px]">
+              <ActivityIndicator size="large" color="#0074FF" />
+            </View>
+          )}
+          
+          <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
+          
+          <View className="mb-4 py-4">
+            <Text className="text-gray-500 text-sm">Bank Name</Text>
+            <Text className="text-lg font-semibold mt-2">{bank.bankName}</Text>
           </View>
 
           <View className="h-[1px] w-full bg-gray-200"></View>
 
-
-          <View className="mb-4 flex flex-col gap-4 py-4">
-            <Text className="capitalize text-[#52515E] text-[14px]">account number</Text>
-            <Text className="text-[18px] font-semibold capitalize">{bank.accountNumber}</Text>
+          <View className="mb-4 py-4">
+            <Text className="text-gray-500 text-sm">Account Number</Text>
+            <Text className="text-lg font-semibold mt-2">{bank.accountNumber}</Text>
+          </View>
+          
+          <View className="h-[1px] w-full bg-gray-200"></View>
+          
+          <View className="mb-4 py-4">
+            <Text className="text-gray-500 text-sm">Account Name</Text>
+            <Text className="text-lg font-semibold mt-2">{bank.accountName}</Text>
           </View>
 
           <View className="h-[1px] w-full bg-gray-200"></View>
 
-          <View className="flex-row justify-between items-start mb-16 py-6">
-            <View className="flex flex-col gap-4">
-              <Text className="text-[#15141F] text-[14px] font-medium">Set as Primary Account</Text>
-              <Text className="text-[#A9A8AF] text-[12px]">This will be your default withdrawal account.</Text>
+          <View className="flex-row justify-between items-center py-6">
+            <View>
+              <Text className="text-base font-medium">Set as Primary Account</Text>
+              <Text className="text-gray-500 text-xs mt-1">This will be your default withdrawal account.</Text>
             </View>
             <Switch
-              value={bank.id === primaryBankId}
-              onValueChange={(val) => setPrimary(val ? bank.id : "")}
+              value={isPrimary}
+              onValueChange={handleSetPrimary}
+              disabled={loading}
             />
           </View>
 
-          <Pressable
-            onPress={() => {
-              removeBank(bank.id);
-              handleClose();
-            }}
-            className="bg-red-200 px-4 py-4 rounded-[32px]"
+          <TouchableOpacity
+            onPress={handleRemoveBank}
+            className="bg-red-100 px-4 py-4 rounded-xl mt-4"
+            disabled={loading}
           >
-            <Text className="text-red-500 text-center text-[18px] font-semibold">Remove</Text>
-          </Pressable>
+            <Text className="text-red-600 text-center text-base font-semibold">Remove Account</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </Modal>

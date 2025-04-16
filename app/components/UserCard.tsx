@@ -6,7 +6,8 @@ import { useRouter } from 'expo-router';
 interface User {
   firstname: string;
   email: string;
-  id: string; // Add other user properties as needed
+  id: string;
+  userImg?: string; // Add user image property
 }
 
 interface UserCardProps {
@@ -30,7 +31,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center">
           <Image
-            source={{ uri: 'https://placehold.co/40x40' }}
+            source={user.userImg ? { uri: user.userImg } : require('../assets/images/user.png')}
             className="w-10 h-10 rounded-full mr-2 border border-gray-100"
           />
           <View>

@@ -110,17 +110,11 @@ const WithdrawalSuccessScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.primaryButton}
-          onPress={handleGoToCommission}
-        >
-          <Text style={styles.primaryButtonText}>Commission Dashboard</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.secondaryButton}
           onPress={handleGoHome}
         >
-          <Text style={styles.secondaryButtonText}>Go to Home</Text>
+          <Text style={styles.primaryButtonText}>Go To Dashboard</Text>
         </TouchableOpacity>
+        
       </View>
     </View>
   );
