@@ -189,7 +189,7 @@ function MyAccount() {
             <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
             
             {/* Header */}
-            <View className="flex-row items-center justify-between px-4 pt-10 mt-8">
+            <View className="flex-row items-center justify-between px-4 mt-4">
                 <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>
                     <Image
                         source={require('../assets/images/back-arrow.png')}

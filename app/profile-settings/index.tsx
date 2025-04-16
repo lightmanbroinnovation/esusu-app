@@ -7,8 +7,8 @@ import { useRouter } from 'expo-router';
 const generalItems = [
     {
         id: 1,
-        title: 'reset password',
-        route: '../reset-password',
+        title: 'reset Passcode',
+        route: '../reset',
     },
 
     {
@@ -42,7 +42,7 @@ export default function ProfileSetting() {
     return (
         <ScrollView className="flex-1 bg-white px-4 pt-10">
             {/* Header */}
-            <View className="flex-row items-center gap-[130px] mt-[2rem]">
+            <View className="flex-row items-center gap-[110px] mt-6">
                 <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>
                     <Image
                         source={require('../assets/images/back-arrow.png')}

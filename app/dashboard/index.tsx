@@ -15,6 +15,8 @@ interface User {
   firstname: string;
   email: string;
   id: string;
+  balance: string,
+  weeklyEarnings: string
 }
 
 const HomeScreen = () => {
@@ -78,7 +80,7 @@ const HomeScreen = () => {
     <View className="flex-1 bg-gray-50">
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       <SafeAreaView className="flex-1">
-        <View className="flex-1 px-4 mt-10">
+        <View className="flex-1 px-4 mt-4">
           {loading ? (
             <View className="flex-1 justify-center items-center">
               <ActivityIndicator size="large" color="#0052CC" />

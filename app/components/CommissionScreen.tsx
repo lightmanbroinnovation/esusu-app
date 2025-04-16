@@ -37,6 +37,7 @@ interface UserDetails {
   totalDeposit?: number;
   totalWithdraw?: number;
   weeklyEarnings?: number;
+  userImg?: string;
   commissions?: CommissionTransaction[];
 }
 

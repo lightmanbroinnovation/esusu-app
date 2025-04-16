@@ -24,7 +24,7 @@ export default function ReetPassword() {
     return (
         <ScrollView className="flex-1 bg-white px-4 pt-10">
             {/* Header */}
-            <View className="flex-row items-center gap-[100px] mt-[2rem]">
+            <View className="flex-row items-center gap-[100px] mt-8">
                 <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>
                     <Image
                         source={require('../assets/images/back-arrow.png')}
@@ -34,7 +34,7 @@ export default function ReetPassword() {
             </View>
 
             {/* password change input */}
-            <View className='h-screen flex flex-col items-center'>
+            <View className=' flex-1 flex-col items-center'>
                 <View className='mt-10 flex flex-col items-start gap-[16px]'>
                     <View className='flex flex-col gap-2 w-full'>
                         <Text className="text-base font-medium text-[#272636]">Current Password</Text>

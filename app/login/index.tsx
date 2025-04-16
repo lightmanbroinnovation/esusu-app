@@ -94,7 +94,7 @@ export default function Login() {
         }}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+        <View className="flex-row justify-between items-center mt-2">
           <TouchableOpacity
             className="flex-row items-center"
             onPress={() => router.back()}
@@ -103,7 +103,7 @@ export default function Login() {
           </TouchableOpacity>
         </View>
         
-        <View className="mt-8">
+        <View className="mt-6">
           <Text className="text-2xl font-bold text-[#0072CE] mb-2">
             Welcome Back!
           </Text>

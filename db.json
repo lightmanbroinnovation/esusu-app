@@ -728,7 +728,24 @@
         "verify_business": true
       },
       "userImg": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744717095/user_documents/k8p3vf1bfdiheqamxr75.webp",
-      "bankAccounts": []
+      "bankAccounts": [
+        {
+          "bankName": "Gtb",
+          "accountName": "Davido ",
+          "accountNumber": "8112880",
+          "isPrimary": false,
+          "id": "1744736810240",
+          "createdAt": "2025-04-15T17:06:50.240Z"
+        },
+        {
+          "bankName": "Uba",
+          "accountName": "Bayo ",
+          "accountNumber": "852345",
+          "isPrimary": true,
+          "id": "1744736867713",
+          "createdAt": "2025-04-15T17:07:47.713Z"
+        }
+      ]
     },
     {
       "id": "qy98",
@@ -1104,6 +1121,73 @@
       "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744716860/user_documents/emjwj3eq6seiljqdcj8m.webp",
       "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744716851/user_documents/vhjhbr8f5um3njyysrgx.webp",
       "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744716860/user_documents/emjwj3eq6seiljqdcj8m.webp",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": []
+    },
+    {
+      "id": "3tgm",
+      "firstname": "Monilari ",
+      "lastname": "Omotoso",
+      "email": "moni123@gmail.comcom",
+      "phonenumber": "8143392980",
+      "balance": "100000",
+      "totalDeposit": "100000",
+      "totalWithdraw": "100000",
+      "weeklyEarnings": "10000",
+      "pin": "1111",
+      "business": "Mo ventures ",
+      "address": "Ilesha road, akure",
+      "city": "Akure ",
+      "state": "Ondo",
+      "gender": "Male",
+      "dob": "2004-02-27",
+      "bvn": "1234567890",
+      "government_id": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737731/user_documents/efucr1rjxkujqmtmqizc.webp",
+      "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
+      "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737731/user_documents/efucr1rjxkujqmtmqizc.webp",
+      "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": [],
+      "bankAccounts": [
+        {
+          "bankName": "Duh",
+          "accountName": "Ijko hoov",
+          "accountNumber": "8558355266",
+          "isPrimary": true,
+          "id": "1744738203031",
+          "createdAt": "2025-04-15T17:30:03.031Z"
+        },
+        {
+          "bankName": "Fhfu",
+          "accountName": "Rfhude",
+          "accountNumber": "588465865",
+          "isPrimary": false,
+          "id": "1744738987650",
+          "createdAt": "2025-04-15T17:43:07.650Z"
+        }
+      ],
+      "userImg": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744738624/user_documents/uyzhpw6ekyuocfrz43xc.webp"
+    },
+    {
+      "id": "7wvy",
+      "firstname": "Monilari ",
+      "lastname": "Omotoso",
+      "email": "moni123@gmail.comcom",
+      "phonenumber": "8143392980",
+      "pin": "1111",
+      "business": "Mo ventures ",
+      "address": "Ilesha road, akure",
+      "city": "Akure ",
+      "state": "Ondo",
+      "gender": "Male",
+      "dob": "2004-02-27",
+      "bvn": "1234567890",
+      "government_id": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737731/user_documents/efucr1rjxkujqmtmqizc.webp",
+      "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
+      "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737731/user_documents/efucr1rjxkujqmtmqizc.webp",
+      "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
       "verificationStatus": "pending",
       "verify_business": true,
       "transactions": []
@@ -1590,6 +1674,60 @@
       "startDate": "2025-04-15",
       "endDate": "2025-04-26",
       "durationValue": 10,
+      "status": "active"
+    },
+    {
+      "id": "adc6",
+      "agentName": "Monilari  Omotoso",
+      "agentId": "3tgm",
+      "firstName": "Momo",
+      "lastName": "Bobo",
+      "phoneNumber": "8076414565",
+      "ninNumber": "112233445566778899",
+      "language": "Yoruba",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744738004/contributor_profiles/i1rghieujknfumwfdzca.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744738004/contributor_profiles/i1rghieujknfumwfdzca.webp",
+      "depositAmount": "500",
+      "frequency": "daily",
+      "startDate": "2025-04-17",
+      "endDate": "2025-06-28",
+      "durationValue": 1,
+      "status": "active"
+    },
+    {
+      "id": "c372",
+      "agentName": "Monilari  Omotoso",
+      "agentId": "3tgm",
+      "firstName": "Labi",
+      "lastName": "James",
+      "phoneNumber": "1228295766",
+      "ninNumber": "896585322",
+      "language": "Igbo",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744739302/contributor_profiles/x4jixvce8ccviwexwvsv.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744739302/contributor_profiles/x4jixvce8ccviwexwvsv.webp",
+      "depositAmount": "2,000",
+      "frequency": "monthly",
+      "startDate": "2025-04-15",
+      "endDate": "2025-04-15",
+      "durationValue": 12,
+      "status": "active"
+    },
+    {
+      "id": "a123",
+      "agentName": "Monilari  Omotoso",
+      "agentId": "3tgm",
+      "firstName": "Labi",
+      "lastName": "James",
+      "phoneNumber": "1228295766",
+      "ninNumber": "896585322",
+      "language": "Igbo",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744739302/contributor_profiles/x4jixvce8ccviwexwvsv.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744739302/contributor_profiles/x4jixvce8ccviwexwvsv.webp",
+      "depositAmount": "2,000",
+      "frequency": "monthly",
+      "startDate": "2025-04-15",
+      "endDate": "2025-04-15",
+      "durationValue": 8,
       "status": "active"
     }
   ]

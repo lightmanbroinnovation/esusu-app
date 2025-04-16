@@ -40,16 +40,16 @@ const Footer = () => {
   };
 
   return (
-    <View className="flex-row justify-around items-center bg-white py-3 border-t border-gray-200">
+    <View className="flex-row justify-around items-center bg-gray-50 py-2 drop-shadow-md">
       {/* Home Button */}
       <TouchableOpacity
         className="items-center"
         onPress={() => handlePress("home")}
       >
-        <View className={`p-2 ${activePage === "home" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "home" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`}>
           <Ionicons 
             name="home"
-            size={22} 
+            size={18} 
             color={activePage === "home" ? "#0052CC" : "#8F92A1"}
           />
         </View>
@@ -63,10 +63,10 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("contributors")}
       >
-        <View className={`p-2 ${activePage === "contributors" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "contributors" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`}>
           <Ionicons 
             name="people-outline"
-            size={22}
+            size={18}
             color={activePage === "contributors" ? "#0052CC" : "#8F92A1"}
           />
         </View>
@@ -80,10 +80,10 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("commission")}
       >
-        <View className={`p-2 ${activePage === "commission" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "commission" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`}>
           <Ionicons 
             name="wallet-outline"
-            size={22}
+            size={18}
             color={activePage === "commission" ? "#0052CC" : "#8F92A1"}
           />
         </View>
@@ -97,10 +97,10 @@ const Footer = () => {
         className="items-center"
         onPress={() => handlePress("settings")}
       >
-        <View className={`p-2 ${activePage === "settings" ? "bg-[#E5F1FF] rounded-full" : ""}`}>
+        <View className={`p-2 ${activePage === "settings" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`}>
           <Ionicons 
             name="person-outline"
-            size={22}
+            size={18}
             color={activePage === "settings" ? "#0052CC" : "#8F92A1"}
           />
         </View>
