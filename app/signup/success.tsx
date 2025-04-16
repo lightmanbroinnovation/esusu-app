@@ -12,7 +12,7 @@ export default function Success() {
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [autoLoginInProgress, setAutoLoginInProgress] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<{ id: string } | null>(null);
   const [countdown, setCountdown] = useState(5);
 
   // Register user and fetch user data when component mounts

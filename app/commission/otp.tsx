@@ -1,7 +1,7 @@
 export const options = {
   headerShown: false, // Hide the header
 };
-
+;
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
