@@ -1,8 +1,9 @@
 import React from 'react';
 import { StatusBar, StatusBarProps, View, StatusBarStyle } from 'react-native';
+import { usePathname } from 'expo-router';
 
 interface StatusBarAdapterProps {
-  backgroundColor: string;
+  backgroundColor?: string;
   barStyle?: 'light-content' | 'dark-content' | 'default';
 }
 
@@ -11,15 +12,20 @@ interface StatusBarAdapterProps {
  * according to the current screen's background color
  */
 const StatusBarAdapter: React.FC<StatusBarAdapterProps> = ({ 
-  backgroundColor,
+  backgroundColor = '#E6F3FF', // Default to light blue
   barStyle = 'dark-content',
   ...props
 }) => {
+  const pathname = usePathname();
+  
+  // Use transparent for root index
+  const bgColor = pathname === '/' ? 'transparent' : backgroundColor;
+  
   return (
-    <View style={{ backgroundColor, height: StatusBar.currentHeight }}>
+    <View style={{ backgroundColor: bgColor, height: StatusBar.currentHeight }}>
       <StatusBar
         translucent
-        backgroundColor={backgroundColor}
+        backgroundColor={bgColor}
         barStyle={barStyle as StatusBarStyle}
         {...props}
       />

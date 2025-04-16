@@ -48,9 +48,11 @@ export default function PasscodeScreen() {
     setTimeout(() => {
       if (pin === userPin) {
         // Successful login - save user ID to AsyncStorage
+        console.log("PIN verification successful, saving session...");
         saveUserSession(userId, phone);
       } else {
         // Failed login
+        console.log("PIN verification failed");
         Vibration.vibrate(300);
         setAttempts(attempts + 1);
         
@@ -93,24 +95,42 @@ export default function PasscodeScreen() {
 
   const saveUserSession = async (userId: string, phone: string) => {
     try {
+      console.log(`Saving user session: userId=${userId}, phone=${phone}`);
+      
       // Save user session data
       await AsyncStorage.setItem('userId', userId);
       await AsyncStorage.setItem('userPhone', phone);
       await AsyncStorage.setItem('isLoggedIn', 'true');
       
-      console.log('User session saved successfully');
-      // Navigate to dashboard
-      navigateToDashboard();
+      console.log('User session saved successfully, navigating to dashboard');
+      
+      // Use a short timeout to ensure AsyncStorage completes before navigation
+      setTimeout(async () => {
+        try {
+          console.log('Attempting to navigate after successful authentication');
+          // Check if we have a stored route to return to after authentication
+          const lastRoute = await AsyncStorage.getItem('lastRoute');
+          if (lastRoute && lastRoute !== '/login/passcode') {
+            console.log(`Returning to previous route: ${lastRoute}`);
+            router.replace(lastRoute);
+            // Clear the stored route
+            await AsyncStorage.removeItem('lastRoute');
+          } else {
+            // Default to dashboard if no stored route
+            console.log('No stored route found, navigating to dashboard');
+            router.replace('/dashboard');
+          }
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          Alert.alert('Navigation Error', 'Failed to navigate. Please try again.');
+          setLoading(false);
+        }
+      }, 500);
     } catch (error) {
       console.error('Error saving user session:', error);
       Alert.alert('Error', 'Failed to save session. Please try again.');
       setLoading(false);
     }
-  };
-
-  const navigateToDashboard = () => {
-    // Navigate to dashboard
-    router.replace("/dashboard");
   };
 
   const handleFingerprintAuth = async () => {

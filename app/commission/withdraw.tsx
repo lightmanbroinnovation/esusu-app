@@ -11,7 +11,7 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUser } from '../../services/api';
@@ -76,41 +76,59 @@ const WithdrawScreen = () => {
     getUserId();
   }, []);
 
-  // Fetch user details when userId is available
-  useEffect(() => {
+  // Function to fetch user data
+  const fetchUserData = async () => {
     if (!userId) return;
     
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch user details
+      const userData = await fetchUser(userId);
+      setUserDetails(userData);
+      
+      // Get bank accounts from user data
+      if (userData.bankAccounts && userData.bankAccounts.length > 0) {
+        setAccounts(userData.bankAccounts);
         
-        // Fetch user details
-        const userData = await fetchUser(userId);
-        setUserDetails(userData);
-        
-        // Get bank accounts from user data
-        if (userData.bankAccounts && userData.bankAccounts.length > 0) {
-          setAccounts(userData.bankAccounts);
-          
-          // Set selected account to primary account or first account
-          const primaryAccount = userData.bankAccounts.find((acc: Account) => acc.isPrimary);
-          setSelectedAccount(primaryAccount || userData.bankAccounts[0]);
-        } else {
-          console.log('No bank accounts found in user data');
-        }
-        
-        console.log('User data fetched successfully');
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-        setError("Failed to load user data. Please try again.");
-      } finally {
-        setLoading(false);
+        // Set selected account to primary account or first account
+        const primaryAccount = userData.bankAccounts.find((acc: Account) => acc.isPrimary);
+        setSelectedAccount(primaryAccount || userData.bankAccounts[0]);
+      } else {
+        console.log('No bank accounts found in user data');
+        setAccounts([]);
+        setSelectedAccount(null);
       }
-    };
+      
+      console.log('User data fetched successfully');
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+      setError("Failed to load user data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
+  // Fetch user details when userId is available
+  useEffect(() => {
+    if (userId) {
+      fetchUserData();
+    }
   }, [userId]);
+
+  // Refetch data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userId) {
+        console.log('Screen focused, refetching user data');
+        fetchUserData();
+      }
+      return () => {
+        // Cleanup if needed
+      };
+    }, [userId])
+  );
   
   const navigateBack = () => {
     router.back();
@@ -251,10 +269,10 @@ const WithdrawScreen = () => {
                 onPress={() => setShowAccountModal(true)}
               >
                 <View className="flex-row justify-between items-center mt-1">
-                  <View className="flex-row items-center">
-                    <Text className="text-gray-600 mr-2">To:</Text>
+                  <View className="flex-row items-center space-x-8">
+                    <Text className="text-gray-600 mr-4">To:</Text>
                     <Text className="text-lg font-semibold mr-2">
-                      {selectedAccount?.bankName || 'Select Bank'}
+                      {selectedAccount?.accountName}
                     </Text>
                     {selectedAccount && (
                       <Image 
@@ -269,6 +287,12 @@ const WithdrawScreen = () => {
                 <View className="flex-row items-center mt-2">
                   <Ionicons name="card-outline" size={18} color="#0099FF" />
                   <Text className="text-blue-600 ml-2">
+                  {selectedAccount?.bankName || 'Select Bank'}
+
+                  </Text>
+                  <Text className="text-blue-600 ml-2">
+              
+
                     {selectedAccount?.accountNumber || ''}
                   </Text>
                   {selectedAccount?.isPrimary && (
@@ -483,7 +507,7 @@ const WithdrawScreen = () => {
               </View>
             )}
             
-            {accounts.length > 0 && (
+            {accounts.length > 0 && accounts.length < 2 && (
               <TouchableOpacity 
                 className="mt-4 bg-blue-600 p-4 rounded-xl"
                 onPress={() => {

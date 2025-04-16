@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, SafeAreaView, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { fetchUser } from "@/services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
@@ -25,11 +25,20 @@ interface UserDetails {
     userImg?: string;
 }
 
+// Menu item interface
+interface MenuItem {
+    label: string;
+    icon: any;
+    bgColor: string;
+    textColor: string;
+    route: string;
+}
+
 export const options = {
     headerShown: false,
 };
 
-const menuItems = [
+const menuItems: MenuItem[] = [
     {
         label: "My Account",
         icon: require("../assets/images/my_account.png"),
@@ -161,8 +170,8 @@ export default function Index() {
             
             console.log("Successfully logged out");
             
-            // Navigate to login screen
-            router.replace("/login");
+            // Navigate to root index instead of login
+            router.replace("/");
         } catch (error) {
             console.error("Error during logout:", error);
             Alert.alert("Error", "Failed to log out. Please try again.");
@@ -200,6 +209,42 @@ export default function Index() {
             }
         }
     };
+
+    // Render menu item
+    const renderMenuItem = ({ item, index }: { item: MenuItem; index: number }) => (
+        <TouchableOpacity
+            className={`flex-row items-center justify-between px-5 py-4 ${
+                index !== menuItems.length - 1 ? "border-b border-gray-200" : ""
+            }`}
+            onPress={() => handlePress(item.route)}
+        >
+            <View className="flex-row items-center">
+                <View className={`${item.bgColor} rounded-md p-2 mr-3`}>
+                    <Image
+                        source={item.icon}
+                        style={{ width: 24, height: 24 }}
+                        resizeMode="contain"
+                    />
+                </View>
+                <Text className={`text-base ${item.textColor} font-medium`}>{item.label}</Text>
+            </View>
+            <Image
+                source={require("../assets/images/arrow-right.png")}
+                style={{ width: 16, height: 16 }}
+                resizeMode="contain"
+                className="text-lg"
+            />
+        </TouchableOpacity>
+    );
+
+    // Footer component for FlatList
+    const ListFooterComponent = () => (
+        <View className="mt-10 flex items-center justify-center mx-8 pb-10">
+            <Text className="text-[14px] text-[#A2A0A8] text-center">
+                You joined Esusu on March 2025. It's been 1 month since then and our mission is still the same.
+            </Text>
+        </View>
+    );
 
     return (
         <View className="flex-1 bg-[#0074FF]">
@@ -240,42 +285,14 @@ export default function Index() {
 
             {/* Menu List */}
             <View className="flex-1 bg-white rounded-t-[32px]">
-                <ScrollView 
-                    showsVerticalScrollIndicator={false} 
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 }}
-                >
-                    {menuItems.map((item, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            className={`flex-row items-center justify-between px-5 py-4 ${index !== menuItems.length - 1 ? "border-b border-gray-200" : ""
-                                }`}
-                            onPress={() => handlePress(item.route)}
-                        >
-                            <View className="flex-row items-center">
-                                <View className={`${item.bgColor} rounded-md p-2 mr-3`}>
-                                    <Image
-                                        source={item.icon}
-                                        style={{ width: 24, height: 24 }}
-                                        resizeMode="contain"
-                                    />
-                                </View>
-                                <Text className={`text-base ${item.textColor} font-medium`}>{item.label}</Text>
-                            </View>
-                            <Image
-                                source={require("../assets/images/arrow-right.png")}
-                                style={{ width: 16, height: 16 }}
-                                resizeMode="contain"
-                                className="text-lg"
-                            />
-                        </TouchableOpacity>
-                    ))}
-
-                    {/* joining date */}
-                    <View className="mt-10 flex items-center justify-center mx-8 pb-10">
-                        <Text className="text-[14px] text-[#A2A0A8] text-center">You joined Esusu on March 2025. It's been 1 month since then and our mission is still the same.</Text>
-                    </View>
-                </ScrollView>
+                <FlatList
+                    data={menuItems}
+                    renderItem={renderMenuItem}
+                    keyExtractor={(_, index) => index.toString()}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingTop: 16 }}
+                    ListFooterComponent={ListFooterComponent}
+                />
 
                 {/* Footer */}
                 <Footer />

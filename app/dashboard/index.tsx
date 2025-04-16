@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, SafeAreaView, Text, View, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { FlatList, SafeAreaView, Text, View, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import UserCard from '../components/UserCard';
 import Footer from '../components/Footer';
 import RecentActivity from '../components/RecentActivity';
@@ -17,6 +17,12 @@ interface User {
   id: string;
   balance: string,
   weeklyEarnings: string
+}
+
+// Dashboard item type for FlatList
+interface DashboardItem {
+  id: string;
+  type: 'userCard' | 'newUser' | 'activity' | 'transactions';
 }
 
 const HomeScreen = () => {
@@ -76,6 +82,40 @@ const HomeScreen = () => {
     fetchUserDetails();
   }, [userId]);
 
+  // Create data array for FlatList
+  const dashboardItems: DashboardItem[] = [
+    { id: 'userCard', type: 'userCard' },
+    { id: 'newUser', type: 'newUser' },
+    { id: 'activity', type: 'activity' },
+    { id: 'transactions', type: 'transactions' }
+  ];
+  
+  const renderItem = ({ item }: { item: DashboardItem }) => {
+    switch(item.type) {
+      case 'userCard':
+        return userData ? <UserCard user={userData} /> : null;
+      case 'newUser':
+        return (
+          <TouchableOpacity onPress={() => router.push("/contributor/add")}>
+            <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]'>
+              <Ionicons name="person-add-outline" size={24} color="#0052CC" className="mr-2" />
+              <Text className="text-[#0052CC] font-medium">New User</Text>
+            </View>
+          </TouchableOpacity>
+        );
+      case 'activity':
+        return (
+          <RecentActivity onVerifyNow={() => router.push('/verification')} />
+        );
+      case 'transactions':
+        return (
+          <LatestTransactions transactions={transactions} />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <View className="flex-1 bg-gray-50">
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
@@ -97,27 +137,13 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
-            <ScrollView 
-              showsVerticalScrollIndicator={false} 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 0 }} // Add padding for footer
-            >
-              {userData ? (
-                <UserCard user={userData} />
-              ) : (
-                <Text className="text-center">Loading user data...</Text>
-              )}
-              <TouchableOpacity onPress={() => router.push("/contributor/add")}>
-                <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]'>
-                  <Ionicons name="person-add-outline" size={24} color="#0052CC" className="mr-2" />
-                  <Text className="text-[#0052CC] font-medium">New User</Text>
-                </View>
-              </TouchableOpacity>
-              <RecentActivity 
-                onVerifyNow={() => router.push('/verification')}
-              />
-              <LatestTransactions transactions={transactions} />
-            </ScrollView>
+            <FlatList
+              data={dashboardItems}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 10 }}
+            />
           )}
         </View>
         <Footer />

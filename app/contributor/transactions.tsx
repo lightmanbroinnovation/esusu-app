@@ -5,7 +5,7 @@ import {
   SafeAreaView, 
   TouchableOpacity, 
   TextInput,
-  ScrollView,
+  SectionList,
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +44,7 @@ const yesterdayString = formatDate(yesterday);
 // Group transactions by date
 const groupTransactionsByDate = (transactions: Transaction[]) => {
   if (!transactions || transactions.length === 0) {
-    return {};
+    return [];
   }
   
   const grouped: Record<string, Transaction[]> = {};
@@ -57,7 +57,16 @@ const groupTransactionsByDate = (transactions: Transaction[]) => {
     grouped[date].push(transaction);
   });
   
-  return grouped;
+  // Convert to SectionList format
+  return Object.keys(grouped).map(date => ({
+    title: date,
+    data: grouped[date]
+  })).sort((a, b) => {
+    // Sort sections by date (newest first)
+    const dateA = new Date(a.title.split('/').reverse().join('-'));
+    const dateB = new Date(b.title.split('/').reverse().join('-'));
+    return dateB.getTime() - dateA.getTime();
+  });
 };
 
 // Transaction Item component
@@ -138,35 +147,43 @@ export default function ContributorTransactionsScreen() {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [groupedTransactions, setGroupedTransactions] = useState<Record<string, Transaction[]>>({});
+  const [groupedTransactions, setGroupedTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch transactions for the contributor
   useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!contributorId) {
-        setError("No contributor ID provided");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const fetchedTransactions = await fetchContributorTransactions(contributorId);
-        setTransactions(fetchedTransactions);
-        setFilteredTransactions(fetchedTransactions);
-        setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
-      } catch (err) {
-        console.error("Error fetching contributor transactions:", err);
-        setError("Failed to load transactions");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchTransactions();
+    fetchTransactionsData();
   }, [contributorId]);
+
+  const fetchTransactionsData = async () => {
+    if (!contributorId) {
+      setError("No contributor ID provided");
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    try {
+      const fetchedTransactions = await fetchContributorTransactions(contributorId);
+      setTransactions(fetchedTransactions);
+      setFilteredTransactions(fetchedTransactions);
+      setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching contributor transactions:", err);
+      setError("Failed to load transactions");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchTransactionsData();
+  };
 
   // Apply both search and filters
   useEffect(() => {
@@ -201,8 +218,7 @@ export default function ContributorTransactionsScreen() {
     });
     
     setFilteredTransactions(filtered);
-    const grouped = groupTransactionsByDate(filtered);
-    setGroupedTransactions(grouped);
+    setGroupedTransactions(groupTransactionsByDate(filtered));
   }, [searchQuery, activeFilters, transactions]);
 
   // Helper function to get consistent date heading
@@ -233,6 +249,59 @@ export default function ContributorTransactionsScreen() {
     setActiveFilters({});
   };
 
+  // Render section header
+  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
+    <Text className="text-gray-400 text-lg mt-2 mb-2">
+      {getDateHeading(section.title)}
+    </Text>
+  );
+
+  // Render transaction item
+  const renderItem = ({ item }: { item: Transaction }) => (
+    <TransactionItem transaction={item} />
+  );
+
+  // Render search component
+  const renderSearchHeader = () => (
+    <View className="flex-row items-center mb-4">
+      <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
+        <Ionicons name="search" size={20} color="#A0A0A0" />
+        <TextInput
+          className="flex-1 ml-2"
+          placeholder="Search...."
+          placeholderTextColor="#A0A0A0"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {(searchQuery || hasActiveFilters()) && (
+          <TouchableOpacity onPress={clearAllFilters}>
+            <Ionicons name="close-circle" size={20} color="#A0A0A0" />
+          </TouchableOpacity>
+        )}
+      </View>
+      <TouchableOpacity 
+        className="bg-gray-100 p-2 rounded-xl"
+        onPress={() => setShowFilter(true)}
+      >
+        <Ionicons 
+          name="options-outline" 
+          size={24} 
+          color={hasActiveFilters() ? "#0052CC" : "#000"} 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render empty state
+  const renderEmptyComponent = () => (
+    <View className="bg-white py-10 rounded-xl mt-2">
+      <Text className="text-gray-400 text-lg font-medium text-center">No Transactions</Text>
+      <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+        No transactions found for this contributor.
+      </Text>
+    </View>
+  );
+
   return (
     <View className="flex-1 bg-white">
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
@@ -250,7 +319,7 @@ export default function ContributorTransactionsScreen() {
             </Text>
           </View>
 
-          {loading ? (
+          {loading && !refreshing ? (
             <View className="flex-1 justify-center items-center">
               <ActivityIndicator size="large" color="#0066FF" />
               <Text className="mt-2 text-gray-600">Loading transactions...</Text>
@@ -267,69 +336,22 @@ export default function ContributorTransactionsScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <>
-              {/* Search and Filter */}
-              <View className="flex-row items-center mb-4">
-                <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
-                  <Ionicons name="search" size={20} color="#A0A0A0" />
-                  <TextInput
-                    className="flex-1 ml-2"
-                    placeholder="Search...."
-                    placeholderTextColor="#A0A0A0"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                  {(searchQuery || hasActiveFilters()) && (
-                    <TouchableOpacity onPress={clearAllFilters}>
-                      <Ionicons name="close-circle" size={20} color="#A0A0A0" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <TouchableOpacity 
-                  className="bg-gray-100 p-2 rounded-xl"
-                  onPress={() => setShowFilter(true)}
-                >
-                  <Ionicons 
-                    name="options-outline" 
-                    size={24} 
-                    color={hasActiveFilters() ? "#0052CC" : "#000"} 
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Transactions list */}
-              <ScrollView 
-                className="flex-1"
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 80 }}
-              >
-                {Object.keys(groupedTransactions).length === 0 ? (
-                  <View className="bg-white py-10 rounded-xl mt-2">
-                    <Text className="text-gray-400 text-lg font-medium text-center">No Transactions</Text>
-                    <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-                      No transactions found for this contributor.
-                    </Text>
-                  </View>
-                ) : (
-                  <>
-                    {Object.keys(groupedTransactions).map(date => (
-                      <View key={date} className="mb-4">
-                        <Text className="text-gray-400 text-lg mt-2 mb-2">
-                          {getDateHeading(date)}
-                        </Text>
-                        {groupedTransactions[date].map((transaction: Transaction) => (
-                          <TransactionItem 
-                            key={transaction.id} 
-                            transaction={transaction}
-                          />
-                        ))}
-                      </View>
-                    ))}
-                  </>
-                )}
-              </ScrollView>
-            </>
+            <SectionList
+              sections={groupedTransactions}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              ListHeaderComponent={renderSearchHeader}
+              ListEmptyComponent={renderEmptyComponent}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              showsVerticalScrollIndicator={false}
+              stickySectionHeadersEnabled={false}
+              contentContainerStyle={{ 
+                paddingBottom: 80,
+                flexGrow: groupedTransactions.length === 0 ? 1 : undefined 
+              }}
+            />
           )}
         </View>
 

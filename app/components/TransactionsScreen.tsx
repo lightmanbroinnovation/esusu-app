@@ -5,7 +5,10 @@ import {
   SafeAreaView, 
   TouchableOpacity, 
   TextInput,
-  ScrollView
+  FlatList,
+  SectionList,
+  ListRenderItemInfo,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -14,6 +17,7 @@ import TransactionFilter, { FilterOptions } from './TransactionFilter';
 import { Transaction } from './types';
 import { getUserTransactions } from './transactionData';
 import StatusBarAdapter from './StatusBarAdapter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Use a more consistent date format for cross-platform compatibility
 const formatDate = (date: Date): string => {
@@ -35,7 +39,7 @@ const yesterdayString = formatDate(yesterday);
 // Group transactions by date
 const groupTransactionsByDate = (transactions: Transaction[]) => {
   if (!transactions || transactions.length === 0) {
-    return {};
+    return [];
   }
   
   const grouped: Record<string, Transaction[]> = {};
@@ -48,7 +52,16 @@ const groupTransactionsByDate = (transactions: Transaction[]) => {
     grouped[date].push(transaction);
   });
   
-  return grouped;
+  // Convert to SectionList format
+  return Object.keys(grouped).map(date => ({
+    title: date,
+    data: grouped[date]
+  })).sort((a, b) => {
+    // Sort sections by date (newest first)
+    const dateA = new Date(a.title.split('/').reverse().join('-'));
+    const dateB = new Date(b.title.split('/').reverse().join('-'));
+    return dateB.getTime() - dateA.getTime();
+  });
 };
 
 const TransactionsScreen = () => {
@@ -59,14 +72,36 @@ const TransactionsScreen = () => {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [groupedTransactions, setGroupedTransactions] = useState<Record<string, Transaction[]>>({});
+  const [groupedTransactions, setGroupedTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch user ID from AsyncStorage
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(storedUserId);
+          console.log('User ID fetched from AsyncStorage:', storedUserId);
+        } else {
+          console.warn('No user ID found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error fetching user ID from AsyncStorage:', error);
+      }
+    };
+    
+    fetchUserId();
+  }, []);
 
   // Fetch transactions from db.json
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (!userId) return; // Don't fetch if userId is not available yet
+      
       try {
-        const userId = "62f2"; // Replace with the actual user ID you want to fetch
         const fetchedTransactions = await getUserTransactions(userId);
         setTransactions(fetchedTransactions);
         setFilteredTransactions(fetchedTransactions);
@@ -75,11 +110,12 @@ const TransactionsScreen = () => {
         console.error("Error fetching transactions:", error);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
     
     fetchTransactions();
-  }, []);
+  }, [userId]); // Re-fetch when userId changes
 
   // Apply both search and filters
   useEffect(() => {
@@ -114,8 +150,7 @@ const TransactionsScreen = () => {
     });
     
     setFilteredTransactions(filtered);
-    const grouped = groupTransactionsByDate(filtered);
-    setGroupedTransactions(grouped);
+    setGroupedTransactions(groupTransactionsByDate(filtered));
   }, [searchQuery, activeFilters, transactions]);
 
   // Helper function to get consistent date heading
@@ -147,18 +182,72 @@ const TransactionsScreen = () => {
   };
 
   const forceReloadTransactions = async () => {
+    if (!userId) return;
+    
+    setRefreshing(true);
     try {
-      setLoading(true);
-      const fetchedTransactions = await getUserTransactions("62f2");
+      const fetchedTransactions = await getUserTransactions(userId);
       setTransactions(fetchedTransactions);
       setFilteredTransactions(fetchedTransactions);
       setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
     } catch (error) {
       console.error("Error reloading transactions:", error);
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const renderSearchHeader = () => (
+    <View className="flex-row items-center mb-4">
+      <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
+        <Ionicons name="search" size={20} color="#A0A0A0" />
+        <TextInput
+          className="flex-1 ml-2"
+          placeholder="Search...."
+          placeholderTextColor="#A0A0A0"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {(searchQuery || hasActiveFilters()) && (
+          <TouchableOpacity onPress={clearAllFilters}>
+            <Ionicons name="close-circle" size={20} color="#A0A0A0" />
+          </TouchableOpacity>
+        )}
+      </View>
+      <TouchableOpacity 
+        className="bg-gray-100 p-2 rounded-xl"
+        onPress={() => setShowFilter(true)}
+      >
+        <Ionicons 
+          name="options-outline" 
+          size={24} 
+          color={hasActiveFilters() ? "#0052CC" : "#000"} 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderEmptyComponent = () => (
+    <View className="bg-white py-10 rounded-xl mt-2">
+      <Text className="text-gray-400 text-lg font-medium text-center">No Recent Activities</Text>
+      <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+        It looks like you haven't made any transactions. Once you start, your activity will appear here.
+      </Text>
+    </View>
+  );
+
+  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
+    <Text className="text-gray-400 text-lg mt-2 mb-2">
+      {getDateHeading(section.title)}
+    </Text>
+  );
+
+  const renderItem = ({ item }: ListRenderItemInfo<Transaction>) => (
+    <TransactionItem 
+      key={item.id} 
+      transaction={item}
+    />
+  );
 
   return (
     <View className="flex-1 bg-white">
@@ -176,64 +265,29 @@ const TransactionsScreen = () => {
           </View>
 
           {/* Transactions list */}
-          <ScrollView 
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 80 }} // Add padding for footer
-          >
-            <View className="flex-row items-center mb-4">
-              <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
-                <Ionicons name="search" size={20} color="#A0A0A0" />
-                <TextInput
-                  className="flex-1 ml-2"
-                  placeholder="Search...."
-                  placeholderTextColor="#A0A0A0"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {(searchQuery || hasActiveFilters()) && (
-                  <TouchableOpacity onPress={clearAllFilters}>
-                    <Ionicons name="close-circle" size={20} color="#A0A0A0" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity 
-                className="bg-gray-100 p-2 rounded-xl"
-                onPress={() => setShowFilter(true)}
-              >
-                <Ionicons 
-                  name="options-outline" 
-                  size={24} 
-                  color={hasActiveFilters() ? "#0052CC" : "#000"} 
-                />
-              </TouchableOpacity>
+          {loading ? (
+            <View className="flex-1 justify-center items-center">
+              <ActivityIndicator size="large" color="#0052CC" />
+              <Text className="mt-4 text-gray-600">Loading activities...</Text>
             </View>
-            {Object.keys(groupedTransactions).length === 0 ? (
-              <View className="bg-white py-10 rounded-xl mt-2">
-                <Text className="text-gray-400 text-lg font-medium text-center">No Recent Activities</Text>
-                <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-                  It looks like you haven't made any transactions. Once you start, your activity will appear here.
-                </Text>
-              </View>
-            ) : (
-              <>
-                {Object.keys(groupedTransactions).map(date => (
-                  <View key={date} className="mb-4">
-                    <Text className="text-gray-400 text-lg mt-2 mb-2">
-                      {getDateHeading(date)}
-                    </Text>
-                    {groupedTransactions[date].map((transaction: Transaction) => (
-                      <TransactionItem 
-                        key={transaction.id} 
-                        transaction={transaction}
-                      />
-                    ))}
-                  </View>
-                ))}
-              </>
-            )}
-          </ScrollView>
+          ) : (
+            <SectionList
+              sections={groupedTransactions}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              ListHeaderComponent={renderSearchHeader}
+              ListEmptyComponent={renderEmptyComponent}
+              onRefresh={forceReloadTransactions}
+              refreshing={refreshing}
+              showsVerticalScrollIndicator={false}
+              stickySectionHeadersEnabled={false}
+              contentContainerStyle={{ 
+                paddingBottom: 80,
+                flexGrow: groupedTransactions.length === 0 ? 1 : undefined 
+              }}
+            />
+          )}
         </View>
 
         {/* Filter Modal */}

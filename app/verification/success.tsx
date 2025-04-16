@@ -37,7 +37,7 @@ const VerificationSuccess = () => {
       console.log('VERIFICATION STATUS:', status);
     } catch (error) {
       console.error('Error checking verification status:', error);
-      setDebugInfo(`Error: ${error.message}`);
+      setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -74,7 +74,7 @@ const VerificationSuccess = () => {
       checkVerificationStatus(); // Refresh status display
     } catch (error) {
       console.error('Error fixing verification:', error);
-      Alert.alert('Error', `Failed to update: ${error.message}`);
+      Alert.alert('Error', `Failed to update: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

@@ -573,6 +573,10 @@
       "lastname": "Omotoso",
       "email": "omotosolilhenxy@gmail.com",
       "phonenumber": "08012349876",
+      "balance": "100000",
+      "totalDeposit": "100000",
+      "totalWithdraw": "100000",
+      "weeklyEarnings": "10000",
       "pin": "1111",
       "business": "NewDawn",
       "address": "Lafe inn street Akure",
@@ -688,7 +692,26 @@
         },
         "submittedAt": "2025-04-14T19:17:02.068Z",
         "verify_business": true
-      }
+      },
+      "userImg": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803789/user_documents/gdqcp8jrbgasvytjorq8.webp",
+      "bankAccounts": [
+        {
+          "bankName": "Gtb",
+          "accountName": "Bola",
+          "accountNumber": "8866555556",
+          "isPrimary": false,
+          "id": "1744791311947",
+          "createdAt": "2025-04-16T08:15:11.947Z"
+        },
+        {
+          "bankName": "Access",
+          "accountName": "Taiwo ",
+          "accountNumber": "5554664646",
+          "isPrimary": true,
+          "id": "1744803832377",
+          "createdAt": "2025-04-16T11:43:52.377Z"
+        }
+      ]
     },
     {
       "id": "4473",
@@ -733,7 +756,7 @@
           "bankName": "Gtb",
           "accountName": "Davido ",
           "accountNumber": "8112880",
-          "isPrimary": false,
+          "isPrimary": true,
           "id": "1744736810240",
           "createdAt": "2025-04-15T17:06:50.240Z"
         },
@@ -741,7 +764,7 @@
           "bankName": "Uba",
           "accountName": "Bayo ",
           "accountNumber": "852345",
-          "isPrimary": true,
+          "isPrimary": false,
           "id": "1744736867713",
           "createdAt": "2025-04-15T17:07:47.713Z"
         }
@@ -1188,6 +1211,54 @@
       "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
       "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737731/user_documents/efucr1rjxkujqmtmqizc.webp",
       "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744737672/user_documents/dxy7e4ybuyvq1ybvqiem.webp",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": []
+    },
+    {
+      "id": "0ibe",
+      "firstname": "Timi",
+      "lastname": "Ux",
+      "email": "Ux@gmail.com",
+      "phonenumber": "6035354718",
+      "pin": "2580",
+      "business": "UiUx",
+      "address": "Lagos ",
+      "city": "Ikeja ",
+      "state": "Lagos ",
+      "gender": "Male",
+      "dob": "2007-04-16",
+      "bvn": "555588555",
+      "government_id": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804424/user_documents/zuboxtye3yazngvmztjz.webp",
+      "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804432/user_documents/a6rbgr7hif3w8j82l3ue.webp",
+      "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804424/user_documents/zuboxtye3yazngvmztjz.webp",
+      "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804432/user_documents/a6rbgr7hif3w8j82l3ue.webp",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": []
+    },
+    {
+      "id": "x0a5",
+      "firstname": "Timi",
+      "lastname": "Ux",
+      "email": "Ux@gmail.com",
+      "phonenumber": "6035354718",
+      "balance": "100000",
+      "totalDeposit": "100000",
+      "totalWithdraw": "100000",
+      "weeklyEarnings": "10000",
+      "pin": "2580",
+      "business": "UiUx",
+      "address": "Lagos ",
+      "city": "Ikeja ",
+      "state": "Lagos ",
+      "gender": "Male",
+      "dob": "2007-04-16",
+      "bvn": "555588555",
+      "government_id": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804424/user_documents/zuboxtye3yazngvmztjz.webp",
+      "business_img": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804432/user_documents/a6rbgr7hif3w8j82l3ue.webp",
+      "idImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804424/user_documents/zuboxtye3yazngvmztjz.webp",
+      "cacImage": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744804432/user_documents/a6rbgr7hif3w8j82l3ue.webp",
       "verificationStatus": "pending",
       "verify_business": true,
       "transactions": []
@@ -1728,6 +1799,42 @@
       "startDate": "2025-04-15",
       "endDate": "2025-04-15",
       "durationValue": 8,
+      "status": "active"
+    },
+    {
+      "id": "6c81",
+      "agentName": "Taiwo Omotoso",
+      "agentId": "62f2",
+      "firstName": "John",
+      "lastName": "Doe",
+      "phoneNumber": "9035354623",
+      "ninNumber": "555555555",
+      "language": "Hausa",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803334/contributor_profiles/p9zguaozdrhgemtnpkcu.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803334/contributor_profiles/p9zguaozdrhgemtnpkcu.webp",
+      "depositAmount": "2,000",
+      "frequency": "daily",
+      "startDate": "2025-04-16",
+      "endDate": "2025-07-31",
+      "durationValue": 1,
+      "status": "active"
+    },
+    {
+      "id": "189e",
+      "agentName": "Taiwo Omotoso",
+      "agentId": "62f2",
+      "firstName": "John",
+      "lastName": "Doe",
+      "phoneNumber": "9035354623",
+      "ninNumber": "555555555",
+      "language": "Hausa",
+      "photoUri": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803334/contributor_profiles/p9zguaozdrhgemtnpkcu.webp",
+      "imageUrl": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803334/contributor_profiles/p9zguaozdrhgemtnpkcu.webp",
+      "depositAmount": "2,000",
+      "frequency": "daily",
+      "startDate": "2025-04-16",
+      "endDate": "2025-07-31",
+      "durationValue": 1,
       "status": "active"
     }
   ]

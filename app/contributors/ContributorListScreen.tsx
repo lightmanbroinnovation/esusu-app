@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Contributor } from './ContributorsScreen';
@@ -207,48 +207,52 @@ const ContributorListScreen = () => {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView className="p-4">
-          {filteredContributors.length > 0 ? (
-            filteredContributors.map((contributor) => (
-              <TouchableOpacity 
-                key={contributor.id} 
-                className="flex-row items-center border-b border-gray-200 pb-4 mb-4 bg-white p-2" 
-                onPress={() => handleContributorPress(contributor)}
-              >
-                <Image
-                  source={{ uri: contributor.photoUri }}
-                  style={{ width: 60, height: 60, borderRadius: 30 }}
-                  className="mr-3"
-                />
-                <View className="flex-1">
-                  <Text className="text-lg font-bold">{contributor.firstName} {contributor.lastName}</Text>
-                  <View className="flex-row justify-between mt-1">
-                    <View>
-                      <Text className="text-gray-500">Balance</Text>
-                      <Text className="font-semibold">₦{contributor.depositAmount}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500">Next Due Date</Text>
-                      <Text className="font-semibold">{new Date(contributor.startDate).toLocaleDateString('en-GB')}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500">Status</Text>
-                      <View className={`px-3 py-1 rounded-full ${getStatusColor(contributor.status || 'unknown')}`}>
-                        <Text className="text-center">{contributor.status || 'Unknown'}</Text>
-                      </View>
+        <FlatList
+          data={filteredContributors}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: contributor }) => (
+            <TouchableOpacity 
+              className="flex-row items-center border-b border-gray-200 pb-4 mb-4 bg-white p-2" 
+              onPress={() => handleContributorPress(contributor)}
+            >
+              <Image
+                source={{ uri: contributor.photoUri }}
+                style={{ width: 60, height: 60, borderRadius: 30 }}
+                className="mr-3"
+              />
+              <View className="flex-1">
+                <Text className="text-lg font-bold">{contributor.firstName} {contributor.lastName}</Text>
+                <View className="flex-row justify-between mt-1">
+                  <View>
+                    <Text className="text-gray-500">Balance</Text>
+                    <Text className="font-semibold">₦{contributor.depositAmount}</Text>
+                  </View>
+                  <View>
+                    <Text className="text-gray-500">Next Due Date</Text>
+                    <Text className="font-semibold">{new Date(contributor.startDate).toLocaleDateString('en-GB')}</Text>
+                  </View>
+                  <View>
+                    <Text className="text-gray-500">Status</Text>
+                    <View className={`px-3 py-1 rounded-full ${getStatusColor(contributor.status || 'unknown')}`}>
+                      <Text className="text-center">{contributor.status || 'Unknown'}</Text>
                     </View>
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))
-          ) : (
+              </View>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={
             <Text className="text-center text-gray-500 mt-4">
               {searchQuery.length > 0 
                 ? `No contributors found matching "${searchQuery}"`
                 : "No contributors found for this duration."}
             </Text>
-          )}
-        </ScrollView>
+          }
+          onRefresh={handleRetry}
+          refreshing={loading}
+          showsVerticalScrollIndicator={false}
+        />
       )}
 
       {/* Status indicators modal */}

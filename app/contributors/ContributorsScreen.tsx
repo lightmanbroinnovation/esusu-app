@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, ScrollView, SafeAreaView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, FlatList, SafeAreaView, Modal, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import Footer from '../components/Footer';
@@ -184,6 +184,8 @@ const ContributorsScreen = () => {
     });
   };
 
+  const frequencyTypes = Object.keys(frequencyDetails) as Frequency[];
+
   return (
     <View className="flex-1 bg-white">
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
@@ -213,17 +215,14 @@ const ContributorsScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
-            <ScrollView 
-              showsVerticalScrollIndicator={false}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 80 }} // Add padding for footer
-            >
-              {Object.keys(frequencyDetails).map((duration) => {
+            <FlatList
+              data={frequencyTypes}
+              keyExtractor={(item) => item}
+              renderItem={({ item: duration }) => {
                 const { title, description } = frequencyDetails[duration as Frequency];
-                const totalCount = allContributors.filter(contributor => contributor.frequency === duration).length; // Get total count for this duration
+                const totalCount = allContributors.filter(contributor => contributor.frequency === duration).length;
                 return (
                   <TouchableOpacity
-                    key={duration}
                     onPress={() => handleCardPress(duration)}
                     className="bg-primaryCard rounded-xl p-4 mb-4"
                   >
@@ -240,7 +239,7 @@ const ContributorsScreen = () => {
                         </View>
                       ))}
                       {totalCount > 3 && (
-                        <Text className="text-white ml-2">+{totalCount - 3}</Text> // Show remaining count
+                        <Text className="text-white ml-2">+{totalCount - 3}</Text>
                       )}
                     </View>
                     <TouchableOpacity 
@@ -252,8 +251,12 @@ const ContributorsScreen = () => {
                     </TouchableOpacity>
                   </TouchableOpacity>
                 );
-              })}
-            </ScrollView>
+              }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 80 }}
+              onRefresh={handleRetry}
+              refreshing={loading}
+            />
           )}
         </View>
         <Footer />

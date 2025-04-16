@@ -498,9 +498,13 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
                   <>
                     <ActivityIndicator size="large" color="#0052CC" />
                     <Text className="text-gray-600 mt-4 text-center">
-                      {submissionProgress < 10 ? 'Preparing data...' :
-                       submissionProgress < 90 ? 'Uploading images...' :
-                       'Finalizing submission...'}
+                      {submissionProgress < 10 ? (
+                        <Text>Preparing data...</Text>
+                      ) : submissionProgress < 90 ? (
+                        <Text>Uploading images...</Text>
+                      ) : (
+                        <Text>Finalizing submission...</Text>
+                      )}
                     </Text>
                     
                     {/* Progress bar */}

@@ -1,11 +1,37 @@
 import axios from "axios";
+import { getCachedData, invalidateCache } from "../app/utils/dataCaching";
+import { trackApiCall } from "../app/utils/performanceMonitor";
 
-const API_BASE_URL = 'http://192.168.100.62:8082'; // Ensure this is the correct base URL
+const API_BASE_URL = 'http://192.168.235.47:8082'; // Ensure this is the correct base URL
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
+
+// Add request interceptor to track performance
+axiosInstance.interceptors.request.use(request => {
+  request.metadata = { startTime: new Date().getTime() };
+  return request;
+});
+
+// Add response interceptor to track performance
+axiosInstance.interceptors.response.use(response => {
+  const endTime = new Date().getTime();
+  const duration = endTime - response.config.metadata.startTime;
+  console.log(`Request to ${response.config.url} took ${duration}ms`);
+  
+  // Track API call performance
+  trackApiCall(response.config.metadata.startTime);
+  
+  return response;
+});
+
+// Function to generate cache keys
+const getCacheKey = (endpoint, id) => `${endpoint}_${id}`;
 
 export const registerUser = async (userData) => {
   try {
@@ -102,6 +128,9 @@ export const registerUser = async (userData) => {
     console.log("Response data:", JSON.stringify(response.data, null, 2));
     console.log("==== REGISTRATION PROCESS COMPLETED ====");
     
+    // After successful registration, we should invalidate any related caches
+    await invalidateCache('users');
+    
     return response.data;
   } catch (error) {
     console.error("==== REGISTRATION FAILED ====");
@@ -131,14 +160,21 @@ export const registerUser = async (userData) => {
 };
 
 export const fetchUser = async (id) => {
-  try {
-    const response = await axiosInstance.get(`/users/${id}`);
-    console.log("User details fetched successfully:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    throw error;
-  }
+  return getCachedData(
+    getCacheKey('user', id),
+    async () => {
+      try {
+        const response = await axiosInstance.get(`/users/${id}`);
+        console.log("User details fetched successfully:", response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+        throw error;
+      }
+    },
+    // Cache user data for 5 minutes
+    1000 * 60 * 5
+  );
 };
 
 export const addContributor = async (contributorData) => {
@@ -174,7 +210,11 @@ export const addContributor = async (contributorData) => {
     
     const response = await axiosInstance.post("/contributors", contributorData);
     console.log("API RESPONSE - Contributor added successfully:", response.data);
-    return response.data; // Return the added contributor data
+    
+    // Invalidate contributor cache for the agent
+    await invalidateCache(getCacheKey('contributors', contributorData.agentId));
+    
+    return response.data;
   } catch (error) {
     console.error("Error adding contributor:", error);
     throw error;
@@ -183,28 +223,47 @@ export const addContributor = async (contributorData) => {
 
 // Updated function to fetch contributors based on agentId
 export const fetchContributors = async (agentId) => {
-  try {
-    const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
-    console.log("Contributors fetched successfully:", response.data);
-    return response.data; // Return the list of contributors
-  } catch (error) {
-    console.error("Error fetching contributors:", error);
-    throw error;
-  }
+  return getCachedData(
+    getCacheKey('contributors', agentId),
+    async () => {
+      try {
+        const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
+        console.log("Contributors fetched successfully:", response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching contributors:", error);
+        throw error;
+      }
+    },
+    // Cache contributor list for 2 minutes
+    1000 * 60 * 2
+  );
 };
 
 // Function to fetch transactions for a user by userId
 export const fetchTransactions = async (userId) => {
-  try {
-    const response = await axiosInstance.get(`/users/${userId}`); // Fetch the user data
-    console.log("User fetched successfully:", response.data);
-    
-    // Return the transactions for the user
-    return response.data.transactions || []; // Return an empty array if no transactions
-  } catch (error) {
-    console.error("Error fetching transactions:", error);
-    throw error;
-  }
+  return getCachedData(
+    getCacheKey('transactions', userId),
+    async () => {
+      try {
+        const response = await axiosInstance.get(`/users/${userId}`);
+        console.log("User fetched successfully for transactions");
+        
+        // Check if the user has transactions data
+        if (response.data && response.data.transactions) {
+          return response.data.transactions;
+        } else {
+          console.log("No transactions found for this user");
+          return [];
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        throw error;
+      }
+    },
+    // Cache transactions for 2 minutes
+    1000 * 60 * 2
+  );
 };
 
 // Function to fetch commissions for a user by userId
@@ -245,6 +304,11 @@ export const updateUser = async (userId, userData) => {
   try {
     const response = await axiosInstance.patch(`/users/${userId}`, userData);
     console.log("User updated successfully:", response.data);
+    
+    // Invalidate cached data for this user
+    await invalidateCache(getCacheKey('user', userId));
+    await invalidateCache(getCacheKey('transactions', userId));
+    
     return response.data;
   } catch (error) {
     console.error("Error updating user:", error);

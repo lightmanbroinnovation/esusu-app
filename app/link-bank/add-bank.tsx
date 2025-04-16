@@ -81,7 +81,7 @@ export default function AddBankScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="px-6">
         {/* Header */}
-        <View className="flex-row items-center justify-between mt-6">
+        <View className="flex-row items-center justify-between mt-12">
           <TouchableOpacity 
             onPress={handlePreviousPage} 
             className="bg-gray-100 h-10 w-10 rounded-full items-center justify-center"
