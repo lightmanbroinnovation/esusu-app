@@ -577,7 +577,7 @@
       "totalDeposit": "100000",
       "totalWithdraw": "100000",
       "weeklyEarnings": "10000",
-      "pin": "1111",
+      "pin": "1234",
       "business": "NewDawn",
       "address": "Lafe inn street Akure",
       "city": "Akure",
@@ -696,22 +696,23 @@
       "userImg": "https://res.cloudinary.com/daskmqzyy/image/upload/v1744803789/user_documents/gdqcp8jrbgasvytjorq8.webp",
       "bankAccounts": [
         {
-          "bankName": "Gtb",
-          "accountName": "Bola",
-          "accountNumber": "8866555556",
-          "isPrimary": false,
-          "id": "1744791311947",
-          "createdAt": "2025-04-16T08:15:11.947Z"
-        },
-        {
           "bankName": "Access",
           "accountName": "Taiwo ",
           "accountNumber": "5554664646",
           "isPrimary": true,
           "id": "1744803832377",
           "createdAt": "2025-04-16T11:43:52.377Z"
+        },
+        {
+          "bankName": "First bank",
+          "accountName": "Tayo",
+          "accountNumber": "333333333",
+          "isPrimary": false,
+          "id": "1744881835370",
+          "createdAt": "2025-04-17T09:23:55.370Z"
         }
-      ]
+      ],
+      "biometricEnabled": true
     },
     {
       "id": "4473",

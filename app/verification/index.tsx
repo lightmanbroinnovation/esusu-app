@@ -177,7 +177,7 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
           }
           
           setLocationImage(newUri);
-          setShowLocationQualityCheck(true);
+    setShowLocationQualityCheck(true);
         }
       }
     } catch (error) {
@@ -286,11 +286,11 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
         
         console.log('Verification data successfully submitted to database');
         
-        // Navigate to success page
-        if (onVerificationComplete) {
-          onVerificationComplete();
-        } else {
-          router.push('/verification/success');
+      // Navigate to success page
+      if (onVerificationComplete) {
+        onVerificationComplete();
+      } else {
+        router.push('/verification/success');
         }
       } catch (error) {
         console.error('Error during verification submission:', error);
@@ -319,15 +319,15 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
   return (
     <SafeAreaView className=" bg-white">
       <ScrollView className=" px-4">
-        <View className=' mt-4 flex-row justify-end'>
+   <View className=' mt-4 flex-row justify-end'>
           <TouchableOpacity 
             className=" bg-gray-100 p-2 rounded-full"
             onPress={onClose}
           >
             <Ionicons name="close" size={24} color="#000" />
           </TouchableOpacity>
-        </View>
-          
+   </View>
+     
         <View className=' mt-2'>
           <Text className="text-[#0052CC] text-3xl font-bold text-center mt-4">
             Verify Business
@@ -380,9 +380,9 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
               </Text>
             </View>
           ) : (
-            <Text className="text-white text-center text-lg font-medium">
-              Verify
-            </Text>
+          <Text className="text-white text-center text-lg font-medium">
+            Verify
+          </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

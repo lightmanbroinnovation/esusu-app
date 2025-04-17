@@ -173,22 +173,22 @@ const AddContributor = () => {
     setSavingImage(true);
     try {
       // Open camera with improved options
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
+        const result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         exif: true,
         cameraType: ImagePicker.CameraType.front, // Default to front camera for user photos
-      });
-      
-      if (!result.canceled) {
+        });
+        
+        if (!result.canceled) {
         // Save the image to app storage
         const newUri = await saveImageToAppStorage(result.assets[0].uri);
         
         // Navigate to photo quality check with permanent image URI
-        router.push({
-          pathname: '/contributor/photo-quality',
+          router.push({
+            pathname: '/contributor/photo-quality',
           params: { photoUri: newUri }
         });
       }
@@ -547,7 +547,7 @@ const AddContributor = () => {
             {uploadingImage ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text className="text-white font-semibold text-lg">Next</Text>
+            <Text className="text-white font-semibold text-lg">Next</Text>
             )}
           </TouchableOpacity>
         </View>

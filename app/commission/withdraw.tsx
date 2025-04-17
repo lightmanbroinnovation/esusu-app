@@ -191,7 +191,7 @@ const WithdrawScreen = () => {
       AsyncStorage.setItem('withdrawAmount', amount),
       AsyncStorage.setItem('selectedAccount', JSON.stringify(selectedAccount))
     ]).then(() => {
-      router.push('/commission/otp' as any);
+    router.push('/commission/otp' as any);
     }).catch(error => {
       console.error('Error saving withdrawal data:', error);
       Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
@@ -255,53 +255,53 @@ const WithdrawScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <View className="flex-1 px-4">
-            {/* Balance Section */}
-            <View className="flex-row justify-center items-center my-2">
-              <Text className="text-gray-700 text-base mr-2">Current Balance:</Text>
+        <View className="flex-1 px-4">
+          {/* Balance Section */}
+          <View className="flex-row justify-center items-center my-2">
+            <Text className="text-gray-700 text-base mr-2">Current Balance:</Text>
               <Text className="text-green-600 font-semibold text-base">₦{userBalance}</Text>
-            </View>
-            
-            {/* Account Selection */}
+          </View>
+          
+          {/* Account Selection */}
             {accounts.length > 0 ? (
-              <TouchableOpacity 
-                className="bg-blue-50 rounded-xl p-4 mb-4"
-                onPress={() => setShowAccountModal(true)}
-              >
-                <View className="flex-row justify-between items-center mt-1">
+          <TouchableOpacity 
+            className="bg-blue-50 rounded-xl p-4 mb-4"
+            onPress={() => setShowAccountModal(true)}
+          >
+            <View className="flex-row justify-between items-center mt-1">
                   <View className="flex-row items-center space-x-8">
                     <Text className="text-gray-600 mr-4">To:</Text>
-                    <Text className="text-lg font-semibold mr-2">
+                <Text className="text-lg font-semibold mr-2">
                       {selectedAccount?.accountName}
-                    </Text>
-                    {selectedAccount && (
-                      <Image 
+                </Text>
+                {selectedAccount && (
+                  <Image 
                         source={getBankLogo(selectedAccount.bankName)}
-                        className="w-8 h-8 rounded"
-                        style={{height: 30, width: 30}}
-                      />
-                    )}
-                  </View>
-                  <Ionicons name="chevron-down" size={24} color="#000" />
-                </View>
-                <View className="flex-row items-center mt-2">
+                    className="w-8 h-8 rounded"
+                    style={{height: 30, width: 30}}
+                  />
+                )}
+              </View>
+              <Ionicons name="chevron-down" size={24} color="#000" />
+            </View>
+            <View className="flex-row items-center mt-2">
                   <Ionicons name="card-outline" size={18} color="#0099FF" />
                   <Text className="text-blue-600 ml-2">
                   {selectedAccount?.bankName || 'Select Bank'}
 
                   </Text>
-                  <Text className="text-blue-600 ml-2">
+              <Text className="text-blue-600 ml-2">
               
 
                     {selectedAccount?.accountNumber || ''}
-                  </Text>
-                  {selectedAccount?.isPrimary && (
-                    <View className="bg-blue-100 rounded-full px-2 py-0.5 ml-2">
-                      <Text className="text-blue-600 text-xs">Primary Account</Text>
-                    </View>
-                  )}
+              </Text>
+              {selectedAccount?.isPrimary && (
+                <View className="bg-blue-100 rounded-full px-2 py-0.5 ml-2">
+                  <Text className="text-blue-600 text-xs">Primary Account</Text>
                 </View>
-              </TouchableOpacity>
+              )}
+            </View>
+          </TouchableOpacity>
             ) : (
               <TouchableOpacity 
                 className="bg-blue-50 rounded-xl p-4 mb-4 flex-row justify-between items-center"
@@ -314,124 +314,124 @@ const WithdrawScreen = () => {
                 <Ionicons name="add-circle" size={32} color="#0074FF" />
               </TouchableOpacity>
             )}
+          
+          {/* Amount Entry */}
+          <View className="items-center mb-6">
+            <Text className="text-gray-600 text-lg mb-2">Enter Amount</Text>
+            <Text className="text-3xl font-bold text-blue-950">
+              {amount === '0' ? '0' : parseInt(amount).toLocaleString()}
+            </Text>
+            <View className="h-0.5 bg-gray-200 w-4/5 mt-2" />
+          </View>
+          
+          {/* Quick Amounts */}
+          <View className="flex-row justify-between mb-4">
+            <TouchableOpacity 
+              className="bg-gray-100 px-4 py-2 rounded-full"
+              onPress={() => handleAmountSelection('5000')}
+            >
+              <Text className="text-gray-800">₦5,000</Text>
+            </TouchableOpacity>
             
-            {/* Amount Entry */}
-            <View className="items-center mb-6">
-              <Text className="text-gray-600 text-lg mb-2">Enter Amount</Text>
-              <Text className="text-3xl font-bold text-blue-950">
-                {amount === '0' ? '0' : parseInt(amount).toLocaleString()}
-              </Text>
-              <View className="h-0.5 bg-gray-200 w-4/5 mt-2" />
-            </View>
+            <TouchableOpacity 
+              className="bg-gray-100 px-4 py-2 rounded-full"
+              onPress={() => handleAmountSelection('15000')}
+            >
+              <Text className="text-gray-800">₦15,000</Text>
+            </TouchableOpacity>
             
-            {/* Quick Amounts */}
-            <View className="flex-row justify-between mb-4">
+            <TouchableOpacity 
+              className="bg-gray-100 px-4 py-2 rounded-full"
+              onPress={() => handleAmountSelection('25000')}
+            >
+              <Text className="text-gray-800">₦25,000</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Keypad */}
+          <View className="w-full items-center">
+            {/* Row 1 */}
+            <View className="flex-row justify-around w-full my-4">
               <TouchableOpacity 
-                className="bg-gray-100 px-4 py-2 rounded-full"
-                onPress={() => handleAmountSelection('5000')}
-              >
-                <Text className="text-gray-800">₦5,000</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                className="bg-gray-100 px-4 py-2 rounded-full"
-                onPress={() => handleAmountSelection('15000')}
-              >
-                <Text className="text-gray-800">₦15,000</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                className="bg-gray-100 px-4 py-2 rounded-full"
-                onPress={() => handleAmountSelection('25000')}
-              >
-                <Text className="text-gray-800">₦25,000</Text>
-              </TouchableOpacity>
-            </View>
-            
-            {/* Keypad */}
-            <View className="w-full items-center">
-              {/* Row 1 */}
-              <View className="flex-row justify-around w-full my-4">
-                <TouchableOpacity 
               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-              onPress={() => handleButtonPress('1')}
-                >
+                onPress={() => handleButtonPress('1')}
+              >
                   <Text className="text-xl font-medium text-blue-950">1</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('2')}
-                >
+                onPress={() => handleButtonPress('2')}
+              >
                   <Text className="text-xl font-medium text-blue-950">2</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('3')}
-                >
+                onPress={() => handleButtonPress('3')}
+              >
                   <Text className="text-xl font-medium text-blue-950">3</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Row 2 */}
-              <View className="flex-row justify-around w-full mb-6">
-                <TouchableOpacity 
+              </TouchableOpacity>
+            </View>
+            
+            {/* Row 2 */}
+            <View className="flex-row justify-around w-full mb-6">
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('4')}
-                >
+                onPress={() => handleButtonPress('4')}
+              >
                   <Text className="text-xl font-medium text-blue-950">4</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('5')}
-                >
+                onPress={() => handleButtonPress('5')}
+              >
                   <Text className="text-xl font-medium text-blue-950">5</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('6')}
-                >
+                onPress={() => handleButtonPress('6')}
+              >
                   <Text className="text-xl font-medium text-blue-950">6</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Row 3 */}
-              <View className="flex-row justify-around w-full mb-6">
-                <TouchableOpacity 
+              </TouchableOpacity>
+            </View>
+            
+            {/* Row 3 */}
+            <View className="flex-row justify-around w-full mb-6">
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('7')}
-                >
+                onPress={() => handleButtonPress('7')}
+              >
                   <Text className="text-xl font-medium text-blue-950">7</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('8')}
-                >
+                onPress={() => handleButtonPress('8')}
+              >
                   <Text className="text-xl font-medium text-blue-950">8</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+              </TouchableOpacity>
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('9')}
-                >
+                onPress={() => handleButtonPress('9')}
+              >
                   <Text className="text-xl font-medium text-blue-950">9</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {/* Row 4 */}
-              <View className="flex-row justify-around w-full">
-                <View className="w-16 h-16" />
-                <TouchableOpacity 
+              </TouchableOpacity>
+            </View>
+            
+            {/* Row 4 */}
+            <View className="flex-row justify-around w-full">
+              <View className="w-16 h-16" />
+              <TouchableOpacity 
                                className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
 
-                  onPress={() => handleButtonPress('0')}
-                >
+                onPress={() => handleButtonPress('0')}
+              >
                   <Text className="text-xl font-medium text-blue-950">0</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -440,7 +440,7 @@ const WithdrawScreen = () => {
                   onPress={handleBackspace}
                 >
                   <Ionicons name="backspace-outline" size={28} color="#374151" />
-                </TouchableOpacity>
+              </TouchableOpacity>
               </View>
             </View>
             
@@ -457,7 +457,7 @@ const WithdrawScreen = () => {
           </View>
         )}
       </SafeAreaView>
-      
+
       {/* Account Selection Modal */}
       <Modal
         animationType="slide"
@@ -476,21 +476,21 @@ const WithdrawScreen = () => {
             
             {accounts.length > 0 ? (
               accounts.map((account) => (
-                <TouchableOpacity 
+              <TouchableOpacity 
                   key={account.id}
                   className={`flex-row items-center p-4 rounded-xl mb-3 ${
                     selectedAccount?.id === account.id ? 'bg-blue-50' : 'bg-gray-50'
                   }`}
-                  onPress={() => {
-                    setSelectedAccount(account);
-                    setShowAccountModal(false);
-                  }}
-                >
+                onPress={() => {
+                  setSelectedAccount(account);
+                  setShowAccountModal(false);
+                }}
+              >
                   <Image 
                     source={getBankLogo(account.bankName)}
                     className="w-12 h-12 rounded-md mr-4"
                   />
-                  <View className="flex-1">
+                <View className="flex-1">
                     <Text className="text-lg font-semibold">{account.bankName}</Text>
                     <Text className="text-gray-600">{account.accountName}</Text>
                     <Text className="text-gray-600">Account: {account.accountNumber}</Text>
@@ -514,7 +514,7 @@ const WithdrawScreen = () => {
                 >
                   <Text className="text-white font-medium">Add Bank Account</Text>
                 </TouchableOpacity>
-              </View>
+                </View>
             )}
             
             {accounts.length > 0 && accounts.length < 2 && (

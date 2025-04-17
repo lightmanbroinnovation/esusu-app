@@ -271,15 +271,15 @@ export default function Success() {
           </Text>
         </View>
       ) : (
-        <TouchableOpacity
-          className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
+      <TouchableOpacity
+        className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
           onPress={handleGoToDashboard}
           disabled={loading || registering}
-        >
+      >
           <Text className="text-white font-bold text-center">
             {autoLoginInProgress ? `Go to Login (${countdown})` : "Go to Login"}
           </Text>
-        </TouchableOpacity>
+      </TouchableOpacity>
       )}
     </View>
   );

@@ -5,6 +5,7 @@ import { fetchUser } from "@/services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
 import Footer from "../components/Footer";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearAllCaches } from '../utils/dataCaching';
 
 // Define the UserDetails type
 interface UserDetails {
@@ -59,6 +60,13 @@ const menuItems: MenuItem[] = [
         bgColor: "bg-blue-100",
         textColor: "text-gray-800",
         route: "/profile-settings",
+    },
+    {
+        label: "Biometric Login",
+        icon: require("../assets/images/security.png"),
+        bgColor: "bg-blue-100",
+        textColor: "text-gray-800",
+        route: "/security",
     },
     {
         label: "FAQs",
@@ -164,14 +172,26 @@ export default function Index() {
     const handleLogout = async () => {
         try {
             // Clear all user-related data from AsyncStorage
-            await AsyncStorage.removeItem('userId');
-            await AsyncStorage.removeItem('userPhone');
-            await AsyncStorage.removeItem('isLoggedIn');
+            const keysToRemove = [
+                'userId',
+                'userPhone',
+                'isLoggedIn',
+                'lastLoginTime',
+                'biometricEnabled',
+                'userData',
+                'pin'
+            ];
             
-            console.log("Successfully logged out");
+            // Clear all keys
+            await AsyncStorage.multiRemove(keysToRemove);
             
-            // Navigate to root index instead of login
-            router.replace("/");
+            // Clear all cached data
+            await clearAllCaches();
+            
+            console.log("Successfully logged out and cleared all data");
+            
+            // Navigate to login instead of root
+            router.replace("/login");
         } catch (error) {
             console.error("Error during logout:", error);
             Alert.alert("Error", "Failed to log out. Please try again.");

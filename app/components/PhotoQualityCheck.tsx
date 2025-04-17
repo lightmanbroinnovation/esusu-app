@@ -173,8 +173,8 @@ export const PhotoQualityCheck = () => {
       }
       
       // Return to the form with both the photo URI and Cloudinary URL
-      router.push({
-        pathname: '/contributor/add',
+    router.push({
+      pathname: '/contributor/add',
         params: { 
           photoUri,
           imageUrl,
@@ -341,16 +341,16 @@ export const PhotoQualityCheck = () => {
               </Text>
             </View>
           ) : (
-            <Image 
-              source={{ uri: photoUri }}
-              style={{ 
-                width: 280, 
-                height: 280, 
-                borderRadius: 20,
-              }}
-              resizeMode="cover"
+          <Image 
+            source={{ uri: photoUri }}
+            style={{ 
+              width: 280, 
+              height: 280, 
+              borderRadius: 20,
+            }}
+            resizeMode="cover"
               onError={handleImageError}
-            />
+          />
           )}
         </View>
         

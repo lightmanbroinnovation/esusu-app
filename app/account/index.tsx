@@ -224,11 +224,11 @@ function MyAccount() {
                                     <ActivityIndicator size="large" color="#0052CC" />
                                 </View>
                             ) : (
-                                <Image
+                            <Image
                                     source={userDetails?.userImg 
                                         ? { uri: userDetails.userImg } 
                                         : require('../assets/images/user.png')}
-                                    className="w-28 h-28 rounded-full"
+                                className="w-28 h-28 rounded-full"
                                     style={{ width: 112, height: 112, borderRadius: 56 }}
                                 />
                             )}

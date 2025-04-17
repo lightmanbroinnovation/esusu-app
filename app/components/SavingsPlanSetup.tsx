@@ -58,22 +58,22 @@ const SavingsPlanSetup = () => {
       
       console.log('FINAL IMAGE URL FOR DB:', finalImageUrl);
       
-      // Prepare the parameters including entered details
-      const contributorData = {
-        agentName: params.agentName,
-        agentId: params.agentId,
+    // Prepare the parameters including entered details
+    const contributorData = {
+      agentName: params.agentName,
+      agentId: params.agentId,
         firstName: params.firstName,
         lastName: params.lastName,
-        phoneNumber: params.phoneNumber,
-        ninNumber: params.ninNumber,
-        language: params.language,
+      phoneNumber: params.phoneNumber,
+      ninNumber: params.ninNumber,
+      language: params.language,
         photoUri: finalImageUrl, // Explicitly include the photo URI
         imageUrl: finalImageUrl, // Add imageUrl field as well for compatibility
-        depositAmount,
-        frequency,
-        startDate: moment(startDate).format('YYYY-MM-DD'),
-        endDate: moment(endDate).format('YYYY-MM-DD'),
-        durationValue,
+      depositAmount,
+      frequency,
+      startDate: moment(startDate).format('YYYY-MM-DD'),
+      endDate: moment(endDate).format('YYYY-MM-DD'),
+      durationValue,
         status: 'active',
       };
       
@@ -191,13 +191,13 @@ const SavingsPlanSetup = () => {
       const newStartDate = moment(startDate).add(direction === 'next' ? 1 : -1, 'months');
       // Don't allow going to past months from current date
       if (!newStartDate.isBefore(moment(), 'month') || direction === 'next') {
-        setStartDate(newStartDate.toDate());
+      setStartDate(newStartDate.toDate());
       }
     } else {
       const newEndDate = moment(endDate).add(direction === 'next' ? 1 : -1, 'months');
       // Don't allow going before the start date month
       if (!newEndDate.isBefore(moment(startDate), 'month') || direction === 'next') {
-        setEndDate(newEndDate.toDate());
+      setEndDate(newEndDate.toDate());
       }
     }
   };

@@ -251,7 +251,7 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
       // Navigate to success page after a short delay
       setTimeout(() => {
         setSubmissionLoading(false);
-        router.push('/verification/success');
+    router.push('/verification/success');
       }, 500);
       
     } catch (error) {

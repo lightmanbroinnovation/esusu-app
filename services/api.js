@@ -163,14 +163,14 @@ export const fetchUser = async (id) => {
   return getCachedData(
     getCacheKey('user', id),
     async () => {
-      try {
-        const response = await axiosInstance.get(`/users/${id}`);
-        console.log("User details fetched successfully:", response.data);
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-        throw error;
-      }
+  try {
+    const response = await axiosInstance.get(`/users/${id}`);
+    console.log("User details fetched successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    throw error;
+  }
     },
     // Cache user data for 5 minutes
     1000 * 60 * 5
@@ -226,14 +226,14 @@ export const fetchContributors = async (agentId) => {
   return getCachedData(
     getCacheKey('contributors', agentId),
     async () => {
-      try {
-        const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
-        console.log("Contributors fetched successfully:", response.data);
+  try {
+    const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
+    console.log("Contributors fetched successfully:", response.data);
         return response.data;
-      } catch (error) {
-        console.error("Error fetching contributors:", error);
-        throw error;
-      }
+  } catch (error) {
+    console.error("Error fetching contributors:", error);
+    throw error;
+  }
     },
     // Cache contributor list for 2 minutes
     1000 * 60 * 2
@@ -256,10 +256,10 @@ export const fetchTransactions = async (userId) => {
           console.log("No transactions found for this user");
           return [];
         }
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-        throw error;
-      }
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    throw error;
+  }
     },
     // Cache transactions for 2 minutes
     1000 * 60 * 2

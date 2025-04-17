@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define interface for params
 interface UserParams {
@@ -29,6 +30,7 @@ interface UserParams {
   bvn?: string;
   idImage?: string;
   cacImage?: string;
+  biometricEnabled?: string;
 }
 
 export default function SecurityScreen() {
@@ -73,15 +75,15 @@ export default function SecurityScreen() {
       });
       
       if (result.success) {
-        // Here we would normally save that the user has enabled biometric auth
-        console.log('Biometric authentication successful');
+        // Save biometric status to AsyncStorage
+        await AsyncStorage.setItem('biometricEnabled', 'true');
         
         // Get all user data from params to pass to next screen
         console.log('===== SECURITY SCREEN - PASSING DATA TO SUCCESS =====');
         const userData: UserParams = { 
           ...params, 
           biometricEnabled: 'true',
-          hasBiometric: 'true' // Add the flag for registration
+          hasBiometric: 'true'
         };
         
         // Log the data being passed (omitting sensitive data)
@@ -92,7 +94,7 @@ export default function SecurityScreen() {
         }, null, 2));
         console.log('==============================================');
         
-        // Navigate to PIN setup with all user data
+        // Navigate to success with all user data
         router.push({
           pathname: "/signup/success",
           params: userData,
@@ -114,27 +116,38 @@ export default function SecurityScreen() {
     }
   };
 
-  const skipBiometric = () => {
-    // Navigate to PIN setup without enabling biometrics
-    console.log('===== SECURITY SCREEN - PASSING DATA TO SUCCESS =====');
-    const userData: UserParams = { 
-      ...params, 
-      biometricEnabled: 'false',
-      hasBiometric: 'false' // Add the flag for registration
-    };
-    
-    // Log the data being passed (omitting sensitive data)
-    console.log('Data being passed to success screen:', JSON.stringify({
-      ...userData,
-      idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
-      cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
-    }, null, 2));
-    console.log('==============================================');
-    
-    router.push({
-      pathname: "/signup/success",
-      params: userData,
-    });
+  const skipBiometric = async () => {
+    try {
+      // Save biometric status to AsyncStorage
+      await AsyncStorage.setItem('biometricEnabled', 'false');
+      
+      // Navigate to success without enabling biometrics
+      console.log('===== SECURITY SCREEN - PASSING DATA TO SUCCESS =====');
+      const userData: UserParams = { 
+        ...params, 
+        biometricEnabled: 'false',
+        hasBiometric: 'false'
+      };
+      
+      // Log the data being passed (omitting sensitive data)
+      console.log('Data being passed to success screen:', JSON.stringify({
+        ...userData,
+        idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
+        cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
+      }, null, 2));
+      console.log('==============================================');
+      
+      router.push({
+        pathname: "/signup/success",
+        params: userData,
+      });
+    } catch (error) {
+      console.error('Error saving biometric status:', error);
+      Alert.alert(
+        "Error",
+        "There was a problem saving your preferences. Please try again."
+      );
+    }
   };
 
   return (
@@ -149,20 +162,20 @@ export default function SecurityScreen() {
           <>
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="fingerprint" size={120} color="#FFFFFF" />
-            </View>
+        </View>
             
             <View style={styles.textContainer}>
               <Text style={styles.title}>Secure & Fast Login</Text>
               <Text style={styles.subtitle}>
                 Use your fingerprint for quicker access to your account.
                 It's faster and more secure than traditional PIN codes.
-              </Text>
-            </View>
-            
+        </Text>
+      </View>
+
             <View style={styles.buttonContainer}>
               {isBiometricAvailable ? (
                 <>
-                  <TouchableOpacity 
+        <TouchableOpacity
                     style={styles.activateButton} 
                     onPress={activateBiometric}
                     disabled={isActivating}
@@ -172,9 +185,9 @@ export default function SecurityScreen() {
                     ) : (
                       <Text style={styles.activateButtonText}>Activate Now</Text>
                     )}
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
+        </TouchableOpacity>
+
+        <TouchableOpacity
                     style={styles.skipButton} 
                     onPress={skipBiometric}
                     disabled={isActivating}
@@ -186,14 +199,14 @@ export default function SecurityScreen() {
                 <View style={styles.notAvailableContainer}>
                   <Text style={styles.notAvailableText}>
                     Biometric authentication is not available on your device.
-                  </Text>
+          </Text>
                   <TouchableOpacity 
                     style={styles.continueButton} 
                     onPress={skipBiometric}
                   >
                     <Text style={styles.continueButtonText}>Continue to PIN Setup</Text>
                     <Ionicons name="arrow-forward" size={20} color="#FFF" style={styles.arrowIcon} />
-                  </TouchableOpacity>
+        </TouchableOpacity>
                 </View>
               )}
             </View>
