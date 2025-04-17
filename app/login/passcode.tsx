@@ -9,6 +9,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../store/slices/notificationSlice';
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -20,6 +22,7 @@ export default function PasscodeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
 
   // Extract needed params - these might be undefined when coming from lock screen
   const userPin = params.pin as string | undefined;
@@ -221,6 +224,13 @@ export default function PasscodeScreen() {
         }
         
         console.log('User session saved and verified successfully');
+        
+        // Show success notification
+        dispatch(addNotification({
+          type: 'success',
+          title: 'Welcome Back!',
+          body: 'You have successfully logged in to your account.'
+        }));
       } catch (storageError) {
         console.error('Storage error:', storageError);
         throw new Error('Failed to save session data');
@@ -232,6 +242,14 @@ export default function PasscodeScreen() {
       }, 800);
     } catch (error) {
       console.error('Error in session process:', error);
+      
+      // Show error notification
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Login Failed',
+        body: 'There was a problem with your login. Please try again.'
+      }));
+      
       Alert.alert(
         'Unable to Save Session', 
         'There was a problem with your login. Please try again.',

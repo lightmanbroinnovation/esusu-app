@@ -18,6 +18,7 @@ import { store } from './store/store';
 
 import { LoadingProvider } from './context/LoadingContext';
 import ConnectionStatus from './components/ConnectionStatus';
+import NotificationToast from './components/NotificationToast';
 import { prefetchData } from './utils/dataCaching';
 import { fetchUser } from '../services/api';
 import { PerformanceMonitor } from './utils/performanceMonitor';
@@ -238,6 +239,7 @@ export default function RootLayout() {
                 headerShown: false,
               }}
             />
+            <NotificationToast />
             <PerformanceMonitor visible={__DEV__} />
           </LoadingProvider>
           <StatusBar style="auto" />

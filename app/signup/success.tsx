@@ -4,11 +4,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUser, registerUser } from "../../services/api";
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../store/slices/notificationSlice';
 
 export default function Success() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [autoLoginInProgress, setAutoLoginInProgress] = useState(false);
@@ -80,6 +83,13 @@ export default function Success() {
           // Save the user ID to AsyncStorage
           await AsyncStorage.setItem('userId', registeredUser.id);
           
+          // Show success notification
+          dispatch(addNotification({
+            type: 'success',
+            title: 'Registration Successful',
+            body: 'Your account has been created successfully!'
+          }));
+          
           // Start auto-login countdown
           if (isSubscribed) {
             startAutoLogin();
@@ -107,11 +117,24 @@ export default function Success() {
             setUserData({ id: storedUserId });
           } else {
             console.error('No user ID available for auto-login');
+            // Show error notification
+            dispatch(addNotification({
+              type: 'error',
+              title: 'Registration Error',
+              body: 'Could not complete registration. Please try again.'
+            }));
           }
         }
       } catch (error) {
         console.error('Error during registration or fetching user data:', error);
         if (isSubscribed) {
+          // Show error notification
+          dispatch(addNotification({
+            type: 'error',
+            title: 'Registration Error',
+            body: 'There was a problem completing your registration. Please try again.'
+          }));
+          
           Alert.alert(
             "Registration Error", 
             "There was a problem completing your registration. Please try again.",

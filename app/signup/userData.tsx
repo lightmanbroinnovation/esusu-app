@@ -331,15 +331,6 @@ export default function UserData() {
                       <Text className="text-center text-lg">Female</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      className="py-3 px-4 mb-1 rounded-lg"
-                      onPress={() => {
-                        setGender('Other');
-                        setShowGenderPicker(false);
-                      }}
-                    >
-                      <Text className="text-center text-lg">Other</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
                       onPress={() => setShowGenderPicker(false)}
                       className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
                     >

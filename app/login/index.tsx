@@ -135,7 +135,7 @@ export default function Login() {
             {/* Phone input */}
             <TextInput
               placeholder="Enter phone number"
-              keyboardType="phone-pad"
+              keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
               value={phone}
               onChangeText={(text) => {
                 setPhone(text);

@@ -165,7 +165,7 @@ export default function DepositScreen() {
             {/* Phone input */}
             <TextInput
               placeholder="Enter phone number"
-              keyboardType="phone-pad"
+              keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
               maxLength={11}
               value={phone}
               onChangeText={setPhone}

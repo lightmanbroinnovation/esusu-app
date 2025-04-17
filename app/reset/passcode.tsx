@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 import { updateUser } from "../../services/api"; // Import API function
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../store/slices/notificationSlice';
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -17,6 +19,7 @@ export default function PasscodeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
 
   // Get params from previous screen
   const userId = params.userId as string;
@@ -82,6 +85,13 @@ export default function PasscodeScreen() {
       // Update user with new PIN
       await updateUser(userId, { pin });
       
+      // Show success notification
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Passcode Updated',
+        body: 'Your passcode has been updated successfully.'
+      }));
+      
       // Navigate to success screen
       setTimeout(() => {
         setLoading(false);
@@ -92,6 +102,14 @@ export default function PasscodeScreen() {
       }, 1000);
     } catch (error) {
       console.error("Error saving PIN:", error);
+      
+      // Show error notification
+      dispatch(addNotification({
+        type: 'error',
+        title: 'Update Failed',
+        body: 'There was an error saving your new passcode. Please try again.'
+      }));
+      
       setLoading(false);
       Alert.alert(
         "Error",

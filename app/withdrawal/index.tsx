@@ -156,7 +156,7 @@ const WithdrawalScreen = () => {
               <TextInput
               className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholder="Enter phone number"
-                keyboardType="phone-pad"
+              keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
                 value={phoneNumber}
                 onChangeText={(text) => {
                   setPhoneNumber(text);

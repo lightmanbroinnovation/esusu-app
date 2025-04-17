@@ -7,16 +7,26 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../store/slices/notificationSlice';
 
 export default function SuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
   
   // Get phone from params for login
   const phone = params.phone as string;
 
   const handleGoToLogin = () => {
+    // Show success notification
+    dispatch(addNotification({
+      type: 'success',
+      title: 'Passcode Reset Complete',
+      body: 'Your passcode has been reset successfully. Please log in with your new passcode.'
+    }));
+
     // Replace the entire navigation stack with the login screen
     // This prevents users from going back to the reset flow
     router.replace({
