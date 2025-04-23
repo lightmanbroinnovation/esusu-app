@@ -26,8 +26,6 @@
     "axios": "^1.8.4",
     "ci-info": "^4.2.0",
     "cloudinary": "^2.6.0",
-    "cloudinary-core": "^2.13.1",
-    "cloudinary-react-native": "^1.0.0",
     "expo": "~52.0.46",
     "expo-application": "~6.0.2",
     "expo-asset": "^11.0.5",
