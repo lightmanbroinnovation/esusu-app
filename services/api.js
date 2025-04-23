@@ -2,7 +2,8 @@ import axios from "axios";
 import { getCachedData, invalidateCache } from "../app/utils/dataCaching";
 import { trackApiCall } from "../app/utils/performanceMonitor";
 
-const API_BASE_URL = 'http://192.168.235.47:8082'; // Ensure this is the correct base URL
+const API_BASE_URL = 'http:///172.20.10.5:3001';
+
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
