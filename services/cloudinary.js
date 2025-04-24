@@ -5,7 +5,7 @@ const CLOUD_NAME = 'daskmqzyy';
 const API_KEY = '829652354354175';
 const API_SECRET = 'KaM9eff0roQcE8AF61mBGaEo090';
 const UPLOAD_FOLDER = 'esusu_assets';
-const UPLOAD_PRESET = 'esusu_unsigned';
+const UPLOAD_PRESET = 'f1quj50x';
 
 /**
  * Converts an image file to base64
