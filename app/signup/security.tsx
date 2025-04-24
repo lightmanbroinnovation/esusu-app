@@ -90,7 +90,8 @@ export default function SecurityScreen() {
         console.log('Data being passed to success screen:', JSON.stringify({
           ...userData,
           idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
-          cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
+          cacImage: userData.cacImage && typeof userData.cacImage === 'string' ? 
+            userData.cacImage.substring(0, 30) + "..." : "missing",
         }, null, 2));
         console.log('==============================================');
         
@@ -133,7 +134,8 @@ export default function SecurityScreen() {
       console.log('Data being passed to success screen:', JSON.stringify({
         ...userData,
         idImage: userData.idImage ? String(userData.idImage).substring(0, 30) + "..." : "missing",
-        cacImage: userData.cacImage ? String(userData.cacImage).substring(0, 30) + "..." : "missing",
+        cacImage: userData.cacImage && typeof userData.cacImage === 'string' ? 
+          userData.cacImage.substring(0, 30) + "..." : "missing",
       }, null, 2));
       console.log('==============================================');
       
