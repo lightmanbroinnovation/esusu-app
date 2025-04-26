@@ -21,9 +21,10 @@ import ConnectionStatus from './components/ConnectionStatus';
 import NotificationToast from './components/NotificationToast';
 import { PerformanceMonitor } from './utils/performanceMonitor';
 
+
 // Create a wrapper component to disable scrollbars instead of modifying ScrollView directly
 export const NoScrollbarScrollView = ({ children, ...props }: React.ComponentProps<typeof ScrollView>) => (
-  <ScrollView 
+  <ScrollView
     showsVerticalScrollIndicator={false}
     showsHorizontalScrollIndicator={false}
     {...props}
@@ -200,7 +201,7 @@ export default function RootLayout() {
     );
   }
 
-  // The app is ready, return the main layout
+ 
   return (
     <Provider store={store}>
       <SafeAreaProvider>

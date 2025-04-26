@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -97,7 +97,7 @@ export default function Login() {
         <View className="flex-row justify-between items-center mt-2">
           <TouchableOpacity
             className="flex-row items-center"
-            onPress={() => router.back()}
+            onPress={() => router.replace('/')}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>

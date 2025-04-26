@@ -26,7 +26,15 @@
     "@reduxjs/toolkit": "^2.7.0",
     "axios": "^1.8.4",
     "ci-info": "^4.2.0",
+<<<<<<< HEAD
+    "cloudinary": "^2.6.0",
+    "cloudinary-core": "^2.13.1",
+    "cloudinary-react-native": "^1.0.0",
+    "eas-cli": "^16.3.2",
+    "expo": "~52.0.46",
+=======
     "expo": "^52.0.0",
+>>>>>>> 0d9a369a245db76483c12c40b64b340831fe2b24
     "expo-application": "~6.0.2",
     "expo-asset": "^11.0.5",
     "expo-blur": "~14.0.3",

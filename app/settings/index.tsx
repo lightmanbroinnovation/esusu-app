@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert, BackHandler } from "react-native";
 import { useRouter } from "expo-router";
 import { fetchUser } from "@/services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
 import Footer from "../components/Footer";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearAllCaches } from '../utils/dataCaching';
+
+
 
 // Define the UserDetails type
 interface UserDetails {
@@ -92,6 +94,19 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function Index() {
+
+    useEffect(() => {
+        const backAction = () => {
+          // Exit app when back is pressed on login
+          BackHandler.exitApp();
+          return true;
+        };
+      
+        BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => BackHandler.removeEventListener('hardwareBackPress', backAction);
+      }, []);
+
+      
     const router = useRouter();
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
@@ -169,34 +184,39 @@ export default function Index() {
         setRetryCount(prevCount => prevCount + 1);
     };
 
-    const handleLogout = async () => {
-        try {
-            // Clear all user-related data from AsyncStorage
-            const keysToRemove = [
-                'userId',
-                'userPhone',
-                'isLoggedIn',
-                'lastLoginTime',
-                'biometricEnabled',
-                'userData',
-                'pin'
-            ];
-            
-            // Clear all keys
-            await AsyncStorage.multiRemove(keysToRemove);
-            
-            // Clear all cached data
-            await clearAllCaches();
-            
-            console.log("Successfully logged out and cleared all data");
-            
-            // Navigate to login instead of root
-            router.replace("/login");
-        } catch (error) {
-            console.error("Error during logout:", error);
-            Alert.alert("Error", "Failed to log out. Please try again.");
-        }
-    };
+
+// Update your handleLogout function
+const handleLogout = async () => {
+    try {
+      // Clear user-related data from AsyncStorage
+      const keysToRemove = [
+        'userId',
+        'userPhone',
+        'isLoggedIn',
+        'lastLoginTime',
+        'biometricEnabled',
+        'userData',
+        'pin'
+      ];
+  
+      await AsyncStorage.multiRemove(keysToRemove);
+      await clearAllCaches();
+  
+      console.log("Successfully logged out and cleared all data");
+  
+      // Reset navigation stack (Expo Router v2+)
+      router.replace({
+        pathname: '/login',
+        // Clear all previous routes from the stack
+        params: { replace: [router.asPath] }, 
+      });
+      
+    } catch (error) {
+      console.error("Error during logout:", error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    }
+  };
+    
 
     const handlePress = (route: string) => {
         console.log("Navigating to:", route);

@@ -88,7 +88,7 @@ export default function Signup() {
             {/* Phone input */}
             <TextInput
               placeholder="Enter phone number"
-              keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
+              // keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
               maxLength={10}
               value={phone}
               onChangeText={setPhone}
