@@ -18,9 +18,14 @@ export const uploadUserDocument = async (imageUri, documentType, userId) => {
     const folder = 'user_documents';
     const metadata = {
       user_id: userId,
-      document_type: documentType,
-      timestamp: new Date().toISOString()
+      document_type: documentType
     };
+    
+    console.log('Uploading document with params:', {
+      folder,
+      user_id: userId,
+      document_type: documentType
+    });
     
     return await uploadImage(imageUri, folder, metadata);
   } catch (error) {
@@ -77,8 +82,7 @@ export const uploadContributorImage = async (imageUri, contributorId, userId) =>
     const folder = 'contributor_profiles';
     const metadata = {
       user_id: safeUserId,
-      contributor_id: safeContributorId,
-      timestamp: new Date().toISOString()
+      contributor_id: safeContributorId
     };
     
     // Attempt to upload with retry logic
@@ -92,7 +96,7 @@ export const uploadContributorImage = async (imageUri, contributorId, userId) =>
         
         // Upload the image
         const url = await uploadImage(imageUri, folder, metadata);
-        console.log('Upload successful:', url.substring(0, 60) + '...');
+        console.log('Upload successful:', typeof url === 'string' ? (url.substring(0, 60) + '...') : 'Non-string response');
         return url;
       } catch (uploadError) {
         console.error(`Upload attempt ${attempts} failed:`, uploadError);
@@ -109,11 +113,6 @@ export const uploadContributorImage = async (imageUri, contributorId, userId) =>
     throw new Error('Failed to upload after maximum attempts');
   } catch (error) {
     console.error('Error uploading contributor image:', error);
-    Alert.alert(
-      "Upload Error",
-      `There was a problem uploading the contributor image: ${error.message}. Please check your internet connection and try again.`,
-      [{ text: "OK" }]
-    );
     throw error;
   }
 };
@@ -132,18 +131,12 @@ export const uploadUserProfileImage = async (imageUri, userId) => {
     
     const folder = 'user_profiles';
     const metadata = {
-      user_id: userId,
-      timestamp: new Date().toISOString()
+      user_id: userId
     };
     
     return await uploadImage(imageUri, folder, metadata);
   } catch (error) {
     console.error('Error uploading user profile image:', error);
-    Alert.alert(
-      "Upload Error",
-      "There was a problem uploading your profile image. Please try again.",
-      [{ text: "OK" }]
-    );
     throw error;
   }
 }; 

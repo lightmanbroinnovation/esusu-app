@@ -8,11 +8,37 @@
       "developmentClient": true,
       "distribution": "internal"
     },
+    "development-slim": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true
+      },
+      "ios": {
+        "buildConfiguration": "Debug",
+        "resourceClass": "m1-medium"
+      }
+    },
     "preview": {
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease",
+        "autoIncrement": true,
+        "image": "latest",
+        "env": {
+          "ANDROID_NDK_HOME": "/opt/android/ndk/23.1.7779620"
+        }
+      },
+      "ios": {
+        "buildConfiguration": "Release",
+        "resourceClass": "m1-medium",
+        "autoIncrement": true
+      }
     }
   },
   "submit": {

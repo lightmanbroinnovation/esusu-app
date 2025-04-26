@@ -2,7 +2,7 @@ import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { useLoading } from '../context/LoadingContext';
 
 // Base API URL
-const API_BASE_URL = 'http://172.20.10.5:8082';
+const API_BASE_URL = 'http://192.168.0.116:8082';
 
 // Setup axios instance with defaults
 const api = axios.create({

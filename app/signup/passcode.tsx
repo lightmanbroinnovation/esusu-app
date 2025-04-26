@@ -36,7 +36,8 @@ export default function PasscodeScreen() {
     console.log('Params received from document screen:', JSON.stringify({
       ...registrationParams,
       idImage: registrationParams.idImage ? String(registrationParams.idImage).substring(0, 30) + "..." : "missing",
-      cacImage: registrationParams.cacImage ? String(registrationParams.cacImage).substring(0, 30) + "..." : "missing",
+      cacImage: registrationParams.cacImage && typeof registrationParams.cacImage === 'string' ? 
+        registrationParams.cacImage.substring(0, 30) + "..." : "missing",
     }, null, 2));
     console.log('==========================================');
   }, []);
@@ -143,7 +144,8 @@ export default function PasscodeScreen() {
           ...passcodeData,
           pin: passcodeData.pin,
           idImage: passcodeData.idImage ? String(passcodeData.idImage).substring(0, 30) + "..." : "missing",
-          cacImage: passcodeData.cacImage ? String(passcodeData.cacImage).substring(0, 30) + "..." : "missing",
+          cacImage: passcodeData.cacImage && typeof passcodeData.cacImage === 'string' ? 
+            passcodeData.cacImage.substring(0, 30) + "..." : "missing",
         }, null, 2));
         
         // Check if we have all the required fields for registration
