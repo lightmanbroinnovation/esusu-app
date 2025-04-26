@@ -23,9 +23,10 @@ import { prefetchData } from './utils/dataCaching';
 import { fetchUser } from '../services/api';
 import { PerformanceMonitor } from './utils/performanceMonitor';
 
+
 // Create a wrapper component to disable scrollbars instead of modifying ScrollView directly
 export const NoScrollbarScrollView = ({ children, ...props }: React.ComponentProps<typeof ScrollView>) => (
-  <ScrollView 
+  <ScrollView
     showsVerticalScrollIndicator={false}
     showsHorizontalScrollIndicator={false}
     {...props}
@@ -64,7 +65,7 @@ const preloadAssets = async () => {
       require('../assets/images/icon.png'),
       require('../assets/images/Onboarding1.png'),
     ];
-    
+
     // Preload images one by one with error handling
     for (const image of images) {
       try {
@@ -73,7 +74,7 @@ const preloadAssets = async () => {
         console.log(`Failed to load image: ${err}`);
       }
     }
-    
+
     // Get user ID for prefetching
     try {
       const userId = await Constants.installationId;
@@ -125,7 +126,7 @@ export default function RootLayout() {
         console.log('Error in splash screen timeout:', error);
       }
     }, 3000); // 3 seconds timeout
-    
+
     return () => clearTimeout(timeoutId);
   }, []);
 
@@ -227,25 +228,25 @@ export default function RootLayout() {
     );
   }
 
-  // The app is ready, return the main layout
+ 
   return (
-    <Provider store={store}>
-      <SafeAreaProvider onLayout={onLayoutRootView}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <LoadingProvider>
-            <ConnectionStatus />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            />
-            <NotificationToast />
-            <PerformanceMonitor visible={__DEV__} />
-          </LoadingProvider>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </Provider>
+      <Provider store={store}>
+        <SafeAreaProvider onLayout={onLayoutRootView}>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <LoadingProvider>
+              <ConnectionStatus />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                }}
+              />
+              <NotificationToast />
+              <PerformanceMonitor visible={__DEV__} />
+            </LoadingProvider>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </Provider>
   );
 }
 

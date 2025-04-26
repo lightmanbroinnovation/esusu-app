@@ -11,6 +11,9 @@ import LatestTransactions from '../components/LatestTransactions';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { AuthGuard } from '@/authGuard';
+
+
 interface User {
   firstname: string;
   email: string;
@@ -40,13 +43,13 @@ const HomeScreen = () => {
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
         const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-        
+
         if (!isLoggedIn || !storedUserId) {
           // User is not logged in, redirect to login
           router.replace('/login');
           return;
         }
-        
+
         // User is logged in, set the user ID
         setUserId(storedUserId);
       } catch (error) {
@@ -55,18 +58,18 @@ const HomeScreen = () => {
         setUserId('62f2');
       }
     };
-    
+
     checkLoginStatus();
   }, []);
 
   // Fetch user data when userId is available
   useEffect(() => {
     if (!userId) return;
-    
+
     const fetchUserDetails = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await fetchUser(userId);
         setUserData(data);
@@ -89,9 +92,9 @@ const HomeScreen = () => {
     { id: 'activity', type: 'activity' },
     { id: 'transactions', type: 'transactions' }
   ];
-  
+
   const renderItem = ({ item }: { item: DashboardItem }) => {
-    switch(item.type) {
+    switch (item.type) {
       case 'userCard':
         return userData ? <UserCard user={userData} /> : null;
       case 'newUser':
@@ -116,48 +119,61 @@ const HomeScreen = () => {
     }
   };
 
-  return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-4 mt-4">
-          {loading ? (
-            <View className="flex-1 justify-center items-center">
-              <ActivityIndicator size="large" color="#0052CC" />
-              <Text className="mt-4 text-gray-600">Loading your dashboard...</Text>
-            </View>
-          ) : error ? (
-            <View className="flex-1 justify-center items-center px-4">
-              <Text className="text-red-500 mb-4">{error}</Text>
-              <TouchableOpacity 
-                className="bg-[#0052CC] px-6 py-3 rounded-lg"
-                onPress={() => userId && fetchUser(userId)}
-              >
-                <Text className="text-white font-medium">Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={dashboardItems}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 10 }}
-            />
-          )}
-        </View>
-        <Footer />
-      </SafeAreaView>
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      if (!isLoggedIn) {
+        router.replace('/login');
+      }
+    };
 
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={showVerification}
-        onRequestClose={() => setShowVerification(false)}
-      >
-        <VerificationController onClose={() => setShowVerification(false)} />
-      </Modal>
-    </View>
+    checkAuth();
+  }, []);
+
+  return (
+    <AuthGuard>
+      <View className="flex-1 bg-gray-50">
+        <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-4 mt-4">
+            {loading ? (
+              <View className="flex-1 justify-center items-center">
+                <ActivityIndicator size="large" color="#0052CC" />
+                <Text className="mt-4 text-gray-600">Loading your dashboard...</Text>
+              </View>
+            ) : error ? (
+              <View className="flex-1 justify-center items-center px-4">
+                <Text className="text-red-500 mb-4">{error}</Text>
+                <TouchableOpacity
+                  className="bg-[#0052CC] px-6 py-3 rounded-lg"
+                  onPress={() => userId && fetchUser(userId)}
+                >
+                  <Text className="text-white font-medium">Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <FlatList
+                data={dashboardItems}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 10 }}
+              />
+            )}
+          </View>
+          <Footer />
+        </SafeAreaView>
+
+        <Modal
+          animationType="slide"
+          transparent={false}
+          visible={showVerification}
+          onRequestClose={() => setShowVerification(false)}
+        >
+          <VerificationController onClose={() => setShowVerification(false)} />
+        </Modal>
+      </View>
+    </AuthGuard>
   );
 };
 
