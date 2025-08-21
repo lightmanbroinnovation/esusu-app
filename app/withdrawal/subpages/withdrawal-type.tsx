@@ -11,28 +11,42 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useBackButtonHandler } from '../../utils/backButtonHandler';
 
-interface UserDetails {
+interface ContributorAccount {
+  _id: string;
+  settlementBalance: number;
   id: string;
-  firstname: string;
-  lastname: string;
-  phonenumber: string;
-  balance: number;
-  imageUrl?: string;
+}
+interface Contributor {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  photo?: string;
+}
+interface UserData {
+  contributorAccount: ContributorAccount;
+  contributor: Contributor;
 }
 
 const WithdrawalTypeScreen = () => {
   const router = useRouter();
+  
+  // Use back button handler for withdrawal type page
+  useBackButtonHandler('/withdrawal/subpages/withdrawal-type');
+  
   const params = useLocalSearchParams();
-  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const phoneNumberParam = params.phoneNumber as string | undefined;
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [amount, setAmount] = useState('0');
   const [showOptions, setShowOptions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (params.userDataString) {
       try {
         const parsedData = JSON.parse(params.userDataString as string);
-        setUserDetails(parsedData);
+        setUserData(parsedData);
       } catch (err) {
         console.error("Error parsing user data:", err);
       }
@@ -50,6 +64,7 @@ const WithdrawalTypeScreen = () => {
       }
       return prev + num;
     });
+    if (error) setError(null);
   };
 
   const handleBackspace = () => {
@@ -57,24 +72,29 @@ const WithdrawalTypeScreen = () => {
       if (prev.length <= 1) return '0';
       return prev.slice(0, -1);
     });
+    if (error) setError(null);
   };
 
   const handleDone = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
-    if (!userDetails) return;
-    
-    if (parseFloat(amount) > (userDetails.balance || 0)) {
-      Alert.alert('Error', 'Amount exceeds available balance');
+    if (!userData) return;
+    const settlementBalance = userData.contributorAccount.settlementBalance || 0;
+    if (parseFloat(amount) > settlementBalance) {
+      setError(`You cannot withdraw more than ₦${settlementBalance.toLocaleString()}`);
       return;
     }
-
     try {
       // Save withdrawal amount and user details
       await AsyncStorage.setItem('withdrawalAmount', amount);
-      await AsyncStorage.setItem('withdrawalUserData', JSON.stringify(userDetails));
-      
-      // Show withdrawal options modal
-      setShowOptions(true);
+      await AsyncStorage.setItem('withdrawalUserData', JSON.stringify(userData));
+      // Navigate to recepient.tsx with phoneNumber and amount
+      router.push({
+        pathname: '/withdrawal/subpages/recepient',
+        params: {
+          phoneNumber: phoneNumberParam || (userData.contributor as any)?.phoneNumber || userData.contributorAccount.id || '',
+          amount
+        }
+      });
     } catch (error) {
       console.error('Error saving withdrawal data:', error);
     }
@@ -105,39 +125,47 @@ const WithdrawalTypeScreen = () => {
       <View className="flex-row items-center pt-4 justify-between px-4 mt-10">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+          className="w-10 h-10 rounded-full items-center justify-center"
         >
-          <Ionicons name="chevron-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text className="text-lg font-semibold">Withdraw</Text>
         <View className="w-10" />
       </View>
 
       {/* User Card */}
-      {userDetails && (
+      {userData && (
         <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl flex-row items-center justify-between">
           <View className="flex-row items-center gap-3">
-            {userDetails.imageUrl ? (
+            {userData.contributor.photo ? (
               <Image
-                source={{ uri: userDetails.imageUrl }}
+                source={{ uri: userData.contributor.photo }}
                 className="w-12 h-12 rounded-full"
               />
             ) : (
               <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
                 <Text className="text-lg font-semibold">
-                  {userDetails.firstname[0]}
+                  {userData.contributor.firstName[0]}
                 </Text>
               </View>
             )}
             <View>
-              <Text className="text-lg font-semibold">{userDetails.firstname}</Text>
-              <Text className="text-gray-600">{userDetails.lastname}</Text>
+              <Text className="text-lg font-semibold">{userData.contributor.firstName}</Text>
+              <Text className="text-gray-600">{userData.contributor.lastName}</Text>
             </View>
           </View>
           <View>
-            <Text className="text-sm text-gray-500">Current Balance</Text>
-            <Text className="text-lg font-semibold">₦{userDetails.balance?.toLocaleString() || '0'}</Text>
+            <Text className="text-sm text-gray-500">Settlement Balance</Text>
+            <Text className="text-lg font-semibold">₦{userData.contributorAccount.settlementBalance?.toLocaleString() || '0'}</Text>
           </View>
+        </View>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <View className="mx-4 mt-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+          <Text className="text-sm text-red-600 font-medium mb-1">Unable to Process</Text>
+          <Text className="text-red-700">{error}</Text>
         </View>
       )}
 

@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Switch } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 
 
 export default function Notifications() {
 
+    // Use back button handler for notifications
+    useBackButtonHandler('/notifications');
 
     const [settings, setSettings] = useState({
         transactionAlerts: true,
@@ -32,11 +35,12 @@ export default function Notifications() {
         <ScrollView className="px-4 pt-10 bg-white">
             {/* Header */}
             <View className="flex-row items-center gap-[100px] mt-6">
-                <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>
-                    <Image
-                        source={require('../assets/images/back-arrow.png')}
-                    />
-                </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handlePreviousPage}
+              className=" p-2 rounded-full mr-4"
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
                 <Text className="text-lg font-semibold">Notification</Text>
             </View>
 

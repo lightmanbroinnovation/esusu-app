@@ -12,59 +12,81 @@ import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchUser, updateUser } from '../../services/api';
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { fetchUser } from '../../services/api';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
+// User details interface
 interface UserDetails {
-  id: string;
-  biometricEnabled?: boolean;
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  fingerprint: boolean;
   // ... other user fields
 }
 
+const fetchSecurityData = async () => {
+  const response = await fetchUser();
+  if (response.status === 'Success' && response.data?.user) {
+    return response.data.user;
+  } else {
+    throw new Error('Failed to fetch user data');
+  }
+};
+
 export default function SecurityScreen() {
   const router = useRouter();
+  
+  // Use back button handler for security page
+  useBackButtonHandler('/security');
   
   // State for biometric availability and user data
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isActivating, setIsActivating] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
-  
-  // Check if user is logged in and get their ID
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem('userId');
-        if (!storedUserId) {
-          Alert.alert('Error', 'Please log in to continue');
-          router.replace('/login');
-          return;
-        }
-        setUserId(storedUserId);
-        
-        // Fetch user details
-        const userData = await fetchUser(storedUserId);
-        setUserDetails(userData);
-        setIsBiometricEnabled(!!userData.biometricEnabled);
-        
-        console.log('User details loaded:', {
-          userId: storedUserId,
-          biometricEnabled: userData.biometricEnabled
-        });
-      } catch (error) {
-        console.error('Error checking user:', error);
-        Alert.alert('Error', 'Failed to verify user session');
-      }
-    };
-    
-    checkUser();
-  }, []);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
 
-  // Check if biometric auth is available
+  // Check if biometric auth is available and fetch user data
   useEffect(() => {
     checkBiometricAvailability();
+    fetchUserData();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      let cacheData = null;
+      try {
+        const cached = await AsyncStorage.getItem('security_user');
+        if (cached) {
+          cacheData = JSON.parse(cached);
+          setUserDetails(cacheData);
+          setIsBiometricEnabled(!!cacheData.fingerprint);
+        }
+      } catch {}
+      
+      if (!networkAvailable && cacheData) {
+        return;
+      }
+      
+      const data = await getCachedData('security_user', fetchSecurityData);
+      setUserDetails(data);
+      setIsBiometricEnabled(!!data.fingerprint);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    }
+  };
 
   const checkBiometricAvailability = async () => {
     try {
@@ -87,31 +109,21 @@ export default function SecurityScreen() {
   };
 
   const activateBiometric = async () => {
-    if (!userId || !userDetails) {
-      Alert.alert('Error', 'User session not found');
-      return;
-    }
-
     try {
       setIsActivating(true);
-      
       // Attempt authentication to verify it works
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Authenticate to activate biometric login',
         fallbackLabel: 'Use PIN instead',
       });
-      
       if (result.success) {
-        // Update user details in the backend first
-        await updateUser(userId, { biometricEnabled: true });
-        
-        // Then update AsyncStorage
-        await AsyncStorage.setItem('biometricEnabled', 'true');
-        
-        // Update local state
+        // Send POST to set-fingerprint endpoint
+        await fetch('https://esusu-server.onrender.com/api/merchant/set-fingerprint ', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fingerprint: true })
+        });
         setIsBiometricEnabled(true);
-        setUserDetails({ ...userDetails, biometricEnabled: true });
-        
         Alert.alert(
           'Success',
           'Biometric login has been activated successfully!',
@@ -140,24 +152,14 @@ export default function SecurityScreen() {
   };
 
   const deactivateBiometric = async () => {
-    if (!userId || !userDetails) {
-      Alert.alert('Error', 'User session not found');
-      return;
-    }
-
     try {
       setIsActivating(true);
-      
-      // Update user details in the backend first
-      await updateUser(userId, { biometricEnabled: false });
-      
-      // Then update AsyncStorage
-      await AsyncStorage.setItem('biometricEnabled', 'false');
-      
-      // Update local state
+      await fetch('https://esusu-server.onrender.com/api/merchant/set-fingerprint ', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: false })
+      });
       setIsBiometricEnabled(false);
-      setUserDetails({ ...userDetails, biometricEnabled: false });
-      
       Alert.alert(
         'Success',
         'Biometric login has been deactivated.',
@@ -183,99 +185,113 @@ export default function SecurityScreen() {
     router.back();
   };
 
+  if (isChecking) {
+    return <EsusuLoader />;
+  }
+
+  if (!networkAvailable) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.notAvailableText}>
+            No network. Please connect to the internet to load security settings.
+          </Text>
+          <TouchableOpacity 
+            style={styles.continueButton} 
+            onPress={skipBiometric}
+          >
+            <Text style={styles.continueButtonText}>Go Back</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFF" style={styles.arrowIcon} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {isChecking ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={styles.loadingText}>Checking device compatibility...</Text>
-          </View>
-        ) : (
-          <>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
 
-            <View style={styles.iconContainer}>
-              <MaterialCommunityIcons name="fingerprint" size={120} color="#FFFFFF" />
-            </View>
-            
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>Secure & Fast Login</Text>
-              {isBiometricEnabled ? (
-                <Text style={styles.subtitle}>
-                  Biometric login is currently active on your account.
-                  You can use your fingerprint to log in quickly and securely.
-                </Text>
-              ) : (
-                <Text style={styles.subtitle}>
-                  Use your fingerprint for quicker access to your account.
-                  It's faster and more secure than traditional PIN codes.
-                </Text>
-              )}
-            </View>
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons name="fingerprint" size={120} color="#FFFFFF" />
+        </View>
+        
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>Secure & Fast Login</Text>
+          {isBiometricEnabled ? (
+            <Text style={styles.subtitle}>
+              Biometric login is currently active on your account.
+              You can use your fingerprint to log in quickly and securely.
+            </Text>
+          ) : (
+            <Text style={styles.subtitle}>
+              Use your fingerprint for quicker access to your account.
+              It's faster and more secure than traditional PIN codes.
+            </Text>
+          )}
+        </View>
 
-            <View style={styles.buttonContainer}>
-              {isBiometricAvailable ? (
-                isBiometricEnabled ? (
-                  // Show deactivate button if biometric is enabled
-                  <TouchableOpacity
-                    style={styles.deactivateButton} 
-                    onPress={deactivateBiometric}
-                    disabled={isActivating}
-                  >
-                    {isActivating ? (
-                      <ActivityIndicator size="small" color="#0072CE" />
-                    ) : (
-                      <Text style={styles.deactivateButtonText}>Deactivate Biometric Login</Text>
-                    )}
-                  </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          {isBiometricAvailable ? (
+            isBiometricEnabled ? (
+              // Show deactivate button if biometric is enabled
+              <TouchableOpacity
+                style={styles.deactivateButton} 
+                onPress={deactivateBiometric}
+                disabled={isActivating}
+              >
+                {isActivating ? (
+                  <ActivityIndicator size="small" color="#0072CE" />
                 ) : (
-                  // Show activate and skip buttons if biometric is not enabled
-                  <>
-                    <TouchableOpacity
-                      style={styles.activateButton} 
-                      onPress={activateBiometric}
-                      disabled={isActivating}
-                    >
-                      {isActivating ? (
-                        <ActivityIndicator size="small" color="#0072CE" />
-                      ) : (
-                        <Text style={styles.activateButtonText}>Activate Now</Text>
-                      )}
-                    </TouchableOpacity>
+                  <Text style={styles.deactivateButtonText}>Deactivate Biometric Login</Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              // Show activate and skip buttons if biometric is not enabled
+              <>
+                <TouchableOpacity
+                  style={styles.activateButton} 
+                  onPress={activateBiometric}
+                  disabled={isActivating}
+                >
+                  {isActivating ? (
+                    <ActivityIndicator size="small" color="#0072CE" />
+                  ) : (
+                    <Text style={styles.activateButtonText}>Activate Now</Text>
+                  )}
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={styles.skipButton} 
-                      onPress={skipBiometric}
-                      disabled={isActivating}
-                    >
-                      <Text style={styles.skipButtonText}>Not Now</Text>
-                    </TouchableOpacity>
-                  </>
-                )
-              ) : (
-                <View style={styles.notAvailableContainer}>
-                  <Text style={styles.notAvailableText}>
-                    Biometric authentication is not available on your device.
-                    Please ensure you have set up fingerprint or face recognition in your device settings.
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.continueButton} 
-                    onPress={skipBiometric}
-                  >
-                    <Text style={styles.continueButtonText}>Go Back</Text>
-                    <Ionicons name="arrow-forward" size={20} color="#FFF" style={styles.arrowIcon} />
-                  </TouchableOpacity>
-                </View>
-              )}
+                <TouchableOpacity
+                  style={styles.skipButton} 
+                  onPress={skipBiometric}
+                  disabled={isActivating}
+                >
+                  <Text style={styles.skipButtonText}>Not Now</Text>
+                </TouchableOpacity>
+              </>
+            )
+          ) : (
+            <View style={styles.notAvailableContainer}>
+              <Text style={styles.notAvailableText}>
+                Biometric authentication is not available on your device.
+                Please ensure you have set up fingerprint or face recognition in your device settings.
+              </Text>
+              <TouchableOpacity 
+                style={styles.continueButton} 
+                onPress={skipBiometric}
+              >
+                <Text style={styles.continueButtonText}>Go Back</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFF" style={styles.arrowIcon} />
+              </TouchableOpacity>
             </View>
-          </>
-        )}
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );

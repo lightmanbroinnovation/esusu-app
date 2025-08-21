@@ -1,286 +1,188 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, ImageBackground, ActivityIndicator, Alert } from "react-native";
+import { 
+  View, 
+  Text, 
+  Image, 
+  TouchableOpacity, 
+  ImageBackground, 
+  ActivityIndicator, 
+  Alert,
+  Dimensions,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchUser, registerUser } from "../../services/api";
 import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
+import { sendNotification, NotificationTemplates } from '../services/notificationService';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function Success() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
+  
+  // Use back button handler for signup success page
+  useBackButtonHandler('/signup/success');
+  
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [registering, setRegistering] = useState(false);
-  const [autoLoginInProgress, setAutoLoginInProgress] = useState(false);
-  const [userData, setUserData] = useState<{ id: string } | null>(null);
-  const [countdown, setCountdown] = useState(5);
+  const { width, height } = Dimensions.get('window');
 
-  // Register user and fetch user data when component mounts
+  // Responsive sizing based on screen width
+  const getResponsiveSize = (baseSize: number) => {
+    if (width < 375) {
+      return baseSize * 0.9; // Small phones
+    } else if (width < 414) {
+      return baseSize; // Medium phones
+    } else {
+      return baseSize * 1.1; // Large phones and tablets
+    }
+  };
+
   useEffect(() => {
-    let isSubscribed = true; // For cleanup
+    let isSubscribed = true;
 
-    const registerAndGetUserData = async () => {
-      // Prevent multiple simultaneous calls
-      if (loading || registering) return;
+    const startSuccessFlow = async () => {
+      console.log('===== SUCCESS SCREEN - STARTING FLOW =====');
       
-      try {
-        console.log('===== SUCCESS SCREEN - REGISTRATION PROCESS =====');
-        
-        // Check if we need to register the user
-        if (!params.registered && Object.keys(params).length > 0) {
-          if (!isSubscribed) return;
-          setRegistering(true);
-          
-          // Parse verification data if it was passed as a string
-          let verificationData = null;
-          if (params.verification_data_string) {
-            try {
-              verificationData = JSON.parse(String(params.verification_data_string));
-              console.log('Parsed verification data from string:', verificationData);
-            } catch (parseError) {
-              console.error('Error parsing verification data:', parseError);
-            }
-          }
-          
-          // Prepare the user data for registration
-          const userRegistrationData = {
-            firstname: params.firstname,
-            lastname: params.lastname,
-            email: params.email,
-            phone: params.phone,
-            phonenumber: params.phone, // Ensure we have phonenumber field
-            pin: params.pin,
-            business: params.business,
-            address: params.address,
-            city: params.city,
-            state: params.state,
-            gender: params.gender || "Not specified",
-            dob: params.dob,
-            bvn: params.bvn,
-            idImage: params.idImage,
-            cacImage: params.cacImage,
-            hasBiometric: params.hasBiometric === 'true', // Convert string to boolean
-            // Add verification data
-            verification_data: verificationData || {
-              government_id: params.idImage,
-              business_document: params.cacImage,
-              documentType: 'national_id'
-            }
-          };
-          
-          // Register the user
-          const registeredUser = await registerUser(userRegistrationData);
-          if (!isSubscribed) return;
-          
-          console.log('User registered successfully with ID:', registeredUser.id);
-          
-          // Set the user data
-          setUserData(registeredUser);
-          
-          // Save the user ID to AsyncStorage
-          await AsyncStorage.setItem('userId', registeredUser.id);
-          
-          // Show success notification
-          dispatch(addNotification({
-            type: 'success',
-            title: 'Registration Successful',
-            body: 'Your account has been created successfully!'
-          }));
-          
-          // Start auto-login countdown
-          if (isSubscribed) {
-            startAutoLogin();
-            setRegistering(false);
-          }
-        } else if (params.userId) {
-          // If user is already registered, just fetch their data
-          if (!isSubscribed) return;
-          setLoading(true);
-          
-          console.log('User already registered with ID:', params.userId);
-          const userId = params.userId as string;
-          const fetchedUserData = await fetchUser(userId);
-          
-          if (!isSubscribed) return;
-          setUserData(fetchedUserData);
-          
-          // Start auto-login countdown
-          startAutoLogin();
-        } else {
-          console.warn('No user ID or registration data received, checking AsyncStorage');
-          const storedUserId = await AsyncStorage.getItem('userId');
-          if (storedUserId && isSubscribed) {
-            console.log('Found user ID in AsyncStorage:', storedUserId);
-            setUserData({ id: storedUserId });
-          } else {
-            console.error('No user ID available for auto-login');
-            // Show error notification
-            dispatch(addNotification({
-              type: 'error',
-              title: 'Registration Error',
-              body: 'Could not complete registration. Please try again.'
-            }));
-          }
-        }
-      } catch (error) {
-        console.error('Error during registration or fetching user data:', error);
-        if (isSubscribed) {
-          // Show error notification
-          dispatch(addNotification({
-            type: 'error',
-            title: 'Registration Error',
-            body: 'There was a problem completing your registration. Please try again.'
-          }));
-          
-          Alert.alert(
-            "Registration Error", 
-            "There was a problem completing your registration. Please try again.",
-            [{ text: "OK" }]
-          );
-        }
-      } finally {
-        if (isSubscribed) {
-          setLoading(false);
-          setRegistering(false);
-        }
-      }
+      // Show success notification
+      dispatch(addNotification({
+        type: 'success',
+        title: 'Registration Successful',
+        body: 'Your account has been created successfully!'
+      }));
+      // Device notification
+      await sendNotification(
+        NotificationTemplates.registration.success('User').title,
+        NotificationTemplates.registration.success('User').body,
+        NotificationTemplates.registration.success('User').type
+      );
+      
       console.log('============================================');
     };
     
-    registerAndGetUserData();
+    startSuccessFlow();
 
-    // Cleanup function
     return () => {
       isSubscribed = false;
     };
-  }, []); // Empty dependency array since we only want this to run once on mount
+  }, []);
 
-  // Start auto-login countdown
-  const startAutoLogin = () => {
-    setAutoLoginInProgress(true);
-    
-    // Countdown from 5 to 0
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleGoToDashboard();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    // Cleanup timer on unmount
-    return () => clearInterval(timer);
-  };
-
-  const handleGoToDashboard = async () => {
+  const handleGoToLogin = async () => {
     try {
       setLoading(true);
-      
-      // Ensure the user ID is saved before redirecting
-      if (userData?.id) {
-        await AsyncStorage.setItem('userId', userData.id);
-        await AsyncStorage.setItem('isLoggedIn', 'true');
-        
-        console.log('===== NAVIGATING TO LOGIN =====');
-        console.log('User registered successfully with ID:', userData.id);
-        console.log('=====================================');
-        
-        // Navigate to login instead of dashboard
-        router.replace("/login");
-      } else {
-        console.error('No user ID available for navigation');
-        // Fallback to login if we don't have user data
-        Alert.alert(
-          "Error", 
-          "Could not retrieve your account information. Please log in again.",
-          [{ 
-            text: "OK", 
-            onPress: () => router.replace("/login")
-          }]
-        );
-      }
+      router.replace("/login");
     } catch (error) {
       console.error('Error navigating to login:', error);
       Alert.alert(
-        "Error", 
-        "There was a problem accessing the login screen. Please try again.",
-        [{ 
-          text: "OK", 
+        "Error",
+        "There was a problem accessing the login page. Please try again.",
+        [{
+          text: "OK",
           onPress: () => router.replace("/login")
         }]
       );
     } finally {
       setLoading(false);
-      setAutoLoginInProgress(false);
     }
   };
 
   return (
-    <View
-      className="flex-1 items-center bg-white px-4"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View className="flex-1 items-start p-0">
-        <ImageBackground
-          source={require("../assets/images/success.png")}
-          className="flex-1 justify-center items-center w-full"
-          resizeMode="contain"
-          style={{ height: 460 }}
-        >
-          <Image
-            source={require("../assets/images/check.png")}
-            className="w-28 h-28 mb-4"
-            resizeMode="contain"
-          />
-          <Text
-            className="text-2xl font-bold text-center text-primary mb-2"
-            style={{ color: "#0072CE" }}
-          >
-            You're All Set!
-          </Text>
-          <Text className="text-center text-gray-600 px-4 mb-4">
-            Your Esusu POS Operator account has been successfully created. Sign in to start
-            earning by helping customers save today!
-          </Text>
-          
-          {registering && (
-            <Text className="text-center text-gray-500 italic">
-              Completing your registration...
-            </Text>
-          )}
-          
-          {autoLoginInProgress && (
-            <Text className="text-center text-gray-500 italic">
-              Redirecting to login in {countdown} seconds...
-            </Text>
-          )}
-        </ImageBackground>
-      </View>
-      
-      {(loading || registering) ? (
-        <View className="w-full bg-[#0072CE] py-4 rounded-lg mb-6 flex-row justify-center items-center">
-          <ActivityIndicator color="white" size="small" />
-          <Text className="text-white font-bold text-center ml-2">
-            {registering ? "Completing Registration..." : "Preparing Login..."}
-          </Text>
-        </View>
-      ) : (
-      <TouchableOpacity
-        className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
-          onPress={handleGoToDashboard}
-          disabled={loading || registering}
+      <ScrollView 
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-          <Text className="text-white font-bold text-center">
-            {autoLoginInProgress ? `Go to Login (${countdown})` : "Go to Login"}
-          </Text>
-      </TouchableOpacity>
-      )}
-    </View>
+        <View
+          className="flex-1 items-center bg-white px-4"
+          style={{ 
+            paddingTop: insets.top + getResponsiveSize(16), 
+            paddingBottom: insets.bottom + getResponsiveSize(16),
+            paddingHorizontal: getResponsiveSize(16)
+          }}
+        >
+          <View className="flex-1 items-start p-0" style={{ width: '100%' }}>
+            <ImageBackground
+              source={require("../assets/images/success.png")}
+              className="flex-1 justify-center items-center w-full"
+              resizeMode="contain"
+              style={{ 
+                height: getResponsiveSize(460),
+                width: '100%'
+              }}
+            >
+              <Image
+                source={require("../assets/images/check.png")}
+                className="w-28 h-28 mb-4"
+                resizeMode="contain"
+                style={{
+                  width: getResponsiveSize(112),
+                  height: getResponsiveSize(112),
+                  marginBottom: getResponsiveSize(16)
+                }}
+              />
+              <Text
+                className="text-2xl font-bold text-center text-primary mb-2"
+                style={{ 
+                  color: "#0072CE",
+                  fontSize: getResponsiveSize(24),
+                  marginBottom: getResponsiveSize(8)
+                }}
+              >
+                You're All Set!
+              </Text>
+              <Text className="text-center text-gray-600 px-4 mb-4" style={{
+                fontSize: getResponsiveSize(16),
+                paddingHorizontal: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(16)
+              }}>
+                Your Esusu POS Operator account has been successfully created. Please log in to continue.
+              </Text>
+            </ImageBackground>
+          </View>
+          
+          {loading ? (
+            <View className="w-full bg-[#0072CE] py-4 rounded-lg mb-6 flex-row justify-center items-center" style={{
+              paddingVertical: getResponsiveSize(16),
+              marginBottom: getResponsiveSize(24),
+              borderRadius: getResponsiveSize(8)
+            }}>
+              <ActivityIndicator color="white" size="small" />
+              <Text className="text-white font-bold text-center ml-2" style={{
+                fontSize: getResponsiveSize(16),
+                marginLeft: getResponsiveSize(8)
+              }}>
+                Preparing Login...
+              </Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
+              onPress={handleGoToLogin}
+              disabled={loading}
+              style={{
+                paddingVertical: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(24),
+                borderRadius: getResponsiveSize(8)
+              }}
+            >
+              <Text className="text-white font-bold text-center" style={{ fontSize: getResponsiveSize(16) }}>
+                Go to Login
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

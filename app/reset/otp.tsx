@@ -7,20 +7,24 @@ export const options = {
   import { useSafeAreaInsets } from "react-native-safe-area-context";
   import { useRouter, useLocalSearchParams } from "expo-router";
   import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+  import { verifyOtp } from "../../services/api";
+import { useBackButtonHandler } from '../utils/backButtonHandler';
   
   export default function OtpVerificationScreen() {
+    const router = useRouter();
+    
+    // Use back button handler for reset OTP page
+    useBackButtonHandler('/reset/otp');
+    
     const [otp, setOtp] = useState<string>(""); // State for the entered OTP
     const [showKeypad, setShowKeypad] = useState<boolean>(true); // State to toggle keypad visibility
     const [loading, setLoading] = useState<boolean>(false);
     const [resendTimer, setResendTimer] = useState(30); // 30 second timer for resend
-    const router = useRouter();
     const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
   
     // Get params from previous screen
     const phone = params.phone as string;
-    const userId = params.userId as string;
-    const verificationOtp = params.otp as string;
   
     // Timer for resend code
     useEffect(() => {
@@ -40,35 +44,44 @@ export const options = {
       setOtp(otp.slice(0, -1));
     };
   
-    const handleVerify = () => {
+    const handleVerify = async () => {
       // Check if OTP is complete
       if (otp.length !== 4) {
         Alert.alert("Error", "Please enter the complete 4-digit code");
         return;
       }
-  
       setLoading(true);
-  
-      // Simulate API verification delay
-      setTimeout(() => {
-        // In production, this would be a real API call to verify OTP
-        if (otp === verificationOtp) {
-          // OTP is valid, proceed to passcode screen
+      try {
+        // Use verifyOtp from services/api.js
+        const response = await verifyOtp(phone, otp);
+        console.log('verifyOtp response:', response);
+        if (response && response.status === 'Success') {
+          // On success, navigate to passcode reset page
           router.push({
             pathname: "/reset/passcode",
-            params: {
-              userId,
-              phone
-            }
+            params: { phone }
           });
         } else {
-          // Invalid OTP
           Vibration.vibrate(300);
-          Alert.alert("Invalid Code", "The verification code you entered is incorrect. Please try again.");
+          let errorMsg = "The verification code you entered is incorrect. Please try again.";
+          if (response && typeof response === 'object' && 'message' in response) {
+            errorMsg = (response as Record<string, any>).message;
+          }
+          Alert.alert("Invalid Code", errorMsg);
           setOtp("");
         }
+      } catch (error) {
+        console.error('verifyOtp error:', error);
+        Vibration.vibrate(300);
+        let errorMsg = "The verification code you entered is incorrect. Please try again.";
+        if (error instanceof Error && error.message) {
+          errorMsg = error.message;
+        }
+        Alert.alert("Invalid Code", errorMsg);
+        setOtp("");
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
   
     const handleResendCode = () => {

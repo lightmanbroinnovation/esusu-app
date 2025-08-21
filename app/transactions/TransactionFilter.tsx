@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -6,6 +6,7 @@ interface FilterProps {
   visible: boolean;
   onClose: () => void;
   onApplyFilter: (filters: FilterOptions) => void;
+  activeFilters?: FilterOptions;
 }
 
 export interface FilterOptions {
@@ -17,12 +18,27 @@ export interface FilterOptions {
   transactionType?: 'all' | 'deposit' | 'withdrawal' | 'account_creation';
 }
 
-const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFilter }) => {
+const TransactionFilter: React.FC<FilterProps> = ({ 
+  visible, 
+  onClose, 
+  onApplyFilter, 
+  activeFilters = {} 
+}) => {
   // Filter states
   const [name, setName] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [transactionType, setTransactionType] = useState<'all' | 'deposit' | 'withdrawal' | 'account_creation'>('all');
+
+  // Initialize form with active filters
+  useEffect(() => {
+    if (visible) {
+      setName(activeFilters.name || '');
+      setMinAmount(activeFilters.minAmount?.toString() || '');
+      setMaxAmount(activeFilters.maxAmount?.toString() || '');
+      setTransactionType(activeFilters.transactionType || 'all');
+    }
+  }, [visible, activeFilters]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -34,14 +50,14 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
 
   // Apply filters and close modal
   const applyFilters = () => {
-    const filters: FilterOptions = {
-      transactionType: transactionType !== 'all' ? transactionType : undefined
-    };
+    const filters: FilterOptions = {};
 
-    if (name) filters.name = name;
-    if (minAmount) filters.minAmount = Number(minAmount);
-    if (maxAmount) filters.maxAmount = Number(maxAmount);
+    if (name.trim()) filters.name = name.trim();
+    if (minAmount.trim()) filters.minAmount = Number(minAmount);
+    if (maxAmount.trim()) filters.maxAmount = Number(maxAmount);
+    if (transactionType !== 'all') filters.transactionType = transactionType;
 
+    console.log('Applying filters:', filters);
     onApplyFilter(filters);
     onClose();
   };

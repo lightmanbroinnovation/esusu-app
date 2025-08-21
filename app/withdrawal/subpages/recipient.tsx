@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// TODO: Replace with Moti Skeleton
 
 interface BankDetails {
   accountNumber: string;
@@ -105,6 +106,23 @@ const RecipientScreen = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <ScrollView className="flex-1 bg-white">
+        {/* TODO: Replace with Moti Skeleton */}
+        <View style={{ padding: 24 }}>
+          {/* Amount Display Skeleton */}
+          <View style={{ width: '100%', height: 48, borderRadius: 12, marginBottom: 24 }} />
+          {/* Form Fields Skeleton */}
+          {[1,2,3].map((_,i) => (
+            <View key={i} style={{ width: '100%', height: 48, borderRadius: 12, marginBottom: 24 }} />
+          ))}
+          {/* Continue Button Skeleton */}
+          <View style={{ width: '100%', height: 48, borderRadius: 24, marginTop: 32 }} />
+        </View>
+      </ScrollView>
+    );
+  }
   return (
     <ScrollView className="flex-1 bg-white">
       <SafeAreaView className="flex-1">
@@ -119,18 +137,18 @@ const RecipientScreen = () => {
           <Text className="text-lg font-semibold">Bank Details</Text>
           <View className="w-10" />
         </View>
-
         {/* Amount Display */}
         <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl">
           <Text className="text-sm text-gray-500">Withdrawal Amount</Text>
-          <Text className="text-2xl font-semibold">₦{parseInt(amount).toLocaleString()}</Text>
+          <Text className="text-2xl font-semibold">
+6{parseInt(amount).toLocaleString()}</Text>
           {userDetails && (
             <Text className="text-xs text-gray-500 mt-1">
-              Available balance: ₦{userDetails.balance.toLocaleString()}
+              Available balance: 
+6{userDetails.balance.toLocaleString()}
             </Text>
           )}
         </View>
-
         {/* Form */}
         <View className="px-4 mt-8">
           {/* Account Number */}
@@ -145,7 +163,6 @@ const RecipientScreen = () => {
               placeholder="Enter account number"
             />
           </View>
-
           {/* Account Name */}
           <View className="mb-6">
             <Text className="text-sm font-medium mb-2">Account Name</Text>
@@ -156,7 +173,6 @@ const RecipientScreen = () => {
               placeholder="Enter account name"
             />
           </View>
-
           {/* Bank Name */}
           <View className="mb-6">
             <Text className="text-sm font-medium mb-2">Bank Name</Text>
@@ -168,7 +184,6 @@ const RecipientScreen = () => {
             />
           </View>
         </View>
-
         {/* Continue Button */}
         <View className="px-4 mt-8">
           <TouchableOpacity

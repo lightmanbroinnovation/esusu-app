@@ -10,7 +10,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Modal
+  Modal,
+  Platform,
+  FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,15 +20,61 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { uploadContributorImage } from '../utils/documentUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// Remove the broken import
+// import { ContributorData } from './types';
 
-const AddContributor = () => {
+// Define ContributorData type inline
+export interface ContributorData {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phoneNumber: string;
+  nin: string;
+  gender: string;
+  language: string;
+  depositAmount: string;
+  duration: string;
+  dob: Date;
+  photo: string;
+}
+import moment from 'moment';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import { fetchMerchantDashboardAccount } from '../../services/api';
+import EsusuLoader from './EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
+
+export default function AddContributor() {
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('AddContributor', 15);
+
   const router = useRouter();
   const params = useLocalSearchParams();
+  
+  // Calculate minimum birth date (18 years ago)
+  const minBirthYear = moment().subtract(18, 'years').year();
+  
+  // Available years (going back 100 years from minimum age)
+  const availableYears = Array.from({length: 82}, (_, i) => minBirthYear - i).sort((a, b) => b - a);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [middleName, setMiddleName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [ninNumber, setNinNumber] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [nin, setNin] = useState('');
+  const [gender, setGender] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [dob, setDob] = useState(moment().subtract(18, 'years').toDate());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showYearSelector, setShowYearSelector] = useState(false);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [hasImage, setHasImage] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -39,24 +87,15 @@ const AddContributor = () => {
   // Use a ref to track if we've already processed this photoUri
   const processedPhotoUri = useRef<string | null>(null);
   
-  // Check if returning from photo quality check with an image
+  // If photoUri is present in params, use it as the image
   useEffect(() => {
-    const photoUri = params.photoUri as string;
-    const imageUrl = params.imageUrl as string;
-    const isCloudinaryUrl = params.isCloudinaryUrl === "true";
-    
-    // Only process the URI if it's different from what we've already processed
-    if (photoUri && photoUri !== processedPhotoUri.current) {
-      processedPhotoUri.current = photoUri;
-      verifyImageExists(photoUri);
-      
-      // If we have a Cloudinary URL, use it directly
-      if (imageUrl && isCloudinaryUrl) {
-        console.log('Using existing Cloudinary URL:', imageUrl);
-        setImageUrl(imageUrl);
-      }
+    if (params.photoUri && typeof params.photoUri === 'string' && params.photoUri !== imageUri) {
+      setImageUri(params.photoUri);
+      setHasImage(true);
+      setImageError(false);
     }
-  }, [params]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.photoUri]);
 
   // Verify that the image file exists and is readable
   const verifyImageExists = async (uri: string) => {
@@ -99,30 +138,29 @@ const AddContributor = () => {
 
   const handleAddImage = async () => {
     try {
-      // Request camera permissions
+      if (Platform.OS === 'web') {
+        handleSelectFromGallery();
+      } else {
+        // Request camera permissions for native platforms
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
       if (status === 'granted') {
         setShowCamera(true);
       } else {
-        // Show proper permission alert
         Alert.alert(
           "Permission Required",
           "Camera permission is required to take pictures. Please enable it in your device settings.",
           [
-            { 
-              text: "Cancel", 
-              style: "cancel" 
-            },
+              { text: "Cancel", style: "cancel" },
             { 
               text: "Open Settings", 
               onPress: () => {
-                // This would ideally open settings, but for now just log
                 console.log("User should be directed to settings");
               }
             }
           ]
         );
+        }
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -130,10 +168,7 @@ const AddContributor = () => {
         "Camera Error",
         "There was a problem accessing your camera. Would you like to select from your gallery instead?",
         [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
+          { text: "Cancel", style: "cancel" },
           {
             text: "Select from Gallery",
             onPress: handleSelectFromGallery
@@ -153,11 +188,20 @@ const AddContributor = () => {
       });
       
       if (!galleryResult.canceled) {
-        // Save the image to app storage
+        if (Platform.OS === 'web') {
+          // For web, directly navigate to photo quality check with the URI
+          router.push({
+            pathname: '/contributor/photo-quality',
+            params: { photoUri: galleryResult.assets[0].uri }
+          });
+        } else {
+          // For native platforms, save to FileSystem first
         const newUri = await saveImageToAppStorage(galleryResult.assets[0].uri);
-        setImageUri(newUri);
-        setHasImage(true);
-        setImageError(false);
+          router.push({
+            pathname: '/contributor/photo-quality',
+            params: { photoUri: newUri }
+          });
+        }
       }
     } catch (galleryError) {
       console.error('Error selecting from gallery:', galleryError);
@@ -172,25 +216,30 @@ const AddContributor = () => {
   const takePicture = async () => {
     setSavingImage(true);
     try {
-      // Open camera with improved options
         const result = await ImagePicker.launchCameraAsync({
           allowsEditing: true,
           aspect: [1, 1],
           quality: 1,
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         exif: true,
-        cameraType: ImagePicker.CameraType.front, // Default to front camera for user photos
+        cameraType: ImagePicker.CameraType.front,
         });
         
         if (!result.canceled) {
-        // Save the image to app storage
+        if (Platform.OS === 'web') {
+          // For web, directly navigate with the URI
+          router.push({
+            pathname: '/contributor/photo-quality',
+            params: { photoUri: result.assets[0].uri }
+          });
+        } else {
+          // For native platforms, save to FileSystem first
         const newUri = await saveImageToAppStorage(result.assets[0].uri);
-        
-        // Navigate to photo quality check with permanent image URI
           router.push({
             pathname: '/contributor/photo-quality',
           params: { photoUri: newUri }
         });
+        }
       }
       
       setShowCamera(false);
@@ -207,8 +256,12 @@ const AddContributor = () => {
     }
   };
 
-  // Helper function to save image to app storage
+  // Helper function to save image to app storage (only for native platforms)
   const saveImageToAppStorage = async (uri: string) => {
+    if (Platform.OS === 'web') {
+      return uri; // On web, return the URI directly
+    }
+
     try {
       // Create a unique filename
       const timestamp = new Date().getTime();
@@ -231,7 +284,7 @@ const AddContributor = () => {
   const handleNext = async () => {
     try {
       // Validate form fields
-      if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim()) {
+      if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !nin.trim() || !gender || !selectedLanguage || !dob) {
         Alert.alert("Missing Information", "Please fill in all required fields.");
         return;
       }
@@ -240,142 +293,53 @@ const AddContributor = () => {
         Alert.alert("Missing Profile Image", "Please add a profile image for the contributor.");
         return;
       }
-      
-      // Upload image to Cloudinary if we have a local image but no Cloudinary URL yet
-      if (imageUri && !imageUrl) {
-        setUploadingImage(true);
-        
-        try {
-          // Try multiple approaches to get the user ID
-          let userId = null;
-          
-          // First try getting user data object
-          try {
-            const userDataString = await AsyncStorage.getItem('userData');
-            if (userDataString) {
-              const userData = JSON.parse(userDataString);
-              if (userData && userData.id) {
-                userId = userData.id;
-                console.log('User ID found in userData:', userId);
-              }
-            }
-          } catch (userDataError) {
-            console.log('Error parsing userData:', userDataError);
-          }
-          
-          // If that fails, try getting userId directly
-          if (!userId) {
-            try {
-              const directUserId = await AsyncStorage.getItem('userId');
-              if (directUserId) {
-                userId = directUserId;
-                console.log('User ID found directly:', userId);
-              }
-            } catch (directIdError) {
-              console.log('Error getting direct userId:', directIdError);
-            }
-          }
-          
-          // If still no userId, use a temporary one and warn
-          if (!userId) {
-            userId = `temp_user_${Date.now()}`;
-            console.warn('No user ID found, using temporary ID:', userId);
-          }
-          
-          // We don't have a contributor ID yet, so we'll use a temporary ID
-          const tempContributorId = `temp_${Date.now()}`;
-          
-          // First check if file exists
-          const fileInfo = await FileSystem.getInfoAsync(imageUri);
-          if (!fileInfo.exists) {
-            throw new Error('Image file not found. The file may have been deleted or moved.');
-          }
-          
-          console.log(`Attempting to upload image: ${imageUri}`);
-          console.log(`File size: ${(fileInfo.size / 1024).toFixed(2)}KB`);
-          
-          // Upload image to Cloudinary
-          const cloudinaryUrl = await uploadContributorImage(imageUri, tempContributorId, userId);
-          
-          // Store the Cloudinary URL
-          setImageUrl(cloudinaryUrl);
-          console.log('Image successfully uploaded to Cloudinary:', cloudinaryUrl);
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          Alert.alert(
-            "Upload Error",
-            "There was a problem uploading the contributor image. Would you like to retry or continue without uploading?",
-            [
-              { 
-                text: "Retry", 
-                onPress: async () => {
-                  setUploadingImage(false);
-                  // Wait a second before retrying
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  // Call handleNext again to retry
-                  handleNext();
-                }
-              },
-              { 
-                text: "Cancel", 
-                style: "cancel",
-                onPress: () => setUploadingImage(false)
-              },
-              { 
-                text: "Continue", 
-                onPress: () => {
-                  // Continue with local image
-                  navigateToNextScreen(imageUri);
-                }
-              }
-            ]
-          );
-          return;
-        }
-        
-        setUploadingImage(false);
-      }
-      
-      // Navigate to next screen
-      navigateToNextScreen(imageUrl || imageUri);
+      // No Cloudinary upload, just pass the real image URI
+      navigateToNextScreen(imageUri);
     } catch (error) {
-      setUploadingImage(false);
       console.error('Error in handleNext:', error);
       Alert.alert(
         "Error", 
         "There was a problem processing your request. Please try again.",
-        [
-          {
-            text: "OK"
-          }
-        ]
+        [{ text: "OK" }]
       );
     }
   };
   
   const navigateToNextScreen = (imageUriOrUrl: string) => {
-    // Log all image data before navigation for debugging
-    console.log('CONTRIBUTOR IMAGE DATA:', JSON.stringify({
-      photoUri: imageUri,
-      cloudinaryUrl: imageUrl,
-      passedImageUri: imageUriOrUrl,
-      isCloudinary: !!imageUrl
-    }));
-    
-    // Navigate to next screen with form data
-    router.push({
-      pathname: "/contributor/agent-verification" as any,
-      params: {
+    const contributorData: ContributorData = {
         firstName,
         lastName,
+      middleName,
         phoneNumber,
-        ninNumber,
+      nin,
+      gender,
         language: selectedLanguage,
-        // Pass both local URI and Cloudinary URL
-        photoUri: imageUri || '',
-        imageUrl: imageUrl || imageUriOrUrl,
-        isCloudinaryUrl: imageUrl ? "true" : "false"
-      }
+      depositAmount: '',
+      duration: '',
+      dob,
+      photo: imageUriOrUrl
+    };
+
+    console.log('[AddContributor] Navigating to SavingsPlanSetup with:', contributorData);
+
+    // Convert all fields to string for router params
+    const params: { [key: string]: string } = {
+      firstName: contributorData.firstName,
+      lastName: contributorData.lastName,
+      middleName: contributorData.middleName || '',
+      phoneNumber: contributorData.phoneNumber,
+      nin: contributorData.nin,
+      gender: contributorData.gender,
+      language: contributorData.language,
+      depositAmount: contributorData.depositAmount,
+      duration: contributorData.duration,
+      dob: contributorData.dob instanceof Date ? contributorData.dob.toISOString() : String(contributorData.dob),
+      photo: contributorData.photo
+    };
+
+    router.push({
+      pathname: '/contributor/savings-plan',
+      params
     });
   };
 
@@ -390,14 +354,158 @@ const AddContributor = () => {
     setHasImage(false);
   };
 
+  // Function to render the calendar
+  const renderCalendar = () => {
+    const currentMonth = moment(dob).month();
+    const currentYear = moment(dob).year();
+    const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth();
+    const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day();
+    
+    const days = [];
+    // Add empty views for days before the first day of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+    }
+    
+    // Add the days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = moment(`${currentYear}-${currentMonth + 1}-${day}`);
+      const isSelected = moment(dob).date() === day && 
+                        moment(dob).month() === currentMonth && 
+                        moment(dob).year() === currentYear;
+      
+      // Check if this date would make the user at least 18 years old
+      const wouldBeEighteen = moment().diff(currentDate, 'years') >= 18;
+      const isDisabled = !wouldBeEighteen;
+      
+      days.push(
+        <TouchableOpacity
+          key={day}
+          className={`flex-1 items-center justify-center my-1 rounded-full
+            ${isSelected ? 'bg-blue-600' : ''}
+            ${isDisabled ? 'opacity-30' : ''}`}
+          style={{ padding: 8 }}
+          disabled={isDisabled}
+          onPress={() => {
+            const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
+            setDob(selectedDate);
+          }}
+        >
+          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    // Create rows of 7 days
+    const rows = [];
+    const totalDays = Math.max(days.length, 35);
+    for (let i = 0; i < totalDays; i += 7) {
+      const weekDays = days.slice(i, i + 7);
+      while (weekDays.length < 7) {
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+      }
+      rows.push(
+        <View key={`row-${i}`} className="flex-row">
+          {weekDays}
+        </View>
+      );
+    }
+
+    return (
+      <View className="flex-1">
+        {rows}
+      </View>
+    );
+  };
+
+  // Function to change the month
+  const changeMonth = (direction: 'next' | 'prev') => {
+    const newDate = moment(dob).add(direction === 'next' ? 1 : -1, 'months');
+    
+    // Prevent going beyond today's date minus 18 years
+    if (direction === 'next' && newDate.isAfter(moment().subtract(18, 'years'))) {
+      return;
+    }
+    
+    setDob(newDate.toDate());
+  };
+
+  // Function to select a year
+  const selectYear = (year: number) => {
+    const newDate = moment(dob).year(year).toDate();
+    setDob(newDate);
+    setShowYearSelector(false);
+  };
+
+  const genderOptions = ['Male', 'Female', 'Prefer not to say'];
+
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
+
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('merchant_dashboard');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        setMerchantData(cacheData);
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    if (fromRefresh) {
+      await invalidateCache('merchant_dashboard');
+    }
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      const data = await getCachedData('merchant_dashboard', fetchMerchantDashboardAccount);
+      setMerchantData(data);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load merchant data');
+        setMerchantData(null);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 mt-16">
+        <View className="flex-row items-center px-4 mt-14">
           <TouchableOpacity 
             onPress={navigateBack}
-            className="bg-gray-200 p-2 rounded-full"
+            className=" p-2 rounded-full"
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
@@ -470,6 +578,17 @@ const AddContributor = () => {
                 className="bg-gray-100 p-4 rounded-xl"
               />
             </View>
+
+            {/* Middle Name */}
+            <View className='my-2'>
+              <Text className="text-gray-700 mb-2">Middle Name</Text>
+              <TextInput
+                value={middleName}
+                onChangeText={setMiddleName}
+                placeholder="Enter middle name"
+                className="bg-gray-100 p-4 rounded-xl"
+              />
+            </View>
             
             {/* Phone Number */}
             <View className='my-2'>
@@ -505,32 +624,59 @@ const AddContributor = () => {
             <View className='my-2'>
               <Text className="text-gray-700 mb-2">National Identity Number (NIN)</Text>
               <TextInput
-                value={ninNumber}
-                onChangeText={setNinNumber}
+                value={nin}
+                onChangeText={setNin}
                 placeholder="Enter NIN"
                 className="bg-gray-100 p-4 rounded-xl"
                 keyboardType="numeric"
+                maxLength={11}
               />
+            </View>
+            
+            {/* Gender */}
+            <View className="my-2">
+              <Text className="text-gray-700 mb-2">Gender</Text>
+              <TouchableOpacity 
+                onPress={() => setShowGenderPicker(true)}
+                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+              >
+                <Text className={gender ? "text-black" : "text-gray-500"}>{gender || "Select your gender"}</Text>
+                <Ionicons name="chevron-down" size={24} color="#0052CC" />
+              </TouchableOpacity>
             </View>
             
             {/* Language Selection */}
             <View className='my-2'>
               <Text className="text-gray-700 mb-2">Language</Text>
-              <View className="flex-row justify-between my-2">
-                {['English', 'Yoruba', 'Hausa', 'Igbo'].map((language) => (
+              <View className="flex-row flex-wrap gap-2">
+                {['english', 'yoruba', 'hausa', 'igbo'].map((language) => (
                   <TouchableOpacity 
                     key={language}
-                    className={`py-3 px-5 rounded-full ${selectedLanguage === language ? 'bg-[#E5F1FF]' : 'bg-gray-100'}`}
                     onPress={() => handleLanguageSelect(language)}
+                    className={`py-3 px-6 rounded-full ${
+                      selectedLanguage === language ? 'bg-blue-600' : 'bg-gray-100'
+                    }`}
                   >
-                    <Text 
-                      className={selectedLanguage === language ? 'text-blue-600' : 'text-gray-500'}
-                    >
-                      {language}
+                    <Text className={selectedLanguage === language ? 'text-white' : 'text-gray-600'}>
+                      {language.charAt(0).toUpperCase() + language.slice(1)}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+            </View>
+            
+            {/* Date of Birth */}
+            <View className="my-2">
+              <Text className="text-gray-700 mb-2">Date of Birth</Text>
+              <TouchableOpacity 
+                onPress={() => setShowCalendar(true)}
+                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+              >
+                <Text className={dob ? "text-black" : "text-gray-500"}>
+                  {moment(dob).format('MMMM D, YYYY')}
+                </Text>
+                <Ionicons name="calendar" size={24} color="#0052CC" />
+              </TouchableOpacity>
             </View>
           </View>
           
@@ -553,6 +699,135 @@ const AddContributor = () => {
         </View>
       </View>
 
+      {/* Gender Picker Modal */}
+      {showGenderPicker && (
+        <Modal
+          transparent={true}
+          visible={showGenderPicker}
+          animationType="slide"
+          onRequestClose={() => setShowGenderPicker(false)}
+        >
+          <View className="flex-1 justify-end bg-black bg-opacity-30">
+            <View className="bg-white rounded-t-3xl p-4">
+              <Text className="text-xl font-bold text-center mb-4">Select Gender</Text>
+              <TouchableOpacity
+                className="py-3 px-4 mb-1 rounded-lg"
+                onPress={() => {
+                  setGender('Male');
+                  setShowGenderPicker(false);
+                }}
+              >
+                <Text className="text-center text-lg">Male</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="py-3 px-4 mb-1 rounded-lg"
+                onPress={() => {
+                  setGender('Female');
+                  setShowGenderPicker(false);
+                }}
+              >
+                <Text className="text-center text-lg">Female</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowGenderPicker(false)}
+                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+              >
+                <Text className="text-white font-bold text-lg">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Calendar Modal */}
+      {showCalendar && (
+        <Modal
+          transparent={true}
+          visible={showCalendar}
+          animationType="slide"
+          onRequestClose={() => setShowCalendar(false)}
+        >
+          <View className="flex-1 justify-end bg-black bg-opacity-30">
+            <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}>
+              <View className="flex-row justify-between items-center p-2 mb-2">
+                <TouchableOpacity 
+                  onPress={() => changeMonth('prev')}
+                  className="p-2 rounded-full bg-gray-100"
+                >
+                  <Ionicons name="chevron-back" size={20} color="#0072CE" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setShowYearSelector(true)}
+                  className="flex-row items-center"
+                >
+                  <Text className="text-xl font-bold text-center">{moment(dob).format('MMMM YYYY')}</Text>
+                  <Ionicons name="chevron-down" size={20} color="#0072CE" className="ml-1" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => changeMonth('next')}
+                  className="p-2 rounded-full bg-gray-100"
+                >
+                  <Ionicons name="chevron-forward" size={20} color="#0072CE" />
+                </TouchableOpacity>
+              </View>
+              <View className="flex-row p-2 mb-2">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                  <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
+                ))}
+              </View>
+              {renderCalendar()}
+              <TouchableOpacity 
+                onPress={() => setShowCalendar(false)}
+                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+              >
+                <Text className="text-white font-bold text-lg">Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Year Selector Modal */}
+      {showYearSelector && (
+        <Modal
+          transparent={true}
+          visible={showYearSelector}
+          animationType="slide"
+          onRequestClose={() => setShowYearSelector(false)}
+        >
+          <View className="flex-1 justify-end bg-black bg-opacity-30">
+            <View className="bg-white rounded-t-3xl p-4" style={{ height: '50%' }}>
+              <Text className="text-xl font-bold text-center mb-4">Select Year</Text>
+              <FlatList
+                data={availableYears}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    className={`py-3 px-4 mb-1 rounded-lg ${moment(dob).year() === item ? 'bg-blue-100' : ''}`}
+                    onPress={() => selectYear(item)}
+                  >
+                    <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+                showsVerticalScrollIndicator={true}
+                initialScrollIndex={availableYears.findIndex(year => year === moment(dob).year())}
+                getItemLayout={(data, index) => ({
+                  length: 48,
+                  offset: 48 * index,
+                  index,
+                })}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowYearSelector(false)}
+                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+              >
+                <Text className="text-white font-bold text-lg">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {/* Camera Modal */}
       <Modal
         animationType="slide"
@@ -562,7 +837,6 @@ const AddContributor = () => {
       >
         <View className="flex-1 bg-black">
           <SafeAreaView className="flex-1">
-            {/* Camera Preview (simulated in this example) */}
             <View className="flex-1 justify-center items-center">
               {savingImage ? (
                 <View className="bg-white/20 p-8 rounded-xl">
@@ -573,7 +847,7 @@ const AddContributor = () => {
                 <View className="w-full items-center">
                   <Text className="text-white text-xl mb-8">Position your face in the frame</Text>
                   
-                  {/* Camera UI */}
+                  {/* Camera Controls */}
                   <View className="mt-auto w-full px-4 py-10 flex-row items-center justify-between">
                     <TouchableOpacity 
                       onPress={() => setShowCamera(false)}
@@ -590,13 +864,10 @@ const AddContributor = () => {
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
+                      onPress={handleSelectFromGallery}
                       className="bg-white/20 p-4 rounded-full"
-                      onPress={() => {
-                        // This would switch between front/back camera in a real implementation
-                        Alert.alert("Camera Switch", "Switching camera");
-                      }}
                     >
-                      <Ionicons name="camera-reverse" size={30} color="#FFFFFF" />
+                      <Ionicons name="images" size={30} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -607,6 +878,4 @@ const AddContributor = () => {
       </Modal>
     </SafeAreaView>
   );
-};
-
-export default AddContributor; 
+}; 

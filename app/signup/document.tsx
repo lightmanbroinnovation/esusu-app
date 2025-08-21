@@ -9,16 +9,38 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Dimensions,
+  KeyboardAvoidingView
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { Ionicons } from "@expo/vector-icons"; // Import icon library
 import { uploadUserDocument } from "../utils/documentUtils"; // Import upload function
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function UploadDocumentScreen() {
+  const router = useRouter();
+  
+  // Use back button handler for signup document page
+  useBackButtonHandler('/signup/document');
+  
   // Console log the params received from previous screen
   const params = useLocalSearchParams();
+  const { width, height } = Dimensions.get('window');
+  const insets = useSafeAreaInsets();
+
+  // Responsive sizing based on screen width
+  const getResponsiveSize = (baseSize: number) => {
+    if (width < 375) {
+      return baseSize * 0.9; // Small phones
+    } else if (width < 414) {
+      return baseSize; // Medium phones
+    } else {
+      return baseSize * 1.1; // Large phones and tablets
+    }
+  };
+
   useEffect(() => {
     console.log('===== DOCUMENT SCREEN - RECEIVED DATA =====');
     console.log('Params received from userData screen:', JSON.stringify(params, null, 2));
@@ -29,8 +51,37 @@ export default function UploadDocumentScreen() {
   const [cacImage, setCacImage] = useState<string | null>(null);
   const [uploadingCac, setUploadingCac] = useState(false);
   const [cacImageUrl, setCacImageUrl] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'error' | 'info' | null>(null);
+  const [messageTimeout, setMessageTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Helper function to set message with auto-clear
+  const setMessageWithTimeout = (msg: string, type: 'error' | 'info', timeoutMs: number = 4000) => {
+    // Clear any existing timeout
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+    }
+    
+    setMessage(msg);
+    setMessageType(type);
+    
+    // Set new timeout to clear message
+    const timeout = setTimeout(() => {
+      setMessage(null);
+      setMessageType(null);
+    }, timeoutMs);
+    
+    setMessageTimeout(timeout);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+      }
+    };
+  }, [messageTimeout]);
 
   const pickImage = async () => {
     try {
@@ -51,7 +102,7 @@ export default function UploadDocumentScreen() {
       }
     } catch (error) {
       console.error('Error picking CAC image:', error);
-      Alert.alert("Error", 'Failed to select CAC image. Please try again.');
+      setMessageWithTimeout("Failed to select CAC image. Please try again.", "error", 4000);
     }
   };
 
@@ -89,11 +140,7 @@ export default function UploadDocumentScreen() {
       setCacImageUrl(fallbackUrl);
       
       if (Platform.OS !== 'web' || process.env.NODE_ENV !== 'development') {
-        Alert.alert(
-          "Upload Warning", 
-          "We're having trouble uploading your document, but we can proceed with a placeholder for now.",
-          [{ text: "Continue" }]
-        );
+        setMessageWithTimeout("We're having trouble uploading your document, but we can proceed with a placeholder for now.", "info", 4000);
       }
       
       return fallbackUrl;
@@ -104,160 +151,173 @@ export default function UploadDocumentScreen() {
 
   const handleSubmit = () => {
     // Validate BVN
-    if (!bvn || bvn.length < 5) {
-      Alert.alert("Invalid BVN", "Please enter a valid BVN number.");
+    if (!bvn.trim()) {
+      setMessageWithTimeout("Please enter your BVN", "error", 3000);
       return;
     }
 
-    // If upload failed, we should still have the fallback cacImageUrl
-    // but if for some reason it's not set, we'll handle that case
-    if (!cacImageUrl) {
-      // Set fallback URL
-      const fallbackUrl = "https://res.cloudinary.com/daskmqzyy/image/upload/v1/verification_documents/placeholder_cac.jpg";
-      setCacImageUrl(fallbackUrl);
-      Alert.alert(
-        "Document Upload Issue", 
-        "We're having trouble with your document upload but will proceed with a placeholder for now.",
-        [{ text: "Continue" }]
-      );
+    if (bvn.length !== 11) {
+      setMessageWithTimeout("BVN must be exactly 11 digits", "error", 3000);
+      return;
     }
 
-    // Create verification data object
-    const verificationData = {
-      business_document: cacImageUrl,
-      documentType: 'cac_certificate'
-    };
-
-    // Store the document data to pass to the next screen
-    const documentData = {
-      ...params, // Include data from the previous page
-      bvn: bvn,
-      cacImage: cacImageUrl,
-      verification_data_string: JSON.stringify(verificationData)
-    };
-
-    console.log('===== DOCUMENT SCREEN - PASSING DATA =====');
-    try {
-      console.log('Document data prepared:', JSON.stringify({
-        bvn: documentData.bvn,
-        cacImage: documentData.cacImage && typeof documentData.cacImage === 'string' ? 
-          documentData.cacImage.substring(0, 30) + "..." : "missing",
-        verification_data_string: documentData.verification_data_string
-      }, null, 2));
-    } catch (error) {
-      console.error('Error preparing document data log:', error);
-    }
-    console.log('==========================================');
-
-    // Navigate to the next page with the combined data
+    // Navigate to next screen with document data
     router.push({
-      pathname: "/signup/passcode",
-      params: documentData,
+      pathname: "/signup/security",
+      params: {
+        ...params,
+        bvn: bvn.trim(),
+        cacImageUrl: cacImageUrl || "",
+      },
     });
   };
 
   return (
-    <View
-      className="flex-1 bg-white px-6"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView 
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          className="flex-1 px-6"
+          style={{
+            paddingTop: insets.top + getResponsiveSize(16),
+            paddingBottom: insets.bottom + getResponsiveSize(16),
+            paddingHorizontal: getResponsiveSize(24),
+          }}
     >
       {/* Header */}
-      <View className="flex-row justify-between items-center px-5 mt-2">
+          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
         <TouchableOpacity
           className="flex-row items-center"
           onPress={() => router.back()}
+              style={{ padding: getResponsiveSize(8) }}
         >
-          <Ionicons name="arrow-back" size={28} />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
         </TouchableOpacity>
-        <Text className="font-semibold">Step 3 of 4</Text>
+            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 4 of 4</Text>
+          </View>
+
+          <View style={{ marginTop: getResponsiveSize(16) }}>
+            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+              Upload Documents
+            </Text>
+            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+              Please provide your BVN and upload your CAC certificate for verification.
+            </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingTop: 10 }}>
-        {/* Title */}
-        <Text className="text-[#0072CE] text-[24px] font-bold mb-2">
-          Upload Your Business Document
-        </Text>
-        <Text className="text-base text-[#4F4F4F] mb-4">
-          To ensure security & compliance, please provide your details.
-        </Text>
+      {message && (
+            <View style={{ 
+              marginTop: getResponsiveSize(16), 
+              marginBottom: getResponsiveSize(16), 
+              padding: getResponsiveSize(12), 
+              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', 
+              borderRadius: getResponsiveSize(8) 
+            }}>
+              <Text style={{ 
+                color: messageType === 'error' ? '#D92D20' : '#0072CE', 
+                textAlign: 'center',
+                fontSize: getResponsiveSize(14)
+              }}>{message}</Text>
+        </View>
+      )}
 
         {/* BVN Input */}
-        <Text className="text-sm text-[#4F4F4F] font-semibold mb-1">BVN Number</Text>
+          <View style={{ marginTop: getResponsiveSize(32) }}>
+            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>BVN (Bank Verification Number)</Text>
         <TextInput
-          className="border border-[#E0E0E0] rounded-lg px-4 py-3 mb-6 bg-[#F4F4F5]"
+              placeholder="Enter your 11-digit BVN"
+              value={bvn}
+              onChangeText={setBvn}
           keyboardType="numeric"
+              maxLength={11}
+              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+              placeholderTextColor="#BDBDBD"
           style={{
-            backgroundColor: "#F4F4F5",
-          }}
-          maxLength={11}
-          placeholder="Enter BVN number"
-          placeholderTextColor="#BDBDBD"
-          value={bvn}
-          onChangeText={(text) => setBvn(text.replace(/[^0-9]/g, ""))}
-        />
+                paddingHorizontal: getResponsiveSize(12),
+                paddingVertical: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8),
+                fontSize: getResponsiveSize(16)
+              }}
+            />
+          </View>
 
-        {/* Upload CAC */}
-        <Text className="text-sm text-[#4F4F4F] font-semibold my-2">
-          Upload CAC Certificate
-        </Text>
-        <View
-          className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
+          {/* CAC Upload */}
+          <View style={{ marginTop: getResponsiveSize(24) }}>
+            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>CAC Certificate</Text>
+            <TouchableOpacity
+              onPress={pickImage}
+              className="border-2 border-dashed border-[#E0E0E0] rounded-lg p-4 items-center justify-center"
           style={{
-            height: 160,
-            backgroundColor: "#F4F4F5",
-            padding: 30,
-            borderWidth: 2,
-            borderColor: "#E0E0E0",
-            borderStyle: "dashed",
-          }}
-        >
-          {uploadingCac ? (
-            <View className="items-center justify-center" style={{ height: 100 }}>
-              <ActivityIndicator size="large" color="#0072CE" />
-              <Text className="text-[#0072CE] mt-2 text-center">
-                Uploading document...
-              </Text>
-            </View>
-          ) : cacImage ? (
+                borderWidth: getResponsiveSize(2),
+                borderRadius: getResponsiveSize(8),
+                padding: getResponsiveSize(16),
+                minHeight: getResponsiveSize(120)
+              }}
+              disabled={uploadingCac}
+            >
+              {cacImage ? (
             <View className="items-center">
               <Image
                 source={{ uri: cacImage }}
-                style={{ width: 100, height: 100, borderRadius: 8 }}
-              />
-              <TouchableOpacity
-                onPress={pickImage}
-                className="mt-2"
-              >
-                <Text className="text-[#0072CE]">Change Document</Text>
+                    className="w-20 h-20 rounded-lg mb-2"
+                    style={{
+                      width: getResponsiveSize(80),
+                      height: getResponsiveSize(80),
+                      borderRadius: getResponsiveSize(8),
+                      marginBottom: getResponsiveSize(8)
+                    }}
+                  />
+                  <Text className="text-[#0072CE] font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                    {uploadingCac ? "Uploading..." : "Image selected"}
+                  </Text>
+                </View>
+              ) : (
+                <View className="items-center">
+                  <Ionicons 
+                    name="cloud-upload-outline" 
+                    size={getResponsiveSize(40)} 
+                    color="#0072CE" 
+                    style={{ marginBottom: getResponsiveSize(8) }}
+                  />
+                  <Text className="text-[#0072CE] font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                    {uploadingCac ? "Uploading..." : "Tap to upload CAC certificate"}
+                  </Text>
+                </View>
+              )}
+              {uploadingCac && (
+                <ActivityIndicator 
+                  size="small" 
+                  color="#0072CE" 
+                  style={{ marginTop: getResponsiveSize(8) }}
+                />
+              )}
               </TouchableOpacity>
             </View>
-          ) : (
-            <TouchableOpacity
-              onPress={pickImage}
-              className="items-center"
-            >
-              <View
-                className="w-12 h-12 rounded-full bg-[#0072CE] items-center justify-center mb-2"
-              >
-                <Ionicons name="cloud-upload-outline" size={24} color="white" />
-              </View>
-              <Text className="text-[#0072CE] text-center">
-                Click to upload CAC certificate
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          className="bg-[#0072CE] rounded-xl py-4 mt-8"
-          onPress={handleSubmit}
-        >
-          <Text className="text-white text-center font-semibold text-base">
-            Continue
-          </Text>
-        </TouchableOpacity>
+          {/* Continue Button */}
+          <View className="pb-4" style={{ paddingBottom: getResponsiveSize(16) }}>
+            <TouchableOpacity
+              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              onPress={handleSubmit}
+              style={{
+                paddingVertical: getResponsiveSize(16),
+                borderRadius: getResponsiveSize(8)
+              }}
+            >
+              <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
+              <Ionicons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

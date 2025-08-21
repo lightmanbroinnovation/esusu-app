@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "esusu-app-v1",
+    "name": "Esusu",
     "slug": "esusu-app-v1",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/Esusu-Icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,9 +19,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff",
-        "package": "com.example.esusuappv1"
+        "foregroundImage": "./assets/images/Esusu-Icon.png",
+        "backgroundColor": "#ffffff"
       },
       "package": "com.example.esusuappv1"
     },

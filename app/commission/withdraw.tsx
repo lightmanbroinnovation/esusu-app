@@ -11,15 +11,19 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchUser } from '../../services/api';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from '../components/EsusuLoader';
+import NetInfo from '@react-native-community/netinfo';
+// No API import needed
 
 // Define the Account type to match the structure in user details
 type Account = {
   id: string;
   bankName: string;
+  bankCode: string;
   accountName: string;
   accountNumber: string;
   isPrimary: boolean;
@@ -41,94 +45,109 @@ interface UserDetails {
   bankAccounts?: Account[];
 }
 
+// Helper to verify bank details
+const verifyBankDetails = async (bankCode: string, accountNumber: string) => {
+  const token = await AsyncStorage.getItem('auth_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+  const res = await fetch('https://esusu-server.onrender.com/api/verification/safehaven/name-enquiry', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ bankCode, accountNumber })
+  });
+  return res.json();
+};
+
+const fetchWithdrawData = async (params: any) => {
+  // If you have an API call for withdraw data, place it here
+  // Otherwise, just return params as data
+  return params;
+};
+
 const WithdrawScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [amount, setAmount] = useState('0');
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'error' | 'info' | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [commission, setCommission] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Fetch user ID from AsyncStorage
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
   useEffect(() => {
-    const getUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem('userId');
-        if (!storedUserId) {
-          console.error('User ID not found in AsyncStorage');
-          setError('User ID not found. Please log in again.');
-          setLoading(false);
-          return;
-        }
-        
-        setUserId(storedUserId);
-        console.log('Retrieved user ID from storage:', storedUserId);
-      } catch (error) {
-        console.error('Error retrieving user ID:', error);
-        setError('Failed to retrieve user ID');
-        setLoading(false);
-      }
-    };
-    
-    getUserId();
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Function to fetch user data
-  const fetchUserData = async () => {
-    if (!userId) return;
-    
+  const fetchData = async (fromRefresh = false) => {
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch user details
-      const userData = await fetchUser(userId);
-      setUserDetails(userData);
-      
-      // Get bank accounts from user data
-      if (userData.bankAccounts && userData.bankAccounts.length > 0) {
-        setAccounts(userData.bankAccounts);
-        
-        // Set selected account to primary account or first account
-        const primaryAccount = userData.bankAccounts.find((acc: Account) => acc.isPrimary);
-        setSelectedAccount(primaryAccount || userData.bankAccounts[0]);
-      } else {
-        console.log('No bank accounts found in user data');
-        setAccounts([]);
-        setSelectedAccount(null);
+      const cached = await AsyncStorage.getItem('commission_withdraw');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        // Set your state from cache if needed
+        const comm = cacheData.commission ? Number(cacheData.commission) : 0;
+        setCommission(comm);
+        let accountsArr: Account[] = [];
+        if (cacheData.settlementAccounts) {
+          const parsed = JSON.parse(cacheData.settlementAccounts as string);
+          accountsArr = Array.isArray(parsed) ? parsed : [];
+        }
+        setAccounts(accountsArr);
+        setSelectedAccount(accountsArr.length > 0 ? accountsArr[0] : null);
       }
-      
-      console.log('User data fetched successfully');
-    } catch (error) {
-      console.error("Failed to fetch user data:", error);
-      setError("Failed to load user data. Please try again.");
+    } catch {}
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      return;
+    }
+    if (fromRefresh) {
+      await invalidateCache('commission_withdraw');
+    }
+    try {
+      const data = await getCachedData('commission_withdraw', () => fetchWithdrawData(params));
+      const comm = params.commission ? Number(params.commission) : 0;
+      setCommission(comm);
+      let accountsArr: Account[] = [];
+      if (params.settlementAccounts) {
+        const parsed = JSON.parse(params.settlementAccounts as string);
+        accountsArr = Array.isArray(parsed) ? parsed : [];
+      }
+      setAccounts(accountsArr);
+      setSelectedAccount(accountsArr.length > 0 ? accountsArr[0] : null);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load withdrawal data.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch user details when userId is available
   useEffect(() => {
-    if (userId) {
-      fetchUserData();
-    }
-  }, [userId]);
+    fetchData();
+  }, [params.commission, params.settlementAccounts]);
 
-  // Refetch data when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      if (userId) {
-        console.log('Screen focused, refetching user data');
-        fetchUserData();
-      }
-      return () => {
-        // Cleanup if needed
-      };
-    }, [userId])
-  );
+  const onRefresh = async () => {
+    setLoading(true);
+    await fetchData(true);
+    setLoading(false);
+  };
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
   
   const navigateBack = () => {
     router.back();
@@ -158,44 +177,51 @@ const WithdrawScreen = () => {
     }
   };
   
-  const handleContinue = () => {
-    // Check if a bank account is selected
+  const handleContinue = async () => {
+    setMessage(null);
+    setMessageType(null);
     if (!selectedAccount) {
-      Alert.alert('No Bank Account', 'Please add a bank account to continue.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Add Bank Account', onPress: navigateToAddBank }
-      ]);
+      setMessage('Please add a bank account to continue.');
+      setMessageType('error');
       return;
     }
-    
-    // Make sure we have user data and valid amount
-    if (!userDetails) {
-      Alert.alert('Error', 'User data not available. Please try again.');
-      return;
-    }
-    
     const amountNum = Number(amount);
-    if (amountNum <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter an amount greater than zero.');
+    if (amountNum < 50) {
+      setMessage('Minimum withdrawal amount is ₦500.');
+      setMessageType('error');
       return;
     }
-    
-    const balance = userDetails.balance || 0;
-    if (amountNum > balance) {
-      Alert.alert('Insufficient Funds', 'You do not have enough balance to withdraw this amount.');
+    if (amountNum > commission) {
+      setMessage('You do not have enough balance to withdraw this amount.');
+      setMessageType('error');
       return;
     }
-    
-    // Save withdrawal amount and selected account to AsyncStorage for the OTP screen
-    Promise.all([
-      AsyncStorage.setItem('withdrawAmount', amount),
-      AsyncStorage.setItem('selectedAccount', JSON.stringify(selectedAccount))
-    ]).then(() => {
-    router.push('/commission/otp' as any);
-    }).catch(error => {
-      console.error('Error saving withdrawal data:', error);
-      Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
-    });
+    setVerifying(true);
+    try {
+      const verifyRes = await verifyBankDetails(selectedAccount.bankCode, selectedAccount.accountNumber);
+      console.log('Bank verification response:', verifyRes);
+      if (verifyRes.status === 'Success' && verifyRes.data) {
+        // Navigate to enter-transaction-pin.tsx with required params
+        router.push({
+          pathname: '/commission/enter-transaction-pin',
+          params: {
+            amount: amountNum,
+            bankCode: selectedAccount.bankCode,
+            accountNumber: selectedAccount.accountNumber,
+            beneficiaryName: verifyRes.data.accountName,
+            sessionId: verifyRes.data.sessionId
+          }
+        });
+      } else {
+        setMessage(verifyRes.message || 'Bank verification failed.');
+        setMessageType('error');
+      }
+    } catch (e) {
+      setMessage('Failed to verify bank details. Please try again.');
+      setMessageType('error');
+    } finally {
+      setVerifying(false);
+    }
   };
 
   // Helper function to get bank logo
@@ -213,66 +239,48 @@ const WithdrawScreen = () => {
     }
   };
 
-  // Safely get balance with fallback value
-  const userBalance = userDetails?.balance?.toLocaleString() || '0';
+  // Use commission as balance
+  const userBalance = commission.toLocaleString();
 
   // Determine if continue button should be enabled
   const isContinueEnabled = !loading && 
     Number(amount) > 0 && 
-    userDetails && 
     selectedAccount && 
-    Number(amount) <= (userDetails.balance || 0);
+    Number(amount) <= commission;
 
   return (
     <View className="flex-1 bg-white">
+      {message && (
+        <View style={{ margin: 16, padding: 12, backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', borderRadius: 8 }}>
+          <Text style={{ color: messageType === 'error' ? '#D92D20' : '#0072CE', textAlign: 'center' }}>{message}</Text>
+        </View>
+      )}
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       <SafeAreaView className="flex-1">
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 mt-2">
-          <TouchableOpacity 
-            onPress={navigateBack}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
-          >
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </TouchableOpacity>
+          <TouchableOpacity onPress={navigateBack} className=" p-2 rounded-full">
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
           <Text className="text-lg font-semibold">Withdraw</Text>
           <View className="w-10" />
         </View>
-        
-        {loading ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#0052CC" />
-            <Text className="mt-4 text-gray-600">Loading your data...</Text>
-          </View>
-        ) : error ? (
-          <View className="flex-1 items-center justify-center px-4">
-            <Text className="text-red-500 text-center mb-4">{error}</Text>
-            <TouchableOpacity 
-              onPress={() => router.replace('/commission')}
-              className="bg-blue-600 px-6 py-2 rounded-md"
-            >
-              <Text className="text-white font-semibold">Go Back</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
         <View className="flex-1 px-4">
           {/* Balance Section */}
           <View className="flex-row justify-center items-center my-2">
             <Text className="text-gray-700 text-base mr-2">Current Balance:</Text>
-              <Text className="text-green-600 font-semibold text-base">₦{userBalance}</Text>
+            <Text className="text-green-600 font-semibold text-base">
+              {commission !== undefined && commission !== null ? `₦${userBalance}` : <Text style={{color:'#A9A8AF'}}>--</Text>}
+            </Text>
           </View>
-          
           {/* Account Selection */}
-            {accounts.length > 0 ? (
-          <TouchableOpacity 
-            className="bg-blue-50 rounded-xl p-4 mb-4"
-            onPress={() => setShowAccountModal(true)}
-          >
+          {accounts && accounts.length > 0 ? (
+            <TouchableOpacity className="bg-blue-50 rounded-xl p-4 mb-4" onPress={() => setShowAccountModal(true)}>
             <View className="flex-row justify-between items-center mt-1">
                   <View className="flex-row items-center space-x-8">
                     <Text className="text-gray-600 mr-4">To:</Text>
                 <Text className="text-lg font-semibold mr-2">
-                      {selectedAccount?.accountName}
+                    {selectedAccount?.accountName || ''}
                 </Text>
                 {selectedAccount && (
                   <Image 
@@ -288,11 +296,8 @@ const WithdrawScreen = () => {
                   <Ionicons name="card-outline" size={18} color="#0099FF" />
                   <Text className="text-blue-600 ml-2">
                   {selectedAccount?.bankName || 'Select Bank'}
-
                   </Text>
               <Text className="text-blue-600 ml-2">
-              
-
                     {selectedAccount?.accountNumber || ''}
               </Text>
               {selectedAccount?.isPrimary && (
@@ -303,10 +308,7 @@ const WithdrawScreen = () => {
             </View>
           </TouchableOpacity>
             ) : (
-              <TouchableOpacity 
-                className="bg-blue-50 rounded-xl p-4 mb-4 flex-row justify-between items-center"
-                onPress={navigateToAddBank}
-              >
+            <TouchableOpacity className="bg-blue-50 rounded-xl p-4 mb-4 flex-row justify-between items-center" onPress={navigateToAddBank}>
                 <View>
                   <Text className="text-lg font-semibold">Add Bank Account</Text>
                   <Text className="text-gray-600 mt-1">You need to add a bank account to withdraw</Text>
@@ -314,7 +316,6 @@ const WithdrawScreen = () => {
                 <Ionicons name="add-circle" size={32} color="#0074FF" />
               </TouchableOpacity>
             )}
-          
           {/* Amount Entry */}
           <View className="items-center mb-6">
             <Text className="text-gray-600 text-lg mb-2">Enter Amount</Text>
@@ -323,103 +324,55 @@ const WithdrawScreen = () => {
             </Text>
             <View className="h-0.5 bg-gray-200 w-4/5 mt-2" />
           </View>
-          
           {/* Quick Amounts */}
           <View className="flex-row justify-between mb-4">
-            <TouchableOpacity 
-              className="bg-gray-100 px-4 py-2 rounded-full"
-              onPress={() => handleAmountSelection('5000')}
-            >
+            <TouchableOpacity className="bg-gray-100 px-4 py-2 rounded-full" onPress={() => handleAmountSelection('5000')}>
               <Text className="text-gray-800">₦5,000</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              className="bg-gray-100 px-4 py-2 rounded-full"
-              onPress={() => handleAmountSelection('15000')}
-            >
+            <TouchableOpacity className="bg-gray-100 px-4 py-2 rounded-full" onPress={() => handleAmountSelection('15000')}>
               <Text className="text-gray-800">₦15,000</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              className="bg-gray-100 px-4 py-2 rounded-full"
-              onPress={() => handleAmountSelection('25000')}
-            >
+            <TouchableOpacity className="bg-gray-100 px-4 py-2 rounded-full" onPress={() => handleAmountSelection('25000')}>
               <Text className="text-gray-800">₦25,000</Text>
             </TouchableOpacity>
           </View>
-          
           {/* Keypad */}
           <View className="w-full items-center">
             {/* Row 1 */}
             <View className="flex-row justify-around w-full my-4">
-              <TouchableOpacity 
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-                onPress={() => handleButtonPress('1')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('1')}>
                   <Text className="text-xl font-medium text-blue-950">1</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('2')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('2')}>
                   <Text className="text-xl font-medium text-blue-950">2</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('3')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('3')}>
                   <Text className="text-xl font-medium text-blue-950">3</Text>
               </TouchableOpacity>
             </View>
             
             {/* Row 2 */}
             <View className="flex-row justify-around w-full mb-6">
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('4')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('4')}>
                   <Text className="text-xl font-medium text-blue-950">4</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('5')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('5')}>
                   <Text className="text-xl font-medium text-blue-950">5</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('6')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('6')}>
                   <Text className="text-xl font-medium text-blue-950">6</Text>
               </TouchableOpacity>
             </View>
             
             {/* Row 3 */}
             <View className="flex-row justify-around w-full mb-6">
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('7')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('7')}>
                   <Text className="text-xl font-medium text-blue-950">7</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('8')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('8')}>
                   <Text className="text-xl font-medium text-blue-950">8</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('9')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('9')}>
                   <Text className="text-xl font-medium text-blue-950">9</Text>
               </TouchableOpacity>
             </View>
@@ -427,18 +380,10 @@ const WithdrawScreen = () => {
             {/* Row 4 */}
             <View className="flex-row justify-around w-full">
               <View className="w-16 h-16" />
-              <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                onPress={() => handleButtonPress('0')}
-              >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={() => handleButtonPress('0')}>
                   <Text className="text-xl font-medium text-blue-950">0</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                               className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-
-                  onPress={handleBackspace}
-                >
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center" onPress={handleBackspace}>
                   <Ionicons name="backspace-outline" size={28} color="#374151" />
               </TouchableOpacity>
               </View>
@@ -449,15 +394,16 @@ const WithdrawScreen = () => {
               <TouchableOpacity 
                 className={`p-4 rounded-xl items-center ${isContinueEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
                 onPress={handleContinue}
-                disabled={!isContinueEnabled}
+                disabled={!isContinueEnabled || verifying}
               >
-                <Text className="text-white font-semibold text-lg">Continue</Text>
+                {verifying ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white font-semibold text-lg">Continue</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
-        )}
-      </SafeAreaView>
-
       {/* Account Selection Modal */}
       <Modal
         animationType="slide"
@@ -473,14 +419,11 @@ const WithdrawScreen = () => {
                 <Ionicons name="close" size={24} color="#000" />
               </TouchableOpacity>
             </View>
-            
             {accounts.length > 0 ? (
               accounts.map((account) => (
               <TouchableOpacity 
                   key={account.id}
-                  className={`flex-row items-center p-4 rounded-xl mb-3 ${
-                    selectedAccount?.id === account.id ? 'bg-blue-50' : 'bg-gray-50'
-                  }`}
+                    className={`flex-row items-center p-4 rounded-xl mb-3 ${selectedAccount?.id === account.id ? 'bg-blue-50' : 'bg-gray-50'}`}
                 onPress={() => {
                   setSelectedAccount(account);
                   setShowAccountModal(false);
@@ -516,7 +459,6 @@ const WithdrawScreen = () => {
                 </TouchableOpacity>
                 </View>
             )}
-            
             {accounts.length > 0 && accounts.length < 2 && (
               <TouchableOpacity 
                 className="mt-4 bg-blue-600 p-4 rounded-xl"
@@ -531,6 +473,7 @@ const WithdrawScreen = () => {
           </View>
         </View>
       </Modal>
+      </SafeAreaView>
     </View>
   );
 };

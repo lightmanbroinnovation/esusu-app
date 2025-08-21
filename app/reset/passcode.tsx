@@ -7,22 +7,26 @@ import { View, Text, TouchableOpacity, Vibration, Alert, ActivityIndicator } fro
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { updateUser } from "../../services/api"; // Import API function
+import { updatePasscode } from "../../services/api";
 import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function PasscodeScreen() {
+  const router = useRouter();
+  
+  // Use back button handler for reset passcode page
+  useBackButtonHandler('/reset/passcode');
+  
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
   const [confirmPin, setConfirmPin] = useState<string>(""); // State for the confirmed PIN
   const [isConfirming, setIsConfirming] = useState<boolean>(false); // State to toggle between "Enter PIN" and "Confirm PIN"
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
 
   // Get params from previous screen
-  const userId = params.userId as string;
   const phone = params.phone as string;
 
   const handleKeyPress = (digit: string) => {
@@ -80,36 +84,68 @@ export default function PasscodeScreen() {
 
   const savePIN = async () => {
     setLoading(true);
-    
     try {
-      // Update user with new PIN
-      await updateUser(userId, { pin });
-      
-      // Show success notification
-      dispatch(addNotification({
-        type: 'success',
-        title: 'Passcode Updated',
-        body: 'Your passcode has been updated successfully.'
-      }));
-      
-      // Navigate to success screen
-      setTimeout(() => {
+      // Send POST request to change-password endpoint
+      const res = await fetch('https://esusu-server.onrender.com/api/merchant/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassCode: String(pin) })
+      });
+      let data = null;
+      let text = '';
+      try {
+        text = await res.text();
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        console.error('JSON parse error:', jsonErr, 'Response text:', text);
+        dispatch(addNotification({
+          type: 'error',
+          title: 'Update Failed',
+          body: 'Server error: Invalid response format.'
+        }));
         setLoading(false);
-        router.push({
-          pathname: "/reset/success",
-          params: { phone }
-        });
-      }, 1000);
+        Alert.alert(
+          "Error",
+          "Server error: Invalid response format.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+      console.log('change-password response:', data);
+      if (data && data.status === 'Success') {
+        dispatch(addNotification({
+          type: 'success',
+          title: 'Passcode Updated',
+          body: 'Your passcode has been updated successfully.'
+        }));
+        setTimeout(() => {
+          setLoading(false);
+          router.push({
+            pathname: "/reset/success",
+            params: { phone }
+          });
+        }, 1000);
+      } else {
+        dispatch(addNotification({
+          type: 'error',
+          title: 'Update Failed',
+          body: data?.message || 'There was an error saving your new passcode. Please try again.'
+        }));
+        setLoading(false);
+        Alert.alert(
+          "Error",
+          data?.message || "There was an error saving your new PIN. Please try again.",
+          [{ text: "OK" }]
+        );
+      }
     } catch (error) {
       console.error("Error saving PIN:", error);
-      
       // Show error notification
       dispatch(addNotification({
         type: 'error',
         title: 'Update Failed',
         body: 'There was an error saving your new passcode. Please try again.'
       }));
-      
       setLoading(false);
       Alert.alert(
         "Error",

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,15 +6,15 @@ import {
   Switch,
   Modal,
   TouchableOpacity,
-  Animated,
-  Dimensions,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBank } from "../context/bank-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateUser } from "../../../services/api";
+import * as Clipboard from 'expo-clipboard';
 
 interface Bank {
   id: string;
@@ -22,9 +22,8 @@ interface Bank {
   accountNumber: string;
   accountName: string;
   isPrimary?: boolean;
+  bankCode?: string;
 }
-
-const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function BankBottomSheet({
   bank,
@@ -33,12 +32,10 @@ export default function BankBottomSheet({
   bank: Bank;
   onClose: () => void;
 }) {
-  const { banks, primaryBankId, refreshBanks } = useBank();
+  const { banks, primaryBankId, isLoading, error, refreshBanks } = useBank();
   const [loading, setLoading] = useState(false);
   const [isPrimary, setIsPrimary] = useState(bank.isPrimary || false);
   const [userId, setUserId] = useState<string | null>(null);
-
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Get user ID from AsyncStorage
   useEffect(() => {
@@ -47,23 +44,13 @@ export default function BankBottomSheet({
     });
   }, []);
 
-  useEffect(() => {
-    // Slide up when modal opens
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
   const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: SCREEN_HEIGHT,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      onClose();
-    });
+    onClose();
+  };
+
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
+    Alert.alert("Copied!", "Text copied to clipboard.");
   };
 
   const handleSetPrimary = async (value: boolean) => {
@@ -75,25 +62,18 @@ export default function BankBottomSheet({
     setLoading(true);
     try {
       setIsPrimary(value);
-      
-      // Update all bank accounts to set primary status
       const updatedBanks = banks.map(item => ({
         ...item,
         isPrimary: item.id === bank.id ? value : false
       }));
-      
-      // Update user with new bank accounts
       await updateUser(userId, { bankAccounts: updatedBanks });
-      
-      // Refresh the bank accounts list
       await refreshBanks();
-      
       if (value) {
         Alert.alert("Success", "This account has been set as your primary account");
       }
     } catch (error) {
       console.error("Error updating primary account:", error);
-      setIsPrimary(!value); // Revert switch if failed
+      setIsPrimary(!value);
       Alert.alert("Error", "Failed to update account status");
     } finally {
       setLoading(false);
@@ -110,28 +90,18 @@ export default function BankBottomSheet({
       "Remove Bank Account",
       "Are you sure you want to remove this bank account?",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Remove",
           style: "destructive",
           onPress: async () => {
             setLoading(true);
             try {
-              // Filter out the bank to be removed
               const updatedBanks = banks.filter(item => item.id !== bank.id);
-              
-              // If removing the primary account, set a new primary if available
               if (bank.isPrimary && updatedBanks.length > 0) {
                 updatedBanks[0].isPrimary = true;
               }
-              
-              // Update user with new bank accounts
               await updateUser(userId, { bankAccounts: updatedBanks });
-              
-              // Refresh and close
               await refreshBanks();
               handleClose();
             } catch (error) {
@@ -146,76 +116,82 @@ export default function BankBottomSheet({
     );
   };
 
-  return (
-    <Modal visible={true} transparent animationType="none" onRequestClose={handleClose}>
-      {/* Overlay */}
-      <View className="flex-1 bg-black/60">
-        {/* Close Button */}
-        <TouchableOpacity
-          onPress={handleClose}
-          className="absolute top-10 right-5 z-20"
-          disabled={loading}
-        >
-          <Ionicons name="close" size={28} color="white" />
-        </TouchableOpacity>
+  // Helper function to get bank logo based on bank name
+  const getBankLogo = (bankName: string) => {
+    const name = bankName?.toLowerCase() || '';
+    if (name.includes('first bank') || name.includes('firstbank')) {
+      return require('../../assets/images/icon.png');
+    } else if (name.includes('uba')) {
+      return require('../../assets/images/icon.png');
+    } else if (name.includes('zenith')) {
+      return require('../../assets/images/icon.png');
+    } else if (name.includes('gtb') || name.includes('guaranty')) {
+      return require('../../assets/images/icon.png');
+    } else {
+      return require('../../assets/images/icon.png');
+    }
+  };
 
-        {/* Sliding Sheet */}
-        <Animated.View
-          style={{
-            transform: [{ translateY: slideAnim }],
-          }}
-          className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6"
-        >
+  return (
+    <Modal visible={true} transparent animationType="fade" onRequestClose={handleClose}>
+      {/* Overlay */}
+      <Pressable className="flex-1 bg-black/60 items-center" onPress={handleClose}>
+        {/* Bottom Sheet */}
+        <View className="absolute bg-white rounded-t-[40px] p-6 w-full bottom-0 items-center" style={{ paddingBottom: 32 }}>
           {loading && (
-            <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/10 z-10 justify-center items-center rounded-t-[32px]">
+            <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/10 z-10 justify-center items-center rounded-xl">
               <ActivityIndicator size="large" color="#0074FF" />
             </View>
           )}
           
-          <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
-          
-          <View className="mb-4 py-4">
-            <Text className="text-gray-500 text-sm">Bank Name</Text>
-            <Text className="text-lg font-semibold mt-2">{bank.bankName}</Text>
+          {/* Large Bank Logo */}
+          <View className="w-24 h-24 rounded-full bg-white shadow items-center justify-center -mt-16 mb-4" style={{ overflow: 'hidden' }}>
+            <Image
+              source={getBankLogo(bank.bankName)}
+              className="w-20 h-20"
+              resizeMode="cover"
+            />
           </View>
 
-          <View className="h-[1px] w-full bg-gray-200"></View>
+          {/* Bank Name */}
+          <Text className="text-gray-500 text-base mb-1">Bank name</Text>
+          <Text className="text-2xl font-bold text-gray-900 mb-4">{bank.bankName || bank.bankCode || 'Unknown Bank'}</Text>
 
-          <View className="mb-4 py-4">
-            <Text className="text-gray-500 text-sm">Account Number</Text>
-            <Text className="text-lg font-semibold mt-2">{bank.accountNumber}</Text>
-          </View>
-          
-          <View className="h-[1px] w-full bg-gray-200"></View>
-          
-          <View className="mb-4 py-4">
-            <Text className="text-gray-500 text-sm">Account Name</Text>
-            <Text className="text-lg font-semibold mt-2">{bank.accountName}</Text>
-          </View>
+          {/* Account Number */}
+          <Text className="text-gray-500 text-base mb-1">Account Name</Text>
+          <Text className="text-2xl font-bold text-gray-900 mb-4 tracking-widest">{bank.accountName || 'N/A'}</Text>
+          {/* Account Number */}
 
-          <View className="h-[1px] w-full bg-gray-200"></View>
+          <Text className="text-gray-500 text-base mb-1">Account Number</Text>
+          <Text className="text-2xl font-bold text-gray-900 mb-4 tracking-widest">{bank.accountNumber || 'N/A'}</Text>
 
-          <View className="flex-row justify-between items-center py-6">
+          {/* Set as Primary Account */}
+          <View className="flex-row justify-between items-center w-full py-5 mb-2">
             <View>
-              <Text className="text-base font-medium">Set as Primary Account</Text>
-              <Text className="text-gray-500 text-xs mt-1">This will be your default withdrawal account.</Text>
+              <Text className="text-base font-semibold text-gray-800">Set as Primary Account</Text>
+              <Text className="text-gray-500 text-sm mt-1">This will be your default withdrawal account.</Text>
             </View>
             <Switch
-              value={isPrimary}
+              trackColor={{ false: "#E0E0E0", true: "#0074FF" }}
+              thumbColor={isPrimary ? "#FFFFFF" : "#FFFFFF"}
+              ios_backgroundColor="#E0E0E0"
               onValueChange={handleSetPrimary}
+              value={isPrimary}
               disabled={loading}
             />
           </View>
 
+          {/* Remove Button */}
           <TouchableOpacity
             onPress={handleRemoveBank}
-            className="bg-red-100 px-4 py-4 rounded-xl mt-4"
             disabled={loading}
+            className="bg-red-100 py-4 rounded-2xl mt-8 w-full"
+            style={{ opacity: loading ? 0.7 : 1 }}
           >
-            <Text className="text-red-600 text-center text-base font-semibold">Remove Account</Text>
+            <Text className="text-red-500 font-bold text-center text-lg">Remove</Text>
           </TouchableOpacity>
-        </Animated.View>
-      </View>
+        </View>
+      </Pressable>
     </Modal>
   );
 }

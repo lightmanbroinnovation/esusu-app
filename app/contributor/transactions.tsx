@@ -12,7 +12,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchContributorTransactions } from '../../services/api';
 import StatusBarAdapter from '../components/StatusBarAdapter';
-import TransactionFilter, { FilterOptions } from '../components/TransactionFilter';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
+// Removed TransactionFilter import
 
 // Define Transaction interface
 interface Transaction {
@@ -137,43 +140,84 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
 
 export default function ContributorTransactionsScreen() {
   const router = useRouter();
+  
+  // Use back button handler for contributor transactions
+  useBackButtonHandler('/contributor/transactions');
+  
   const params = useLocalSearchParams();
   const contributorId = params.contributorId as string;
   const contributorName = params.contributorName as string;
-  
+  const memoizedRecentContributions = React.useMemo(() => {
+    return params.recentContributions
+      ? JSON.parse(params.recentContributions as string)
+      : null;
+  }, [params.recentContributions]);
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilter, setShowFilter] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
-  
+  // Removed filter modal state
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [groupedTransactions, setGroupedTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
-  // Fetch transactions for the contributor
   useEffect(() => {
-    fetchTransactionsData();
-  }, [contributorId]);
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(!!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const fetchTransactionsData = async () => {
+  useEffect(() => {
+    if (memoizedRecentContributions && Array.isArray(memoizedRecentContributions)) {
+      // Map the raw contributions to the Transaction interface
+      const mapped = memoizedRecentContributions.map((item: any) => ({
+        id: item._id || item.id,
+        name: contributorName || '', // or item.name if available
+        type: item.type,
+        amount: item.amount,
+        timestamp: item.createdAt,
+        date: formatDate(new Date(item.createdAt)),
+      }));
+      setTransactions(mapped);
+      setLoading(false);
+    } else {
+      fetchTransactionsData();
+    }
+    // Only run this effect when contributorId or memoizedRecentContributions changes
+  }, [contributorId, memoizedRecentContributions]);
+
+  const fetchTransactionsData = async (fromRefresh = false) => {
     if (!contributorId) {
       setError("No contributor ID provided");
       setLoading(false);
       setRefreshing(false);
       return;
     }
-
+    setLoading(true);
+    setError(null);
+    if (fromRefresh) {
+      await invalidateCache(`contributor_transactions_${contributorId}`);
+    }
     try {
-      const fetchedTransactions = await fetchContributorTransactions(contributorId);
-      setTransactions(fetchedTransactions);
-      setFilteredTransactions(fetchedTransactions);
-      setGroupedTransactions(groupTransactionsByDate(fetchedTransactions));
-      setError(null);
+      const response = await getCachedData(
+        `contributor_transactions_${contributorId}`,
+        () => fetchContributorTransactions(contributorId)
+      );
+      if (response && Array.isArray(response)) {
+        setTransactions(response);
+        setError(null);
+      } else if (response && response.data && Array.isArray(response.data)) {
+        setTransactions(response.data);
+        setError(null);
+      } else {
+        setError('Failed to load transactions');
+      }
     } catch (err) {
-      console.error("Error fetching contributor transactions:", err);
-      setError("Failed to load transactions");
+      setError('Failed to load transactions');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -182,44 +226,21 @@ export default function ContributorTransactionsScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchTransactionsData();
+    fetchTransactionsData(true);
   };
 
-  // Apply both search and filters
+  // Apply search filter only when searchQuery or transactions changes
   useEffect(() => {
+    // Filter by name or amount (as string)
     const filtered = transactions.filter(transaction => {
-      const nameMatch = searchQuery 
-        ? transaction.name.toLowerCase().includes(searchQuery.toLowerCase())
-        : true;
-      const amountMatch = searchQuery 
-        ? transaction.amount.toString().includes(searchQuery)
-        : true;
-      
-      const nameFilterMatch = activeFilters.name
-        ? transaction.name.toLowerCase().includes(activeFilters.name.toLowerCase())
-        : true;
-      
-      const minAmountMatch = activeFilters.minAmount !== undefined
-        ? transaction.amount >= activeFilters.minAmount
-        : true;
-      const maxAmountMatch = activeFilters.maxAmount !== undefined
-        ? transaction.amount <= activeFilters.maxAmount
-        : true;
-      
-      const typeMatch = activeFilters.transactionType && activeFilters.transactionType !== 'all'
-        ? transaction.type === activeFilters.transactionType
-        : true;
-      
-      return (nameMatch || amountMatch) && 
-        nameFilterMatch && 
-        minAmountMatch && 
-        maxAmountMatch && 
-        typeMatch;
+      if (!searchQuery) return true;
+      const nameMatch = transaction.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const amountMatch = transaction.amount.toString().includes(searchQuery);
+      return nameMatch || amountMatch;
     });
-    
     setFilteredTransactions(filtered);
     setGroupedTransactions(groupTransactionsByDate(filtered));
-  }, [searchQuery, activeFilters, transactions]);
+  }, [searchQuery, transactions]);
 
   // Helper function to get consistent date heading
   const getDateHeading = useCallback((date: string) => {
@@ -236,20 +257,14 @@ export default function ContributorTransactionsScreen() {
     router.back();
   };
 
-  const handleApplyFilter = (filters: FilterOptions) => {
-    setActiveFilters(filters);
-  };
-
-  const hasActiveFilters = () => {
-    return Object.keys(activeFilters).length > 0;
-  };
+  // Removed filter logic
 
   const clearAllFilters = () => {
     setSearchQuery('');
-    setActiveFilters({});
   };
 
   // Render section header
+  // Show date and time in section header (Today, Yesterday, or MM/DD/YYYY)
   const renderSectionHeader = ({ section }: { section: { title: string } }) => (
     <Text className="text-gray-400 text-lg mt-2 mb-2">
       {getDateHeading(section.title)}
@@ -257,38 +272,32 @@ export default function ContributorTransactionsScreen() {
   );
 
   // Render transaction item
-  const renderItem = ({ item }: { item: Transaction }) => (
-    <TransactionItem transaction={item} />
-  );
+  // Show time next to date in subtitle
+  const renderItem = ({ item }: { item: Transaction }) => {
+    const dateObj = new Date(item.timestamp);
+    const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return <TransactionItem transaction={{ ...item, timestamp: `${item.date} ${timeString}` }} />;
+  };
 
   // Render search component
   const renderSearchHeader = () => (
     <View className="flex-row items-center mb-4">
-      <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
+      <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1">
         <Ionicons name="search" size={20} color="#A0A0A0" />
         <TextInput
           className="flex-1 ml-2"
-          placeholder="Search...."
+          placeholder="Search by name or amount..."
           placeholderTextColor="#A0A0A0"
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={text => setSearchQuery(text)}
+          keyboardType="default"
         />
-        {(searchQuery || hasActiveFilters()) && (
+        {searchQuery.length > 0 && (
           <TouchableOpacity onPress={clearAllFilters}>
             <Ionicons name="close-circle" size={20} color="#A0A0A0" />
           </TouchableOpacity>
         )}
       </View>
-      <TouchableOpacity 
-        className="bg-gray-100 p-2 rounded-xl"
-        onPress={() => setShowFilter(true)}
-      >
-        <Ionicons 
-          name="options-outline" 
-          size={24} 
-          color={hasActiveFilters() ? "#0052CC" : "#000"} 
-        />
-      </TouchableOpacity>
     </View>
   );
 
@@ -310,7 +319,7 @@ export default function ContributorTransactionsScreen() {
           <View className="flex-row items-center mb-4">
             <TouchableOpacity 
               onPress={navigateBack}
-              className="bg-gray-100 p-2 rounded-full mr-4"
+              className=" p-2 rounded-full mr-4"
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
@@ -324,7 +333,7 @@ export default function ContributorTransactionsScreen() {
               <ActivityIndicator size="large" color="#0066FF" />
               <Text className="mt-2 text-gray-600">Loading transactions...</Text>
             </View>
-          ) : error ? (
+          ) : error && transactions.length === 0 && !isConnected ? (
             <View className="flex-1 justify-center items-center">
               <Ionicons name="alert-circle" size={48} color="red" />
               <Text className="mt-2 text-red-500">{error}</Text>
@@ -355,12 +364,7 @@ export default function ContributorTransactionsScreen() {
           )}
         </View>
 
-        {/* Filter Modal */}
-        <TransactionFilter 
-          visible={showFilter} 
-          onClose={() => setShowFilter(false)}
-          onApplyFilter={handleApplyFilter}
-        />
+        {/* Filter Modal removed */}
       </SafeAreaView>
     </View>
   );

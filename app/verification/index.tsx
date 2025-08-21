@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Modal, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Modal, Image, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import VerificationStep from './VerificationStep';
@@ -12,6 +12,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadVerificationDocument, uploadBusinessLocationPhoto } from '../../services/cloudinary';
 import { submitBusinessVerification } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { fetchUser } from '../../services/api';
+import { getCachedData } from '../utils/dataCaching';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 // Define camera types as string literals to avoid TypeScript errors
 const CAMERA_TYPE = {
@@ -28,21 +33,28 @@ interface VerifyBusinessProps {
 interface StepState {
   completed: boolean;
   selected: boolean;
+  disabled: boolean;
 }
 
 interface StepsState {
-  businessInfo: StepState;
+  personalInfo: StepState;
   governmentID: StepState;
+  businessInfo: StepState;
   businessLocation: StepState;
   [key: string]: StepState;
 }
 
-const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: VerifyBusinessProps) => {
+export default function VerificationScreen() {
   const router = useRouter();
+  
+  // Use back button handler for verification page
+  useBackButtonHandler('/verification');
+  
   const [steps, setSteps] = useState<StepsState>({
-    businessInfo: { completed: true, selected: false },
-    governmentID: { completed: false, selected: false },
-    businessLocation: { completed: false, selected: false }
+    personalInfo: { completed: false, selected: false, disabled: false },
+    governmentID: { completed: false, selected: false, disabled: false },
+    businessInfo: { completed: false, selected: false, disabled: false },
+    businessLocation: { completed: false, selected: false, disabled: false }
   });
 
   const [showIDSelect, setShowIDSelect] = useState(false);
@@ -60,8 +72,79 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
   // New state for Cloudinary URLs
   const [idCloudinaryUrl, setIdCloudinaryUrl] = useState('');
   const [locationCloudinaryUrl, setLocationCloudinaryUrl] = useState('');
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [cachedUser, setCachedUser] = useState<any>(null);
+
+  // Fetch and cache user data
+  const fetchAndSetUserSteps = async (fromRefresh = false) => {
+    try {
+      if (fromRefresh) {
+        await AsyncStorage.removeItem('verification_user');
+      }
+      // Try to load from cache first
+      let user = null;
+      const cached = await AsyncStorage.getItem('verification_user');
+      if (cached) {
+        user = JSON.parse(cached);
+        setCachedUser(user);
+        setLoading(false);
+      }
+      // Always fetch fresh data in the background
+      const fetchSettingsData = async () => {
+        const response = await fetchUser();
+        if (response.status === 'Success' && response.data?.user) {
+          return response.data.user;
+        } else {
+          throw new Error('Failed to fetch user data');
+        }
+      };
+      user = await getCachedData('settings_user', fetchSettingsData);
+      setCachedUser(user);
+      await AsyncStorage.setItem('verification_user', JSON.stringify(user));
+      setSteps(prevSteps => {
+        const newSteps = { ...prevSteps };
+        // Personal Info
+        if (user.documentsVerified) {
+          newSteps.personalInfo.completed = true;
+          newSteps.personalInfo.disabled = true;
+        }
+        // Business Info
+        if (user.businessLocation) {
+          newSteps.businessInfo.completed = true;
+          newSteps.businessInfo.disabled = true;
+        }
+        // Government ID
+        if (user.governmentid || user.governmentID) {
+          newSteps.governmentID.completed = true;
+          newSteps.governmentID.disabled = true;
+        }
+        return newSteps;
+      });
+    } catch (e) {
+      // fail silently, let user proceed
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    fetchAndSetUserSteps();
+    return () => unsubscribe();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAndSetUserSteps(true);
+  };
 
   const handleStepSelect = (step: string) => {
+    if (steps[step]?.disabled) return;
     const updatedSteps = { ...steps };
     
     // Reset all selected states
@@ -75,15 +158,18 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
     setSteps(updatedSteps);
     
     // Show specific screens based on the selected step
-    if (step === 'governmentID') {
+    if (step === 'personalInfo') {
+      router.push('/verification/userData');
+    } else if (step === 'governmentID') {
       setShowIDSelect(true);
+    } else if (step === 'businessInfo') {
+      router.push('/verification/BusinessInfoForm');
     } else if (step === 'businessLocation') {
-      // Open camera directly for business location
-      setCameraType('location');
-      launchCamera('location');
+   
+      router.push('/verification/BusinessLocationUpload');
+    
     } else {
-      // Call the parent's onStepSelect for other steps
-      onStepSelect(step);
+      // onStepSelect(step); // This prop is not passed to this component
     }
   };
 
@@ -177,7 +263,7 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
           }
           
           setLocationImage(newUri);
-    setShowLocationQualityCheck(true);
+          setShowLocationQualityCheck(true);
         }
       }
     } catch (error) {
@@ -214,7 +300,7 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
     
     // Mark business location as completed
     const updatedSteps = { ...steps };
-    updatedSteps.businessLocation.completed = true;
+    updatedSteps.businessInfo.completed = true;
     setSteps(updatedSteps);
   };
 
@@ -287,11 +373,7 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
         console.log('Verification data successfully submitted to database');
         
       // Navigate to success page
-      if (onVerificationComplete) {
-        onVerificationComplete();
-      } else {
-        router.push('/verification/success');
-        }
+      router.push('/verification/success');
       } catch (error) {
         console.error('Error during verification submission:', error);
         
@@ -316,13 +398,29 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
     }
   };
 
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  if (!networkAvailable && !idCloudinaryUrl && !locationCloudinaryUrl) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text>No network. Please connect to the internet to load verification data.</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView className=" bg-white">
-      <ScrollView className=" px-4">
-   <View className=' mt-4 flex-row justify-end'>
+      <ScrollView
+        className="px-4"
+        style={{ overflow: 'scroll' }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+   <View className=' mt-10 flex-row justify-end'>
           <TouchableOpacity 
             className=" bg-gray-100 p-2 rounded-full"
-            onPress={onClose}
+            onPress={() => router.push('/dashboard')}
           >
             <Ionicons name="close" size={24} color="#000" />
           </TouchableOpacity>
@@ -339,27 +437,40 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
 
         <View className="mt-4 space-y-4">
           <VerificationStep 
+            title="Personal Information"
+            description="Provide details about your yourself to ensure a smooth verification process."
+            completed={steps.personalInfo.completed}
+            selected={steps.personalInfo.selected}
+            disabled={steps.personalInfo.disabled}
+            onPress={() => handleStepSelect('personalInfo')}
+          />
+          
+       
+          
+          <VerificationStep 
             title="Business Information"
             description="Provide details about your business to ensure a smooth verification process."
             completed={steps.businessInfo.completed}
             selected={steps.businessInfo.selected}
+            disabled={steps.businessInfo.disabled}
             onPress={() => handleStepSelect('businessInfo')}
           />
-          
-          <VerificationStep 
-            title="Government ID"
-            description="Provide a Driver's License, National Identity Card, or Passport."
-            completed={steps.governmentID.completed}
-            selected={steps.governmentID.selected}
-            onPress={() => handleStepSelect('governmentID')}
-          />
-          
-          <VerificationStep 
+
+          {/* <VerificationStep 
             title="Business Location"
             description="Upload clear photos of your shop to verify your business location."
             completed={steps.businessLocation.completed}
             selected={steps.businessLocation.selected}
             onPress={() => handleStepSelect('businessLocation')}
+          /> */}
+
+             <VerificationStep 
+            title="Government ID"
+            description="Provide a Driver's License, National Identity Card, or Passport."
+            completed={steps.governmentID.completed}
+            selected={steps.governmentID.selected}
+            disabled={steps.governmentID.disabled}
+            onPress={() => handleStepSelect('governmentID')}
           />
         </View>
 
@@ -475,6 +586,4 @@ const VerifyBusiness = ({ onStepSelect, onClose, onVerificationComplete }: Verif
       </Modal>
     </SafeAreaView>
   );
-};
-
-export default VerifyBusiness; 
+}; 

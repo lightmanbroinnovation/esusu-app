@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../../utils/dataCaching';
+import { fetchMerchantDashboardAccount } from '../../../services/api';
+import EsusuLoader from '../../components/EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../../utils/dataFetchGuard';
+import { useBackButtonHandler } from '../../utils/backButtonHandler';
 
 
-export default function BankDeposit() {
+export default function BankDepositScreen() {
+  const router = useRouter();
+  
+  // Use back button handler for bank deposit page
+  useBackButtonHandler('/deposit/subpages/bank-deposit');
+  
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
 
-    const router = useRouter()
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('BankDepositScreen', 15);
+
+  const params = useLocalSearchParams();
 
     const handlePreviousPage = () => {
         router.back()
@@ -15,6 +36,65 @@ export default function BankDeposit() {
     const handleNextPage = () => {
         router.push('/deposit/subpages/success')
     }
+
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
+
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('merchant_dashboard');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        setMerchantData(cacheData);
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    if (fromRefresh) {
+      await invalidateCache('merchant_dashboard');
+    }
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      const data = await getCachedData('merchant_dashboard', fetchMerchantDashboardAccount);
+      setMerchantData(data);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load merchant data');
+        setMerchantData(null);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
 
     return (
         <ScrollView className="flex-1 bg-white px-4 pt-10">

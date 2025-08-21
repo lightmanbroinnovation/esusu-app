@@ -14,17 +14,23 @@ import {
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { fetchContributorByPhone } from "../../services/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchContributorDetailsForDeposit } from "../../services/api";
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function DepositScreen() {
   const router = useRouter();
+  
+  // Use back button handler for deposit page
+  useBackButtonHandler('/deposit');
+  
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false); // State to track keyboard visibility
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
 
   useEffect(() => {
     // Add event listeners for keyboard show and hide
@@ -35,25 +41,6 @@ export default function DepositScreen() {
       setIsKeyboardVisible(false)
     );
 
-    // Get the logged-in user ID from AsyncStorage
-    const getLoggedInUserId = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-          setLoggedInUserId(userId);
-          console.log("Found logged in user ID:", userId);
-        } else {
-          console.log("No logged in user ID found");
-          setError("You must be logged in to make deposits");
-        }
-      } catch (err) {
-        console.error("Error getting logged in user ID:", err);
-        setError("Could not retrieve login information");
-      }
-    };
-
-    getLoggedInUserId();
-
     // Cleanup event listeners on unmount
     return () => {
       keyboardDidShowListener.remove();
@@ -61,16 +48,18 @@ export default function DepositScreen() {
     };
   }, []);
 
-  const fetchContributorDetails = async () => {
-    // Check if user is logged in
-    if (!loggedInUserId) {
-      setError("You must be logged in to make deposits");
-      return;
-    }
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
 
+  const fetchContributorDetails = async () => {
     // Validate phone number
     if (!phone || phone.length < 10) {
       setError("Please enter a valid phone number");
+      setTimeout(() => setError(''), 4000);
       return;
     }
 
@@ -82,8 +71,8 @@ export default function DepositScreen() {
       const formattedPhone = phone.startsWith('+') ? phone : phone;
       console.log("Searching for contributor with phone:", formattedPhone);
       
-      // Fetch contributor details by phone number for this agent
-      const contributorData = await fetchContributorByPhone(loggedInUserId, formattedPhone);
+      // Fetch contributor details using the new API endpoint
+      const contributorData = await fetchContributorDetailsForDeposit(formattedPhone);
       
       // Log contributor details for debugging
       console.log("CONTRIBUTOR DETAILS:", JSON.stringify(contributorData, null, 2));
@@ -96,7 +85,7 @@ export default function DepositScreen() {
       router.push({ 
         pathname: "/deposit/subpages/amt-deposit", 
         params: { 
-          contributorId: contributorData.id,
+          contributorId: contributorData.id || contributorData._id,
           phone: formattedPhone, 
           firstname: contributorData.firstname || contributorData.firstName,
           lastname: contributorData.lastname || contributorData.lastName,
@@ -104,14 +93,36 @@ export default function DepositScreen() {
           userDataString: JSON.stringify(contributorData)
         } 
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching contributor details:", error);
-      setError(error.message || "Could not find contributor with this phone number");
+      const err: any = error;
+      if (err && err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+        setTimeout(() => setError(''), 4000);
+      } else if (err && err.message) {
+        setError(err.message);
+        setTimeout(() => setError(''), 4000);
+      } else {
+        setError("Could not find contributor with this phone number");
+        setTimeout(() => setError(''), 4000);
+      }
       // Don't navigate when there's an error
     } finally {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  if (!networkAvailable && !phone) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text>No network. Please connect to the internet to load deposit page.</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -187,7 +198,7 @@ export default function DepositScreen() {
             <TouchableOpacity
               className={`flex-row justify-center items-center ${loading || !phone ? 'bg-[#0072CE]/50' : 'bg-[#0072CE]'} py-4 rounded-lg`}
               onPress={fetchContributorDetails}
-              disabled={loading || !phone || !loggedInUserId}
+              disabled={loading || !phone}
             >
               {loading ? (
                 <ActivityIndicator color="white" size="small" />

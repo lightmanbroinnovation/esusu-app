@@ -6,12 +6,18 @@ import {
   TouchableOpacity, 
   TextInput,
   ActivityIndicator,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchUser } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import { fetchAgentVerificationData } from '../../services/api';
+import EsusuLoader from './EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 
 interface User {
   firstname: string;
@@ -21,13 +27,21 @@ interface User {
   userImg?: string;
 }
 
-const AgentVerification = () => {
+export default function AgentVerification() {
+  const [verificationData, setVerificationData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('AgentVerification', 15);
+
   const router = useRouter();
   const params = useLocalSearchParams();
   const [userData, setUserData] = useState<User | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Fetch user ID from AsyncStorage when component mounts
   useEffect(() => {
@@ -133,6 +147,65 @@ const AgentVerification = () => {
     }
   };
 
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
+
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('agent_verification');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        setVerificationData(cacheData);
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    if (fromRefresh) {
+      await invalidateCache('agent_verification');
+    }
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      const data = await getCachedData('agent_verification', fetchAgentVerificationData);
+      setVerificationData(data);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load verification data');
+        setVerificationData(null);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
@@ -209,6 +282,4 @@ const AgentVerification = () => {
       </View>
     </SafeAreaView>
   );
-};
-
-export default AgentVerification; 
+}; 

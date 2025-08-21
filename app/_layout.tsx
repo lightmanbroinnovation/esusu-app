@@ -20,6 +20,8 @@ import { LoadingProvider } from './context/LoadingContext';
 import ConnectionStatus from './components/ConnectionStatus';
 import NotificationToast from './components/NotificationToast';
 import { PerformanceMonitor } from './utils/performanceMonitor';
+import { useAuth, AuthProvider } from './context/AuthContext';
+import { getCachedData } from './utils/dataCaching';
 
 
 // Create a wrapper component to disable scrollbars instead of modifying ScrollView directly
@@ -92,12 +94,28 @@ function ConnectionIssueScreen() {
 }
 
 export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <AuthProvider>
+        <RootLayoutWithAuth />
+      </AuthProvider>
+    </Provider>
+  );
+}
+
+function RootLayoutWithAuth() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
   const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [isTryingToReconnect, setIsTryingToReconnect] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const [checkedCache, setCheckedCache] = useState(false);
+  const [hasCache, setHasCache] = useState(true);
 
   // Set a maximum time for splash screen to be visible (failsafe)
   useEffect(() => {
@@ -159,67 +177,66 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, assetsLoaded]);
 
+  // Check for cache for the current page if offline
+  useEffect(() => {
+    if (!isConnected) {
+      // Use the pathname as the cache key (customize as needed)
+      const cacheKey = pathname.replace(/^\//, '').replace(/\//g, '_') || 'index';
+      getCachedData(cacheKey, async () => null)
+        .then(data => {
+          setHasCache(!!data);
+          setCheckedCache(true);
+        })
+        .catch(() => {
+          setHasCache(false);
+          setCheckedCache(true);
+        });
+    } else {
+      setCheckedCache(true);
+      setHasCache(true);
+    }
+  }, [isConnected, pathname]);
+
+  // Redirect logic if offline and no cache
+  useEffect(() => {
+    if (!isConnected && checkedCache && !hasCache) {
+      if (user) {
+        if (pathname !== '/login/passcode') {
+          router.replace('/login/passcode');
+        }
+      } else {
+        // Only redirect to '/' if not already on index
+        if (pathname !== '/' && pathname !== '/index') {
+          router.replace('/');
+        }
+        // If already on '/', do nothing so onboarding is shown
+      }
+    }
+  }, [isConnected, checkedCache, hasCache, user, pathname]);
+
   // If the app is not ready, return null as the splash screen is still visible
   if (!isReady) {
     return null;
   }
 
-  // Handle no network connection
-  if (!isConnected) {
-    return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E6F3FF', padding: 20 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>
-            No Internet Connection
-          </Text>
-          <Text style={{ textAlign: 'center', marginBottom: 20 }}>
-            Please check your connection and try again.
-          </Text>
-          {isTryingToReconnect ? (
-            <ActivityIndicator size="small" color="#0066FF" />
-          ) : (
-            <TouchableOpacity
-              onPress={() => {
-                setIsTryingToReconnect(true);
-                NetInfo.fetch().then(state => {
-                  setIsConnected(!!state.isConnected);
-                  setIsTryingToReconnect(false);
-                });
-              }}
-              style={{
-                backgroundColor: '#0066FF',
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 5,
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Try Again</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </SafeAreaProvider>
-    );
-  }
+  // Remove the old no-network screen logic, as we now handle it with redirects
 
- 
   return (
-    <Provider store={store}>
-      <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <LoadingProvider>
-            <ConnectionStatus />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            />
-            <NotificationToast />
-            <PerformanceMonitor visible={__DEV__} />
-          </LoadingProvider>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </Provider>
+    <SafeAreaProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <LoadingProvider>
+          <ConnectionStatus />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          />
+          <NotificationToast />
+          <PerformanceMonitor visible={__DEV__} />
+        </LoadingProvider>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

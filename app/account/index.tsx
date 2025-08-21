@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Platform, RefreshControl } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import NetInfo from '@react-native-community/netinfo';
+// TODO: Replace with Moti Skeleton
 
 import { fetchUser, updateUser } from '@/services/api';
 import { uploadUserDocument } from '../utils/documentUtils';
 import StatusBarAdapter from '../components/StatusBarAdapter';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from '../components/EsusuLoader';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 interface UserDetails {
     id: string;
@@ -31,7 +36,41 @@ interface UserDetails {
     userImg?: string;
 }
 
+const fetchAccountData = async () => {
+  const response = await fetchUser();
+  if (response.status === 'Success' && response.data?.user) {
+    return response.data.user;
+  } else {
+    throw new Error('Failed to fetch user data');
+  }
+};
+
+const normalizeUser = (user: any): UserDetails => ({
+  id: user._id || user.id || '',
+  firstname: user.firstName || user.firstname || '',
+  lastname: user.lastName || user.lastname || '',
+  email: user.email || '',
+  phonenumber: user.phoneNumber || user.phonenumber || '',
+  business: user.business || '',
+  address: user.address || '',
+  city: user.city || '',
+  state: user.state || '',
+  bvn: user.bvn || '',
+  idImage: user.idImage || '',
+  cacImage: user.cacImage || '',
+  isVerified: user.isVerified ?? true,
+  userImg: user.userImg,
+  gender: user.gender || '',
+  dob: user.dob || '',
+  pin: user.pin || '', // Ensure pin is always present
+});
+
 function MyAccount() {
+    const router = useRouter();
+    
+    // Use back button handler for account page
+    useBackButtonHandler('/account');
+    
     const [dob, setDob] = useState<Date | undefined>();
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [gender, setGender] = useState<string | undefined>(undefined);
@@ -39,7 +78,17 @@ function MyAccount() {
     const [address, setAddress] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
 
-    const router = useRouter();
+    // Responsive sizing based on screen width
+    const getResponsiveSize = (baseSize: number) => {
+        const { width } = require('react-native').Dimensions.get('window');
+        if (width < 375) {
+            return baseSize * 0.9; // Small phones
+        } else if (width < 414) {
+            return baseSize; // Medium phones
+        } else {
+            return baseSize * 1.1; // Large phones and tablets
+        }
+    };
 
     const handlePreviousPage = () => {
         router.back();
@@ -48,54 +97,65 @@ function MyAccount() {
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [retryCount, setRetryCount] = useState(0);
-    
-    // Fetch user ID from AsyncStorage instead of hardcoding
-    const fetchUserDetails = async () => {
+    const [refreshing, setRefreshing] = useState(false);
+    const [networkAvailable, setNetworkAvailable] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            setNetworkAvailable(!!state.isConnected);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    const fetchData = async (fromRefresh = false) => {
         setLoading(true);
         setError(null);
+        let cacheData = null;
         try {
-            // Get user ID from AsyncStorage
-            const userId = await AsyncStorage.getItem('userId');
-            if (!userId) {
-                throw new Error("User ID not found in storage");
+            const cached = await AsyncStorage.getItem('account_user');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setUserDetails(normalizeUser(parsed));
+                cacheData = parsed;
             }
-            
-            console.log("Fetching user with ID:", userId);
-            const data = await fetchUser(userId);
-            console.log("Fetched user data:", data);
-            
-            if (data) {
-                setUserDetails(data);
-                setAddress(data.address || '');
-                
-                // Set gender and dob from user data if available
-                if (data.gender) {
-                    setGender(data.gender);
-                }
-                
-                if (data.dob) {
-                    setDob(new Date(data.dob));
-                }
-            } else {
-                throw new Error("No data returned from API");
-            }
-        } catch (error) {
-            console.error("Error fetching user details:", error);
-            setError("Could not fetch your profile. Using cached data.");
-            // Use mock data as fallback
-            setUserDetails(null);
-        } finally {
+        } catch {}
+        if (!networkAvailable && cacheData) {
             setLoading(false);
+            setRefreshing(false);
+            return;
         }
+        if (fromRefresh) {
+            await invalidateCache('account_user');
+        }
+        try {
+            const data = await getCachedData('account_user', fetchAccountData);
+            setUserDetails(normalizeUser(data));
+        } catch (err) {
+            if (!cacheData) {
+                setError('Could not fetch your profile. Please try again later.');
+                setUserDetails(null);
+            }
+        }
+        setLoading(false);
+        setRefreshing(false);
     };
 
     useEffect(() => {
-        fetchUserDetails();
-    }, [retryCount]);
+        fetchData();
+    }, []);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchData(true);
+        setRefreshing(false);
+    };
+
+    if (loading) {
+        return <EsusuLoader />;
+    }
 
     const handleRetry = () => {
-        setRetryCount(prev => prev + 1);
+        fetchData(true);
     };
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -185,61 +245,75 @@ function MyAccount() {
     };
 
     return (
-        <ScrollView className="flex-1 bg-white">
+        <ScrollView style={{flex:1, backgroundColor: '#fff'}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
             <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
             
             {/* Header */}
-            <View className="flex-row items-center justify-between px-4 mt-4">
-                <TouchableOpacity onPress={handlePreviousPage} className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'>
-                    <Image
-                        source={require('../assets/images/back-arrow.png')}
-                    />
-                </TouchableOpacity>
+            <View className="flex-row items-center justify-between px-4 pt-8 pb-4 bg-white">
+                <TouchableOpacity onPress={handlePreviousPage}>
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
                 <Text className="text-lg font-semibold">My Account</Text>
                 <View className="w-8" />
             </View>
 
-            {loading ? (
-                <View className="items-center justify-center py-20">
-                    <ActivityIndicator size="large" color="#0052CC" />
-                    <Text className="mt-4 text-gray-600">Loading your profile...</Text>
-                </View>
-            ) : error ? (
-                <View className="items-center justify-center px-4 py-8">
-                    <Text className="text-gray-600 text-center mb-4">{error}</Text>
-                    <TouchableOpacity 
-                        className="bg-blue-600 px-6 py-2 rounded-md"
-                        onPress={handleRetry}
-                    >
-                        <Text className="text-white font-semibold">Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <>
-                    {/* Avatar */}
-                    <View className="items-center mt-8 mb-6">
-                        <View className="relative">
-                            {uploadingImage ? (
-                                <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center">
-                                    <ActivityIndicator size="large" color="#0052CC" />
-                                </View>
-                            ) : (
+                    {/* Profile Section */}
+                    <View className="items-center mb-6">
+                      <View className="relative">
+                        <View className="rounded-full overflow-hidden bg-white justify-center items-center" style={{
+                          borderRadius: getResponsiveSize(40),
+                          width: getResponsiveSize(80),
+                          height: getResponsiveSize(80)
+                        }}>
+                          {uploadingImage ? (
+                            <View style={{
+                              width: getResponsiveSize(80),
+                              height: getResponsiveSize(80),
+                              backgroundColor: '#E5E7EB',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}>
+                              <ActivityIndicator size="large" color="#0052CC" />
+                            </View>
+                          ) : userDetails?.userImg ? (
                             <Image
-                                    source={userDetails?.userImg 
-                                        ? { uri: userDetails.userImg } 
-                                        : require('../assets/images/user.png')}
-                                className="w-28 h-28 rounded-full"
-                                    style={{ width: 112, height: 112, borderRadius: 56 }}
-                                />
-                            )}
-                            <TouchableOpacity 
-                                className="absolute bottom-0 right-0 bg-[#928FFF] rounded-full p-1"
-                                onPress={handleImageUpload}
-                                disabled={uploadingImage}
-                            >
-                                <Ionicons name="camera" size={18} color="white" />
-                            </TouchableOpacity>
+                              source={{ uri: userDetails.userImg }}
+                              style={{ 
+                                width: getResponsiveSize(80), 
+                                height: getResponsiveSize(80) 
+                              }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <View style={{
+                              width: getResponsiveSize(80),
+                              height: getResponsiveSize(80),
+                              backgroundColor: '#0072CE',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}>
+                              <Text style={{
+                                fontSize: getResponsiveSize(32),
+                                fontWeight: 'bold',
+                                color: 'white'
+                              }}>
+                                {userDetails?.firstname ? userDetails.firstname.charAt(0).toUpperCase() : 'U'}
+                              </Text>
+                            </View>
+                          )}
                         </View>
+                        <TouchableOpacity 
+                          className="absolute bottom-0 right-0 bg-[#928FFF] rounded-full p-1"
+                          style={{
+                            padding: getResponsiveSize(4),
+                            borderRadius: getResponsiveSize(12)
+                          }}
+                          onPress={handleImageUpload}
+                          disabled={uploadingImage}
+                        >
+                          <Ionicons name="camera" size={getResponsiveSize(18)} color="white" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
 
                     {/* Input Fields */}
@@ -249,14 +323,25 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={userDetails?.firstname}
+                            value={userDetails?.firstname || ''}
                                     editable={false}
                                     placeholder="First Name"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
+                        <Image source={require('../assets/images/lock.png')} />
+                            </View>
+                        </View>
+                        <View className='flex flex-col gap-2 w-full'>
+                            <Text className="text-base font-medium text-[#272636]">Last Name</Text>
+                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                                <TextInput
+                                    className="text-[#272636] flex-1"
+                            value={userDetails?.lastname || ''}
+                                    editable={false}
+                                    placeholder="Last Name"
+                                    placeholderTextColor="#A9A8AF"
                                 />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
@@ -265,14 +350,12 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={userDetails?.business}
+                            value={userDetails?.business || ''}
                                     editable={false}
                                     placeholder="Business Name"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
@@ -281,14 +364,12 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={userDetails?.email}
+                            value={userDetails?.email || ''}
                                     editable={false}
                                     placeholder="Email Address"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
@@ -297,14 +378,12 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={userDetails?.phonenumber}
+                            value={userDetails?.phonenumber || ''}
                                     editable={false}
                                     placeholder="Phone Number"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
@@ -313,14 +392,12 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={dob ? dob.toLocaleDateString() : userDetails?.dob || ''}
+                                    value={userDetails?.dob ? new Date(userDetails.dob).toLocaleDateString() : ''}
                                     editable={false}
                                     placeholder="Date of Birth"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
 
                             {showDatePicker && (
@@ -344,9 +421,7 @@ function MyAccount() {
                                     placeholder="Gender"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
 
                             {showGenderPicker && (
@@ -371,14 +446,12 @@ function MyAccount() {
                             <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
                                 <TextInput
                                     className="text-[#272636] flex-1"
-                                    value={userDetails?.address}
+                            value={userDetails?.address || ''}
                                     editable={false}
                                     placeholder="Address"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                                <Image
-                                    source={require('../assets/images/lock.png')}
-                                />
+                        <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
                     </View>
@@ -395,7 +468,13 @@ function MyAccount() {
                             <Text className="text-white font-semibold">Back to Dashboard</Text>
                         )}
                     </TouchableOpacity>
-                </>
+
+            {/* Show error or loading as a banner, not as a full screen */}
+            {loading && (
+                <View style={{padding: 8, alignItems: 'center'}}>
+                    <ActivityIndicator size="small" color="#0052CC" />
+                    <Text style={{color:'#A9A8AF'}}>Loading...</Text>
+                </View>
             )}
         </ScrollView>
     );

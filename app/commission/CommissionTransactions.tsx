@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { fetchCommissions, fetchUser } from '../../services/api'; // Import the fetchUser function
-import TransactionFilter, { FilterOptions } from '../commission/TransactionFilter'; // Import the filter component
+// No API imports needed
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for icons
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from '../components/EsusuLoader';
+import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// TODO: Replace with Moti Skeleton
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 // Define the CommissionTransaction type
 interface CommissionTransaction {
@@ -13,118 +18,125 @@ interface CommissionTransaction {
   amount: number;
   date: string;
   time: string;
+  title?: string;
+  description?: string;
 }
+
+const fetchCommissionTransactionsData = async (params: any) => {
+  // If you have an API call for commission transactions, place it here
+  // Otherwise, just return params as data
+  return params;
+};
 
 const CommissionTransactions: React.FC = () => {
   const router = useRouter();
-  const [transactions, setTransactions] = useState<CommissionTransaction[]>([]); // State to hold fetched commissions
-  const [loading, setLoading] = useState(true); // State to manage loading state
-  const [activeFilters, setActiveFilters] = useState<FilterOptions>({}); // State for active filters
-  const [showFilter, setShowFilter] = useState(false); // State to control filter modal visibility
-  const [searchQuery, setSearchQuery] = useState(''); // State for search query
-  const [userId, setUserId] = useState<string | null>(null);
+  const params = useLocalSearchParams();
+  
+  // Use back button handler for commission transactions page
+  useBackButtonHandler('/commission/CommissionTransactions');
+  
+  const [transactions, setTransactions] = useState<CommissionTransaction[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
 
-  // Fetch user ID from AsyncStorage
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('CommissionTransactionsScreen', 15);
+
   useEffect(() => {
-    const getUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem('userId');
-        if (!storedUserId) {
-          console.error('User ID not found in AsyncStorage');
-          setError('User ID not found. Please log in again.');
-          setLoading(false);
-          return;
-        }
-        
-        setUserId(storedUserId);
-        console.log('Retrieved user ID from storage:', storedUserId);
-      } catch (error) {
-        console.error('Error retrieving user ID:', error);
-        setError('Failed to retrieve user ID');
-        setLoading(false);
-      }
-    };
-    
-    getUserId();
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Fetch user details and commissions when userId is available
-  useEffect(() => {
-    if (!userId) return;
-    
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch user details to get commissions
-        const userData = await fetchUser(userId);
-        
-        // Get commissions from user data or from dedicated API function
-        const commissions = userData.commissions || await fetchCommissions(userId);
-        setTransactions(commissions);
-        
-        console.log('User data and commissions fetched successfully');
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        setError("Failed to load data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
 
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    try {
+      const cached = await AsyncStorage.getItem('commission_transactions');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        if (cacheData.transactions) {
+          const parsed = JSON.parse(cacheData.transactions);
+          setTransactions(Array.isArray(parsed) ? parsed : []);
+        } else {
+          setTransactions([]);
+        }
+      }
+    } catch {}
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      return;
+    }
+    if (fromRefresh) {
+      await invalidateCache('commission_transactions');
+    }
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      const data = await getCachedData('commission_transactions', () => fetchCommissionTransactionsData(params));
+      if (data.transactions) {
+        const parsed = JSON.parse(data.transactions as string);
+        setTransactions(Array.isArray(parsed) ? parsed : []);
+      } else {
+        setTransactions([]);
+      }
+      setError(null);
+    } catch (e) {
+      if (!cacheData) {
+        setError('Failed to load transactions.');
+        setTransactions([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
-  }, [userId]);
+  }, [params.transactions]);
+
+  const onRefresh = async () => {
+    setLoading(true);
+    await fetchData(true);
+    setLoading(false);
+  };
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
 
   const handleRetry = () => {
-    if (userId) {
-      // Re-fetch data if userId is available
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          
-          // Fetch user details
-          const userData = await fetchUser(userId);
-          
-          // Get commissions from user data or from dedicated API function
-          const commissions = userData.commissions || await fetchCommissions(userId);
-          setTransactions(commissions);
-          
-          console.log('User data and commissions fetched successfully');
-        } catch (error) {
-          console.error("Failed to fetch data:", error);
-          setError("Failed to load data. Please try again.");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    } else {
-      // Retry getting userId from AsyncStorage
-      const getUserId = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const storedUserId = await AsyncStorage.getItem('userId');
-          if (!storedUserId) {
-            setError('User ID not found. Please log in again.');
-            setLoading(false);
-            return;
-          }
-          
-          setUserId(storedUserId);
-        } catch (error) {
-          console.error('Error retrieving user ID:', error);
-          setError('Failed to retrieve user ID. Please try again.');
-          setLoading(false);
-        }
-      };
-      
-      getUserId();
+    setLoading(true);
+    try {
+      if (params.transactions) {
+        const parsed = JSON.parse(params.transactions as string);
+        setTransactions(Array.isArray(parsed) ? parsed : []);
+      } else {
+        setTransactions([]);
+      }
+      setError(null);
+    } catch (e) {
+      setError('Failed to load transactions.');
+      setTransactions([]);
     }
+    setLoading(false);
   };
 
   // Function to group commissions by date
@@ -139,35 +151,14 @@ const CommissionTransactions: React.FC = () => {
     }, {} as Record<string, CommissionTransaction[]>);
   };
 
-  // Apply filters to transactions
-  const applyFilters = (transactions: CommissionTransaction[], filters: FilterOptions) => {
-    return transactions.filter(transaction => {
-      const matchesType = filters.transactionType && filters.transactionType !== 'all'
-        ? transaction.type === filters.transactionType
-        : true;
-
-      const matchesMinAmount = filters.minAmount !== undefined
-        ? transaction.amount >= filters.minAmount
-        : true;
-
-      const matchesMaxAmount = filters.maxAmount !== undefined
-        ? transaction.amount <= filters.maxAmount
-        : true;
-
-      return matchesType && matchesMinAmount && matchesMaxAmount;
-    });
-  };
-
-  // Apply search query to transactions
-  const applySearch = (transactions: CommissionTransaction[], query: string) => {
-    return transactions.filter(transaction => 
-      transaction.type.toLowerCase().includes(query.toLowerCase())
-    );
-  };
-
-  const filteredTransactions = applyFilters(transactions, activeFilters); // Apply filters to transactions
-  const searchedTransactions = applySearch(filteredTransactions, searchQuery); // Apply search to filtered transactions
-  const groupedCommissions = groupCommissionsByDate(searchedTransactions); // Group the filtered and searched commissions
+  // Only search by type or amount
+  const searchedTransactions = transactions.filter(transaction => {
+    if (!searchQuery) return true;
+    const typeMatch = transaction.type.toLowerCase().includes(searchQuery.toLowerCase());
+    const amountMatch = transaction.amount.toString().includes(searchQuery);
+    return typeMatch || amountMatch;
+  });
+  const groupedCommissions = groupCommissionsByDate(searchedTransactions);
 
 
   const navigateBack = () => {
@@ -177,87 +168,101 @@ const CommissionTransactions: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView className="px-4 flex-1">
-      <View className="flex-row items-center mt-12 mb-4">
-          <TouchableOpacity 
-            onPress={navigateBack}
-            className="bg-gray-100 p-2 rounded-full mr-4"
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
-        </View>
-        <View className="flex-row items-center mb-4">
-          <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1 mr-2">
-            <Ionicons name="search" size={20} color="#A0A0A0" />
-            <TextInput
-              className="flex-1 ml-2"
-              placeholder="Search...."
-              placeholderTextColor="#A0A0A0"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {(searchQuery || Object.keys(activeFilters).length > 0) && (
-              <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveFilters({}); }}>
-                <Ionicons name="close-circle" size={20} color="#A0A0A0" />
-              </TouchableOpacity>
-            )}
-          </View>
-          <TouchableOpacity className="bg-gray-100 p-2 rounded-xl" onPress={() => setShowFilter(true)}>
-            <Ionicons name="options-outline" size={24} color={Object.keys(activeFilters).length > 0 ? "#0052CC" : "#000"} />
-          </TouchableOpacity>
-        </View>
-
-        <TransactionFilter
-          visible={showFilter}
-          onClose={() => setShowFilter(false)}
-          onApplyFilter={(filters) => {
-            setActiveFilters(filters);
-            setShowFilter(false);
-          }}
-        />
-        
-        {loading ? (
-          <View className="flex-1 items-center justify-center py-10">
-            <ActivityIndicator size="large" color="#0052CC" />
-            <Text className="mt-4 text-gray-600">Loading your commission data...</Text>
-          </View>
-        ) : error ? (
-          <View className="flex-1 items-center justify-center py-10">
-            <Text className="text-red-500 text-center mb-4">{error}</Text>
-            <TouchableOpacity 
-              onPress={handleRetry}
-              className="bg-blue-600 px-6 py-2 rounded-md"
-            >
-              <Text className="text-white font-semibold">Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : searchedTransactions.length === 0 ? (
-          <View className="bg-white py-10 rounded-xl mt-2">
-            <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
-            <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-              It looks like you haven't made any commission transactions yet.
-            </Text>
-          </View>
-        ) : (
-          Object.entries(groupedCommissions).map(([date, transactions]) => (
-            <View key={date} className="mb-4">
-              <Text className="text-gray-500 mb-2">{date}</Text>
-              {transactions.map(transaction => (
-                <View key={transaction.id} className="mb-4">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="font-medium">{transaction.type}</Text>
-                    <Text className={`font-semibold ${transaction.type === 'Withdrawn' ? 'text-red-600' : 'text-green-600'}`}>
-                      {transaction.amount > 0 ? `₦${transaction.amount.toLocaleString()}` : `-₦${Math.abs(transaction.amount).toLocaleString()}`}
-                    </Text>
-                  </View>
-                  <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
-                </View>
-              ))}
+      {loading ? (
+        <View style={{ paddingHorizontal: 16, paddingTop: 48 }}>
+          {/* Search Bar Skeleton */}
+          <View style={{ width: '100%', height: 48, borderRadius: 24, marginBottom: 24, backgroundColor: '#E5E7EB' }} />
+          {/* Transaction List Skeleton */}
+          {[1,2,3,4,5].map((item, index) => (
+            <View key={`skeleton-${index}`} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E5E7EB' }} />
+              <View style={{ marginLeft: 16 }}>
+                <View style={{ width: 120, height: 16, borderRadius: 4, marginBottom: 6, backgroundColor: '#E5E7EB' }} />
+                <View style={{ width: 80, height: 14, borderRadius: 4, backgroundColor: '#E5E7EB' }} />
+              </View>
             </View>
-          ))
-        )}
-      </ScrollView>
+          ))}
+        </View>
+      ) : (
+        <ScrollView className="px-4 flex-1">
+          <View className="flex-row items-center mt-12 mb-4">
+            <TouchableOpacity 
+              onPress={navigateBack}
+              className="bg-gray-100 p-2 rounded-full mr-4"
+            >
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
+          </View>
+          <View className="flex-row items-center mb-4">
+            <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1">
+              <Ionicons name="search" size={20} color="#A0A0A0" />
+              <TextInput
+                className="flex-1 ml-2"
+                placeholder="Search by type or amount..."
+                placeholderTextColor="#A0A0A0"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color="#A0A0A0" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          
+          {loading ? (
+            <View className="flex-1 items-center justify-center py-10">
+              <ActivityIndicator size="large" color="#0052CC" />
+              <Text className="mt-4 text-gray-600">Loading your commission data...</Text>
+            </View>
+          ) : error ? (
+            <View className="flex-1 items-center justify-center py-10">
+              <Text className="text-red-500 text-center mb-4">{error}</Text>
+              <TouchableOpacity 
+                onPress={handleRetry}
+                className="bg-blue-600 px-6 py-2 rounded-md"
+              >
+                <Text className="text-white font-semibold">Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : searchedTransactions.length === 0 ? (
+            <View className="bg-white py-10 rounded-xl mt-2">
+              <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
+              <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+                It looks like you haven't made any commission transactions yet.
+              </Text>
+            </View>
+          ) : (
+            Object.entries(groupedCommissions).map(([date, transactions]) => (
+              <View key={date} className="mb-4">
+                <Text className="text-gray-500 mb-2">{date}</Text>
+                {transactions.map(transaction => {
+                  const title = (transaction.title ?? '').trim().toLowerCase();
+                  const isDebit = title === 'debit';
+                  const isCredit = title === 'credit';
+                  return (
+                    <View key={transaction.id} className="mb-4">
+                      <View className="flex-row justify-between items-center">
+                        <Text className="font-medium">{transaction.description ?? transaction.type}</Text>
+                        <Text className={`font-semibold ${isDebit ? 'text-red-600' : isCredit ? 'text-green-600' : 'text-gray-600'}`}>
+                          {isDebit
+                            ? `-₦${Math.abs(transaction.amount).toLocaleString()}`
+                            : isCredit
+                            ? `+₦${transaction.amount.toLocaleString()}`
+                            : `₦${transaction.amount.toLocaleString()}`}
+                        </Text>
+                      </View>
+                      <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 };

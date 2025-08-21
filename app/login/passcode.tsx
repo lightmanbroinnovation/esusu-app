@@ -3,7 +3,7 @@ export const options = {
 };
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator, BackHandler } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator, BackHandler, ScrollView } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -11,7 +11,13 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon lib
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
-import { fetchUser } from '../../services/api';
+import { fetchUser, fetchUserByPhone } from '../../services/api';
+import { getCachedData } from '../utils/dataCaching';
+import { getDataInfo } from '../utils/clearAllData';
+import { refreshAllUserData } from '../utils/dataRefresh';
+import { sendNotification, NotificationTemplates } from '../services/notificationService';
+import { useDisableBackHandler } from '../utils/backButtonHandler';
+import { performHardLogout } from '../utils/logoutUtility';
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -19,27 +25,30 @@ export default function PasscodeScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [attempts, setAttempts] = useState<number>(0);
   const [isFromLock, setIsFromLock] = useState<boolean>(false);
-  const [storedPin, setStoredPin] = useState<string | null>(null); // To store PIN retrieved from storage
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
+  const [showFingerprintModal, setShowFingerprintModal] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
-
-  // Extract needed params - these might be undefined when coming from lock screen
-  const userPin = params.pin as string | undefined;
-  const userId = params.userId as string | undefined;
   const phone = params.phone as string | undefined;
+  const email = params.email as string | undefined;
+  const loginMethod = params.loginMethod as 'phone' | 'email' | undefined;
+
+  // Use disable back handler for passcode screen
+  useDisableBackHandler();
 
   useEffect(() => {
+    console.log("[Passcode] Screen loaded. Params:", params);
     // Check if this screen was opened due to app lock
     checkIfFromLock();
     
     // Check if we already have user data when coming from lock screen
     checkExistingSession();
 
-    // Check biometric status when component mounts
-    checkBiometricStatus();
+    // Fetch and log cached user data (includes biometric status check)
+    fetchAndLogCachedData();
 
     // Prevent going back if this is a locked session
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -51,7 +60,9 @@ export default function PasscodeScreen() {
     });
 
     return () => backHandler.remove();
-  }, [isFromLock]);
+  }, [isFromLock, isLoggingOut]);
+
+  // Removed fallback biometric check since it's now handled in fetchAndLogCachedData
 
   useEffect(() => {
     // Check if PIN is complete (4 digits)
@@ -60,53 +71,186 @@ export default function PasscodeScreen() {
     }
   }, [pin]);
 
-  const checkBiometricStatus = async () => {
+  // Check if we should show fingerprint modal based on user data
+  useEffect(() => {
+    console.log('🔄 useEffect triggered - biometric status changed:', {
+      isBiometricEnabled,
+      showFingerprintModal,
+      showKeypad
+    });
+    
+    if (isBiometricEnabled) {
+      console.log('✅ Biometric enabled, showing fingerprint modal');
+      setShowFingerprintModal(true);
+      setShowKeypad(false);
+    } else {
+      console.log('❌ Biometric disabled, showing keypad');
+      setShowFingerprintModal(false);
+      setShowKeypad(true);
+    }
+  }, [isBiometricEnabled]);
+
+  // Removed direct fingerprint check since it's now handled in fetchAndLogCachedData
+
+  // Add a debug effect to log state changes
+  useEffect(() => {
+    console.log('🔍 State change detected:', {
+      isBiometricEnabled,
+      showFingerprintModal,
+      showKeypad
+    });
+    
+    // Additional debug: Log the current biometric state
+    if (isBiometricEnabled) {
+      console.log('🎯 BIOMETRIC ENABLED - Should show fingerprint modal');
+    } else {
+      console.log('❌ BIOMETRIC DISABLED - Should show keypad');
+    }
+  }, [isBiometricEnabled, showFingerprintModal, showKeypad]);
+
+  const fetchAndLogCachedData = async () => {
     try {
-      // Get user ID either from params or storage
-      const currentUserId = userId || await AsyncStorage.getItem('userId');
+      console.log('🔍 Fetching and logging cached data...');
       
-      if (!currentUserId) {
-        console.log('No user ID available to check biometric status');
-        setIsBiometricEnabled(false);
-        return;
+      // Get data info
+      const dataInfo = await getDataInfo();
+      console.log('📊 Data Info:', JSON.stringify(dataInfo, null, 2));
+      
+      // Try to get cached user data
+      try {
+        const cachedUserData = await getCachedData('userData', async () => {
+          console.log('No cached user data found, fetching fresh...');
+          return await fetchUser();
+        });
+        console.log('👤 Cached User Data:', JSON.stringify(cachedUserData, null, 2));
+        
+        // Specifically log biometric-related fields
+        if (cachedUserData) {
+          console.log('🔐 Biometric fields in cached user data:', {
+            fingerprint: cachedUserData.fingerprint || cachedUserData.data?.user?.fingerprint,
+            hasBiometric: cachedUserData.hasBiometric || cachedUserData.data?.user?.hasBiometric,
+            biometricStatus: cachedUserData.biometricStatus || cachedUserData.data?.user?.biometricStatus
+          });
+          
+          // Check if we have fingerprint data and update biometric status
+          const hasFingerprint = cachedUserData.data?.user?.fingerprint === true;
+          console.log('🎯 Fingerprint check result:', {
+            hasFingerprint,
+            fingerprintValue: cachedUserData.data?.user?.fingerprint,
+            fingerprintType: typeof cachedUserData.data?.user?.fingerprint
+          });
+          
+          if (hasFingerprint) {
+            console.log('✅ Found fingerprint in cached data, checking device capability...');
+            
+            // Check device capability
+            const [hasHardware, isEnrolled] = await Promise.all([
+              LocalAuthentication.hasHardwareAsync(),
+              LocalAuthentication.isEnrolledAsync()
+            ]);
+            
+            console.log('📱 Device capability for fingerprint:', { hasHardware, isEnrolled });
+            
+            if (hasHardware && isEnrolled) {
+              console.log('✅ Device capable, enabling biometric...');
+              setIsBiometricEnabled(true);
+            } else {
+              console.log('❌ Device not capable of biometrics');
+              setIsBiometricEnabled(false);
+            }
+          } else {
+            console.log('❌ No fingerprint data found in cached user data');
+            setIsBiometricEnabled(false);
+          }
+        }
+      } catch (error) {
+        console.log('❌ Error fetching cached user data:', error);
       }
-
-      const [biometricStatus, hasHardware, isEnrolled, userData] = await Promise.all([
-        AsyncStorage.getItem('biometricEnabled'),
-        LocalAuthentication.hasHardwareAsync(),
-        LocalAuthentication.isEnrolledAsync(),
-        fetchUser(currentUserId) // Fetch user data to check biometric status
-      ]);
-
-      // Check both AsyncStorage and user data from database
-      const isBiometricEnabledInStorage = biometricStatus === 'true';
-      const isBiometricEnabledInDB = userData?.biometricEnabled === true;
-
-      console.log('Biometric status check:', {
-        fromStorage: isBiometricEnabledInStorage,
-        fromDB: isBiometricEnabledInDB,
-        hasHardware,
-        isEnrolled
-      });
-
-      // If either storage or DB indicates biometric is enabled, and device is capable
-      const shouldEnableBiometric = (isBiometricEnabledInStorage || isBiometricEnabledInDB) && 
-                                  hasHardware && 
-                                  isEnrolled;
-
-      setIsBiometricEnabled(shouldEnableBiometric);
-
-      // Sync storage with DB if they differ
-      if (isBiometricEnabledInDB !== isBiometricEnabledInStorage) {
-        await AsyncStorage.setItem('biometricEnabled', String(isBiometricEnabledInDB));
-        console.log('Synced biometric status with database value:', isBiometricEnabledInDB);
+      
+      // Get all AsyncStorage keys and their values
+      const allKeys = await AsyncStorage.getAllKeys();
+      console.log('🔑 All AsyncStorage Keys:', allKeys);
+      
+      // Log important keys
+      const importantKeys = [
+        'auth_token',
+        'userId',
+        'userPhone',
+        'userData',
+        'isLoggedIn',
+        'fingerprint', // Changed from 'biometricEnabled' to 'fingerprint'
+        'biometricStatus'
+      ];
+      
+      for (const key of importantKeys) {
+        try {
+          const value = await AsyncStorage.getItem(key);
+          if (value) {
+            console.log(`📝 ${key}:`, value);
+            
+            // Try to parse JSON for userData
+            if (key === 'userData') {
+              try {
+                const parsedUserData = JSON.parse(value);
+                console.log(`📝 ${key} (parsed):`, JSON.stringify(parsedUserData, null, 2));
+                console.log(`🔐 ${key} biometric fields:`, {
+                  fingerprint: parsedUserData.fingerprint || parsedUserData.data?.user?.fingerprint,
+                  hasBiometric: parsedUserData.hasBiometric || parsedUserData.data?.user?.hasBiometric,
+                  biometricStatus: parsedUserData.biometricStatus || parsedUserData.data?.user?.biometricStatus
+                });
+              } catch (parseError) {
+                console.log(`❌ Error parsing ${key}:`, parseError);
+              }
+            }
+          } else {
+            console.log(`📝 ${key}: null/undefined`);
+          }
+        } catch (error) {
+          console.log(`❌ Error reading ${key}:`, error);
+        }
+      }
+      
+      // Log cache keys
+      const cacheKeys = allKeys.filter(key => key.startsWith('cache_'));
+      console.log('🗄️ Cache Keys:', cacheKeys);
+      
+      // Try to get some cached data
+      for (const cacheKey of cacheKeys.slice(0, 3)) { // Only first 3 to avoid spam
+        try {
+          const cachedValue = await AsyncStorage.getItem(cacheKey);
+          if (cachedValue) {
+            const parsed = JSON.parse(cachedValue);
+            console.log(`🗄️ ${cacheKey}:`, JSON.stringify(parsed, null, 2));
+          }
+        } catch (error) {
+          console.log(`❌ Error reading cache ${cacheKey}:`, error);
+        }
+      }
+      
+      // Check biometric-specific storage
+      console.log('🔐 Checking biometric-specific storage...');
+      const biometricKeys = allKeys.filter(key => 
+        key.toLowerCase().includes('biometric') || 
+        key.toLowerCase().includes('fingerprint') ||
+        key.toLowerCase().includes('auth')
+      );
+      console.log('🔐 Biometric-related keys:', biometricKeys);
+      
+      for (const key of biometricKeys) {
+        try {
+          const value = await AsyncStorage.getItem(key);
+          console.log(`🔐 ${key}:`, value);
+        } catch (error) {
+          console.log(`❌ Error reading biometric key ${key}:`, error);
+        }
       }
       
     } catch (error) {
-      console.error('Error checking biometric status:', error);
-      setIsBiometricEnabled(false);
+      console.error('❌ Error in fetchAndLogCachedData:', error);
     }
   };
+
+  // Removed checkBiometricStatus function - now handled in fetchAndLogCachedData
 
   // Check if we were redirected here from the lock function
   const checkIfFromLock = async () => {
@@ -118,8 +262,6 @@ export default function PasscodeScreen() {
       
       if (storedUserId && storedPhone) {
         console.log("Found stored user session, retrieving PIN");
-        const fakePinFromStorage = "1234";
-        setStoredPin(fakePinFromStorage);
         setIsFromLock(true);
       } else {
         console.log("This is a normal login session");
@@ -132,19 +274,32 @@ export default function PasscodeScreen() {
 
   // Check if we already have a user session for the lock screen
   const checkExistingSession = async () => {
+    // Skip session check if we're in the process of logging out
+    if (isLoggingOut) {
+      console.log("🔄 Skipping session check - logout in progress");
+      return;
+    }
+    
     // If this is a lock screen and we don't have user ID and PIN from params
-    if (!userId || !userPin) {
+    if (!params.userId || !params.pin) {
       try {
         console.log("No user data in params, attempting to retrieve from storage");
         const storedUserId = await AsyncStorage.getItem('userId');
         const storedPhone = await AsyncStorage.getItem('userPhone');
         
-        if (storedUserId) {
-          console.log("Found stored user data, fetching user details");
-          const fakePinFromStorage = "1234";
-          setStoredPin(fakePinFromStorage);
+        // Allow login if phone param exists, even if no stored session
+        if (phone || storedPhone) {
+          // Proceed as normal
+          return;
         } else {
-          console.warn("No stored user session found, redirecting to login");
+          // Check if we're in the process of logging out (no auth token)
+          const authToken = await AsyncStorage.getItem('auth_token');
+          if (!authToken) {
+            console.log("No auth token found, likely logging out - not redirecting");
+            return;
+          }
+          
+          console.warn("No stored user session or phone param found, redirecting to login");
           router.replace('/login');
         }
       } catch (error) {
@@ -168,205 +323,134 @@ export default function PasscodeScreen() {
     setPin(pin.slice(0, -1));
   };
 
-  const verifyPin = () => {
+  const verifyPin = async (useFingerprint = false) => {
     setLoading(true);
-    
-    // Determine which PIN to check against
-    const pinToCheck = storedPin || userPin;
-    
-    // Ensure we have a PIN to check against
-    if (!pinToCheck) {
-      console.error("No PIN available for verification");
-      Alert.alert("Error", "Unable to verify PIN. Please try logging in again.");
-      setLoading(false);
-      setPin("");
-      return;
-    }
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      // Convert both PINs to strings for comparison
-      const enteredPin = String(pin);
-      const correctPin = String(pinToCheck);
-      
-      console.log("Verifying PIN:", { enteredPin, correctPin });
-      
-      if (enteredPin === correctPin) {
-        // Successful login - save user ID to AsyncStorage
-        console.log("PIN verification successful, saving session...");
-        // Use retrieved userId if not provided in params
-        const userIdToSave = userId || AsyncStorage.getItem('userId')
-          .then(id => id)
-          .catch(() => null);
-        
-        // Use retrieved phone if not provided in params
-        const phoneToSave = phone || AsyncStorage.getItem('userPhone')
-          .then(p => p)
-          .catch(() => null);
-        
-        // Resolve the promises
-        Promise.all([userIdToSave, phoneToSave])
-          .then(([id, phoneNumber]) => {
-            if (id && phoneNumber) {
-              saveUserSession(id, phoneNumber);
-            } else {
-              throw new Error("Missing user information");
-            }
-          })
-          .catch(error => {
-            console.error("Error resolving user data:", error);
-            Alert.alert("Authentication Error", "Unable to retrieve your account information. Please log in again.");
-            setLoading(false);
-            setPin("");
-          });
-      } else {
-        // Failed login
-        console.log("PIN verification failed");
-        Vibration.vibrate(300);
-        setAttempts(attempts + 1);
-        
-        if (attempts >= 2) {
-          // Too many attempts
-          Alert.alert(
-            "Too Many Attempts",
-            "You've made too many incorrect attempts. Please try again later or reset your PIN.",
-            [
-              {
-                text: "Reset PIN",
-                onPress: () => router.push({
-                  pathname: "/reset",
-                  params: { phone }
-                }),
-                style: "cancel"
-              },
-              {
-                text: "Try Again",
-                onPress: () => {
-                  setPin("");
-                  setAttempts(0);
-                }
-              }
-            ]
-          );
-        } else {
-          Alert.alert(
-            "Incorrect PIN",
-            `Incorrect PIN. You have ${3 - attempts - 1} attempts remaining.`,
-            [{ text: "Try Again" }]
-          );
-          setPin("");
-        }
-        
-        setLoading(false);
-      }
-    }, 800);
-  };
-
-  const saveUserSession = async (userId: string, phone: string) => {
     try {
-      setLoading(true);
-      console.log(`Saving user session: userId=${userId}, phone=${phone}`);
+      const loginValue = phone || email;
+      const loginType = loginMethod || (phone ? 'phone' : 'email');
       
-      // Save user session data - use explicit transactions with Promise.all
-      try {
-        await AsyncStorage.setItem('userId', userId);
-        await AsyncStorage.setItem('userPhone', phone);
-        await AsyncStorage.setItem('isLoggedIn', 'true');
-        await AsyncStorage.setItem('lastLoginTime', new Date().toISOString());
-        
-        // Verify the session was saved properly
-        const verifyUserId = await AsyncStorage.getItem('userId');
-        const verifyLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-        
-        if (verifyUserId !== userId || verifyLoggedIn !== 'true') {
-          throw new Error(`Session verification failed - userId: ${verifyUserId}, isLoggedIn: ${verifyLoggedIn}`);
-        }
-        
-        console.log('User session saved and verified successfully');
-        
-        // Show success notification
-        dispatch(addNotification({
-          type: 'success',
-          title: 'Welcome Back!',
-          body: 'You have successfully logged in to your account.'
-        }));
-      } catch (storageError) {
-        console.error('Storage error:', storageError);
-        throw new Error('Failed to save session data');
+      console.log("[Passcode] verifyPin called with:", loginType, loginValue, "pin:", pin);
+      
+      if (!loginValue) {
+        Alert.alert("Error", `Invalid ${loginType}. Please try again.`);
+        setPin("");
+        return;
       }
       
-      // Only after verifying storage, proceed with navigation
-      setTimeout(() => {
-        router.replace('/dashboard');
-      }, 800);
-    } catch (error) {
-      console.error('Error in session process:', error);
+      if (loginType === 'phone' && (!phone || phone.length !== 11)) {
+        Alert.alert("Error", "Invalid phone number. Please try again.");
+        setPin("");
+        return;
+      }
       
-      // Show error notification
+      if (loginType === 'email' && !email) {
+        Alert.alert("Error", "Invalid email address. Please try again.");
+        setPin("");
+        return;
+      }
+      
+      // Call backend to login
+      let response;
+      if (useFingerprint) {
+        response = await fetchUserByPhone(loginValue, { fingerprint: true });
+      } else {
+        response = await fetchUserByPhone(loginValue, pin);
+      }
+      console.log('[Passcode] Login Response:', response);
+
+      if (response && response.data && response.data.token) {
+        // Store auth token
+        await AsyncStorage.setItem('auth_token', response.data.token);
+        // Store user data
+        if (phone) await AsyncStorage.setItem('userPhone', phone);
+        if (email) await AsyncStorage.setItem('userEmail', email);
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        
+        // If user data is included in response, store it
+        if (response.data.user) {
+          await AsyncStorage.setItem('userId', response.data.user._id);
+          await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
+        }
+
+        // Send device notification for login
+        await sendNotification(
+          NotificationTemplates.auth.login.title,
+          NotificationTemplates.auth.login.body,
+          NotificationTemplates.auth.login.type
+        );
+
+        console.log("[Passcode] Login successful, refreshing all data...");
+        
+        // Refresh all user data after successful login
+        try {
+          await refreshAllUserData();
+          console.log("[Passcode] All data refreshed successfully");
+        } catch (error) {
+          console.log("[Passcode] Warning: Some data refresh failed:", error);
+          // Continue with navigation even if refresh fails
+        }
+        
+        // Navigate to dashboard
+        router.replace('/dashboard');
+      } else {
+        console.log("[Passcode] Login failed, invalid response:", response);
+        Vibration.vibrate(300);
+        Alert.alert("Login Failed", "Incorrect passcode or credentials. Please try again.");
+        setPin("");
+      }
+    } catch (error: any) {
+      console.error("[Passcode] Error during login:", error);
+      Vibration.vibrate(300);
+      // Show error message from server if available, else fallback
+      let errorMessage = "An error occurred. Please try again.";
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
       dispatch(addNotification({
         type: 'error',
         title: 'Login Failed',
-        body: 'There was a problem with your login. Please try again.'
+        body: errorMessage
       }));
-      
-      Alert.alert(
-        'Unable to Save Session', 
-        'There was a problem with your login. Please try again.',
-        [{ text: "OK", onPress: () => setPin("") }]
-      );
-      setLoading(false);
       setPin("");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleFingerprintAuth = async () => {
     try {
       setLoading(true);
-      
-      // First, ensure we have user data
-      const currentUserId = userId || await AsyncStorage.getItem('userId');
+      // Only require phone (not userId) for biometric auth
       const currentPhone = phone || await AsyncStorage.getItem('userPhone');
-      
-      if (!currentUserId || !currentPhone) {
-        console.error('Missing user data for biometric auth:', { currentUserId, currentPhone });
+      if (!currentPhone) {
+        console.error('Missing phone for biometric auth:', { currentPhone });
         throw new Error('User session not found');
       }
-
       // Check device capability
       const [hasHardware, isEnrolled] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync()
       ]);
-
       if (!hasHardware) {
         throw new Error("Your device doesn't support biometric authentication");
       }
-      
       if (!isEnrolled) {
         throw new Error("No biometrics found. Please set up fingerprint authentication in your device settings.");
       }
-      
       // Attempt biometric authentication
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Authenticate with fingerprint",
         fallbackLabel: "Use PIN",
         disableDeviceFallback: false
       });
-
       if (result.success) {
         console.log('Biometric authentication successful');
-        
-        // Verify user data exists in database
-        const userData = await fetchUser(currentUserId);
-        if (!userData) {
-          throw new Error('User data not found');
-        }
-
         // Save session and proceed
-        await saveUserSession(currentUserId, currentPhone);
+        await verifyPin(true); // Pass true to indicate fingerprint
       } else if (result.error === "user_cancel") {
         console.log('User cancelled biometric auth');
-        // User canceled, just reset loading state
         setLoading(false);
       } else {
         throw new Error('Biometric authentication failed');
@@ -405,9 +489,96 @@ export default function PasscodeScreen() {
     }
   };
 
+  const handleSwitchAccount = async () => {
+    try {
+      console.log('🔄 User requested to switch account - performing hard logout...');
+      
+      // Show confirmation dialog
+      Alert.alert(
+        "Switch Account",
+        "This will clear all data and return you to the login screen. Are you sure?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Switch Account",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setIsLoggingOut(true);
+                console.log('🔄 Setting logout flag to prevent session checks...');
+                
+                // Perform hard logout to clear everything
+                await performHardLogout();
+              } catch (logoutError) {
+                console.error('Hard logout failed:', logoutError);
+                setIsLoggingOut(false);
+                // Fallback: try to navigate to login page anyway
+                try {
+                  router.replace('/login');
+                } catch (navError) {
+                  console.error('Navigation failed:', navError);
+                  Alert.alert("Error", "Failed to switch account. Please restart the app.");
+                }
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error during switch account:', error);
+      Alert.alert("Error", "Failed to switch account. Please try again.");
+    }
+  };
+
+  const showKeypadInstead = () => {
+    setShowFingerprintModal(false);
+    setShowKeypad(true);
+  };
+
+  const renderFingerprintModal = () => {
+    return (
+      <View className="absolute inset-0 bg-gray-500 bg-opacity-10 flex-1 z-30">
+        <View className="flex-1 justify-end pb-0">
+          <View className="bg-white rounded-t-3xl p-8 shadow-lg w-full">
+            <View className="items-center">
+              <TouchableOpacity
+                onPress={handleFingerprintAuth}
+                className="items-center"
+                disabled={loading}
+              >
+                <MaterialIcons name="fingerprint" size={80} color="#0072CE" />
+                {loading && (
+                  <ActivityIndicator size="small" color="#0072CE" className="mt-2" />
+                )}
+              </TouchableOpacity>
+              
+              <Text className="text-xl font-bold text-gray-800 mt-4 text-center">
+                Use Fingerprint
+              </Text>
+              <Text className="text-gray-600 text-center mt-2 mb-6">
+                Tap the fingerprint icon to authenticate
+              </Text>
+              
+              <TouchableOpacity
+                onPress={showKeypadInstead}
+                className="py-3 px-6 bg-gray-100 rounded-xl"
+                disabled={loading}
+              >
+                <Text className="text-gray-700 font-medium">Login with Passcode</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-6 ">
+      <View className="flex-row justify-center space-x-8 mt-3 ">
         {[0, 1, 2, 3].map((i) => (
           <View 
             key={i}
@@ -467,45 +638,62 @@ export default function PasscodeScreen() {
     );
   };
 
-  return (
-    <View className="flex-1 bg-white px-6 justify-between pt-20 pb-10">
-      {/* Top section */}
-      <View className="items-center">
-        <Text className="text-2xl font-bold text-primaryText">Enter passcode</Text>
-        <Text className="text-gray-500 mt-2 mb-16">Enter your passcode to log in</Text>
+    return (
+    <View className="flex-1 bg-white">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-20 pb-6">
+        {/* Top section */}
+        <View className="items-center">
+          <Text className="text-2xl font-bold text-primaryText">Enter passcode</Text>
+          <Text className="text-gray-500 mt-2 mb-16">Enter your passcode to log in</Text>
 
-        {renderPinInputs()}
+          {renderPinInputs()}
 
-        {loading && (
-          <ActivityIndicator size="large" color="#0072CE" className="mt-6" />
-        )}
+          {loading && (
+            <ActivityIndicator size="large" color="#0072CE" className="mt-6" />
+          )}
 
-        <TouchableOpacity 
-          className="mt-4"
-          onPress={() => router.push({
-            pathname: "/reset",
-            params: { phone }
-          })}
-          disabled={loading}
-        >
-          <Text className="text-sm text-primaryText">Forgot passcode?</Text>
-        </TouchableOpacity>
-        
-        {/* Only show fingerprint option if biometric is enabled */}
-        {isBiometricEnabled && (
           <TouchableOpacity 
-            onPress={handleFingerprintAuth} 
-            className="mt-6 items-center"
+            className="mt-4"
+            onPress={() => router.push({
+              pathname: "/reset",
+              params: { phone, email, loginMethod }
+            })}
             disabled={loading}
           >
-            <MaterialIcons name="fingerprint" size={40} color="#0072CE" />
-            <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
+            <Text className="text-sm text-primaryText">Forgot passcode?</Text>
           </TouchableOpacity>
-        )}
-      </View>
+          
+          {/* Show fingerprint option if available but not currently using it */}
+          {isBiometricEnabled && (
+            <TouchableOpacity 
+              onPress={() => {
+                setShowKeypad(false);
+                setShowFingerprintModal(true);
+              }} 
+              className="mt-6 items-center"
+              disabled={loading}
+            >
+              <MaterialIcons name="fingerprint" size={40} color="#0072CE" />
+              <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Keypad */}
-      {showKeypad && renderKeypad()}
+        {/* Keypad */}
+        {showKeypad && renderKeypad()}
+
+        {/* Switch Account */}
+        <TouchableOpacity
+          className="mt-8 mb-4 items-center"
+          onPress={handleSwitchAccount}
+          disabled={loading}
+        >
+          <Text className="text-base text-[#0072CE] font-semibold">Switch Account</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Fingerprint Modal Overlay */}
+      {showFingerprintModal && renderFingerprintModal()}
     </View>
   );
 }

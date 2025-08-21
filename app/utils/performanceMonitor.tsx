@@ -26,96 +26,7 @@ const defaultMetrics: PerformanceMetrics = {
 let APP_START_TIME = Date.now();
 
 // Component to monitor and display performance metrics
-export const PerformanceMonitor: React.FC<{ visible?: boolean }> = ({ visible = false }) => {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>(defaultMetrics);
-  const [expanded, setExpanded] = useState(false);
-  const frameCount = useRef(0);
-  const lastFrameTime = useRef(Date.now());
-  const renderCount = useRef(0);
-  const apiCallTimes = useRef<number[]>([]);
-  const componentMounts = useRef<{[key: string]: number}>({});
-
-  // Track FPS
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const delta = now - lastFrameTime.current;
-      const fps = frameCount.current / (delta / 1000);
-      
-      frameCount.current = 0;
-      lastFrameTime.current = now;
-      
-      // Calculate an optimization score based on all metrics
-      // This is a simplified score - in a real app you'd need more sophisticated measurement
-      const memoryUsage = Object.keys(componentMounts.current).length * 0.5; // Simple approximation
-      const renderTime = renderCount.current > 0 ? 1000 / renderCount.current : 0;
-      const networkLatency = apiCallTimes.current.length > 0 
-        ? apiCallTimes.current.reduce((a, b) => a + b, 0) / apiCallTimes.current.length 
-        : 0;
-      
-      const startupTime = APP_START_TIME > 0 ? Date.now() - APP_START_TIME : 0;
-      
-      // Calculate optimization score (0-100)
-      // These weights would need to be calibrated for a real app
-      const fpsScore = Math.min(fps / 60 * 40, 40); // 40% weight, optimal at 60fps
-      const memoryScore = Math.max(0, 20 - memoryUsage * 0.1); // 20% weight, lower is better
-      const renderScore = Math.max(0, 20 - renderTime * 0.1); // 20% weight, lower is better
-      const networkScore = Math.max(0, 20 - networkLatency * 0.05); // 20% weight, lower is better
-      
-      const optimizationScore = Math.round(fpsScore + memoryScore + renderScore + networkScore);
-      
-      setMetrics({
-        fps: Math.round(fps * 10) / 10,
-        memoryUsage: Math.round(memoryUsage * 100) / 100,
-        renderTime: Math.round(renderTime * 100) / 100,
-        networkLatency: Math.round(networkLatency),
-        startupTime: Math.round(startupTime / 100) / 10,
-        optimizationScore
-      });
-      
-      // Reset render count after calculating
-      renderCount.current = 0;
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Frame counter
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      frameCount.current++;
-      renderCount.current++;
-    }, 16.67); // ~60fps
-    
-    return () => clearInterval(intervalId);
-  }, []);
-  
-  // If the component isn't visible, just return null
-  if (!visible) return null;
-  
-  return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        style={[styles.button, { backgroundColor: getOptimizationColor(metrics.optimizationScore) }]}
-        onPress={() => setExpanded(!expanded)}
-      >
-        <Text style={styles.buttonText}>
-          Opt: {metrics.optimizationScore}%
-        </Text>
-      </TouchableOpacity>
-      
-      {expanded && (
-        <View style={styles.details}>
-          <Text style={styles.detailText}>FPS: {metrics.fps}</Text>
-          <Text style={styles.detailText}>Memory Usage: {metrics.memoryUsage}</Text>
-          <Text style={styles.detailText}>Render Time: {metrics.renderTime}ms</Text>
-          <Text style={styles.detailText}>Network Latency: {metrics.networkLatency}ms</Text>
-          <Text style={styles.detailText}>Startup Time: {metrics.startupTime}s</Text>
-        </View>
-      )}
-    </View>
-  );
-};
+export const PerformanceMonitor: React.FC<{ visible?: boolean }> = () => null;
 
 // Utility function to get color based on optimization score
 const getOptimizationColor = (score: number) => {
@@ -181,6 +92,37 @@ export const getOptimizationScore = (): number => {
   
   const instance = (PerformanceMonitor as any);
   return instance.metrics ? instance.metrics.optimizationScore : 0;
+};
+
+// Utility to detect and prevent infinite loops
+export const useLoopPrevention = (callback: () => void, dependencies: any[], maxCalls: number = 10) => {
+  const callCount = useRef(0);
+  const lastCallTime = useRef(0);
+  
+  useEffect(() => {
+    const now = Date.now();
+    
+    // Prevent excessive calls in short time
+    if (now - lastCallTime.current < 100) { // 100ms minimum interval
+      return;
+    }
+    
+    // Prevent too many calls
+    if (callCount.current >= maxCalls) {
+      console.warn('Loop prevention: Maximum calls reached for this effect');
+      return;
+    }
+    
+    callCount.current++;
+    lastCallTime.current = now;
+    
+    callback();
+  }, dependencies);
+  
+  // Reset counter when dependencies change significantly
+  useEffect(() => {
+    callCount.current = 0;
+  }, [JSON.stringify(dependencies)]);
 };
 
 // Styles for the monitor

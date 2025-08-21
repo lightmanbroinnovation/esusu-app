@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, FlatList, SafeAreaView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, FlatList, SafeAreaView, Modal, ActivityIndicator, Alert, ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import Footer from '../components/Footer';
-import { fetchContributors } from '../../services/api';
+import { getCustomers, fetchGroupedContributors, fetchGroupedContributorPhotos } from '../../services/api';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { addNotification } from '../store/slices/notificationSlice';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from '../components/EsusuLoader';
+import NetInfo from '@react-native-community/netinfo';
+// @ts-ignore
+import { sendNotification, NotificationTemplates } from '../services/notificationService';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
+// TODO: Replace with Moti Skeleton
 
 // Define the Contributor type
 export interface Contributor {
@@ -30,12 +40,70 @@ export interface Contributor {
 // Define a union type for frequency keys
 type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'Other';
 
-const ContributorsScreen = () => {
-  const router = useRouter();
-  const [allContributors, setAllContributors] = useState<Contributor[]>([]); // Store all contributors
+const fetchContributorsData = async () => {
+  try {
+    console.log('Fetching grouped contributor photos');
+    const groups = await fetchGroupedContributorPhotos();
+    console.log('Raw groups data:', JSON.stringify(groups, null, 2));
+    
+    // Transform the response to { daily: [photoUri, ...], weekly: [...], monthly: [...] }
+    const transformed: { [key: string]: string[] } = {};
+    const titles: { [key: string]: string } = {};
+    
+    ['daily', 'weekly', 'monthly'].forEach(group => {
+      if (groups[group] && groups[group].contributors) {
+        // Extract photo URLs from contributors
+        transformed[group] = groups[group].contributors
+          .filter((c: any) => c.photo && c.photo.trim() !== '')
+          .map((c: any) => c.photo);
+        titles[group] = groups[group].title || group.charAt(0).toUpperCase() + group.slice(1);
+      } else {
+        transformed[group] = [];
+        titles[group] = group.charAt(0).toUpperCase() + group.slice(1);
+      }
+    });
+    
+    console.log('Transformed data:', JSON.stringify(transformed, null, 2));
+    return { transformed, titles };
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Server error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('No response received from server:', error.request);
+    } else {
+      console.error('Error:', error.message);
+    }
+    throw new Error("Unable to load contributor photos. Please try again later.");
+  }
+};
+
+export default function ContributorsScreen() {
+  const [groupedPhotos, setGroupedPhotos] = useState<Record<string, string[]>>({
+    daily: [],
+    weekly: [],
+    monthly: []
+  });
+  const [groupTitles, setGroupTitles] = useState<Record<string, string>>({
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly'
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('ContributorsScreen', 15);
+
+  const router = useRouter();
+  
+  // Use back button handler for contributors screen
+  useBackButtonHandler('/contributors');
+  const dispatch = useDispatch();
+  const [allContributors, setAllContributors] = useState<Contributor[]>([]);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [currentDuration, setCurrentDuration] = useState<string>('');
 
@@ -61,26 +129,129 @@ const ContributorsScreen = () => {
     getUserId();
   }, []);
 
-  // Fetch contributors when user ID is available
   useEffect(() => {
-    if (!userId) return;
-    
-    const getContributors = async () => {
-      try {
-        console.log('Fetching contributors for agent ID:', userId);
-        const contributors = await fetchContributors(userId);
-        setAllContributors(contributors);
-        setError(null);
-      } catch (error) {
-        console.error("Error fetching contributors:", error);
-        setError("Unable to load contributors. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    getContributors();
-  }, [userId]);
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
+
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData: Record<string, any[]> | null = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('contributors_data');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        // Set groupedPhotos and groupTitles from cache if possible
+        if (cacheData && typeof cacheData === 'object' && 'transformed' in cacheData && 'titles' in cacheData && 
+            Array.isArray((cacheData as any).transformed.daily) && Array.isArray((cacheData as any).transformed.weekly) && Array.isArray((cacheData as any).transformed.monthly)) {
+          // New cache format
+          setGroupedPhotos((cacheData as any).transformed);
+          setGroupTitles((cacheData as any).titles);
+        } else {
+          // Old cache format
+          const transformed: Record<string, string[]> = {};
+          const titles: Record<string, string> = {};
+          (['daily', 'weekly', 'monthly'] as const).forEach(group => {
+            if (cacheData && cacheData[group]) {
+              const groupData: any = cacheData[group];
+              if (Array.isArray(groupData)) {
+                // Old cache format: array of contributors
+                transformed[group] = groupData.map((c: any) => c.photo);
+              } else if (typeof groupData === 'object' && groupData !== null && Array.isArray((groupData as any).contributors)) {
+                // New cache format: object with contributors array
+                transformed[group] = (groupData as any).contributors.map((c: any) => c.photo);
+              } else {
+                transformed[group] = [];
+              }
+            } else {
+              transformed[group] = [];
+            }
+            titles[group] = group.charAt(0).toUpperCase() + group.slice(1);
+          });
+          setGroupedPhotos(transformed);
+          setGroupTitles(titles);
+        }
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    if (fromRefresh) {
+      await invalidateCache('contributors_data');
+    }
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      const data = await getCachedData('contributors_data', fetchContributorsData);
+      console.log('Fetched data:', JSON.stringify(data, null, 2));
+      
+      if (data && typeof data === 'object' && 'transformed' in data && 'titles' in data && 
+          Array.isArray((data as any).transformed.daily) && Array.isArray((data as any).transformed.weekly) && Array.isArray((data as any).transformed.monthly)) {
+        // New format: data contains transformed and titles
+        setGroupedPhotos((data as any).transformed);
+        setGroupTitles((data as any).titles);
+      } else {
+        // Fallback for old format
+        const transformed: Record<string, string[]> = {};
+        const titles: Record<string, string> = {};
+        (['daily', 'weekly', 'monthly'] as const).forEach(group => {
+          if (data && typeof data === 'object' && group in data) {
+            const groupData: any = (data as any)[group];
+            if (Array.isArray(groupData)) {
+              // Old format: array of contributors
+              transformed[group] = groupData.map((c: any) => c.photo);
+            } else if (typeof groupData === 'object' && groupData !== null && Array.isArray((groupData as any).contributors)) {
+              // New format: object with contributors array
+              transformed[group] = (groupData as any).contributors.map((c: any) => c.photo);
+            } else {
+              transformed[group] = [];
+            }
+          } else {
+            transformed[group] = [];
+          }
+          titles[group] = group.charAt(0).toUpperCase() + group.slice(1);
+        });
+        setGroupedPhotos(transformed);
+        setGroupTitles(titles);
+      }
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load contributors data.');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
 
   const handleRetry = () => {
     setLoading(true);
@@ -121,9 +292,15 @@ const ContributorsScreen = () => {
   };
 
   // Reminder modal functions
-  const openReminderModal = (duration: string) => {
+  const openReminderModal = async (duration: string) => {
     setCurrentDuration(duration);
     setReminderModalVisible(true);
+    const name = duration.charAt(0).toUpperCase() + duration.slice(1);
+    await sendNotification(
+      NotificationTemplates.contributor.reminder(name).title,
+      NotificationTemplates.contributor.reminder(name).body,
+      NotificationTemplates.contributor.reminder(name).type
+    );
   };
 
   const closeReminderModal = () => {
@@ -171,97 +348,145 @@ const ContributorsScreen = () => {
   };
 
   const handleCardPress = (duration: string) => {
-    const contributorIds = allContributors
-      .filter(contributor => contributor.frequency === duration)
-      .map(contributor => contributor.id); // Extract IDs
+    const filteredContributors = allContributors
+      .filter(contributor => contributor.frequency === duration);
 
-    console.log("Navigating to ContributorListScreen with Duration:", duration); // Log duration
-    console.log("Contributor IDs:", contributorIds); // Log contributor IDs
+    console.log("Navigating to ContributorListScreen with Duration:", duration);
+    console.log("Filtered Contributors:", filteredContributors);
 
-    // Pass the selected duration and contributor IDs to the next page
     router.push({
       pathname: '/contributors/ContributorListScreen',
-      params: { duration, contributorIds }, // Ensure this is structured correctly
+      params: { duration }
     });
   };
 
   const frequencyTypes = Object.keys(frequencyDetails) as Frequency[];
 
+  // Subtitles for each group
+  const groupSubtitles: { [key: string]: string } = {
+    daily: 'Contributors who save every day.',
+    weekly: 'Contributors who save every week.',
+    monthly: 'Contributors who save once a month',
+    yearly: 'Contributors who save once a year.'
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData(true);
+    setRefreshing(false);
+  };
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  // Do NOT show a 'no network' error. Always display the contributors data, even if offline.
+  // Only show error if there is truly no data to display (e.g., error and no contributors at all)
+
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-4 mt-2">
-          {/* Header */}
+      {error ? (
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-gray-600">Error: {error}</Text>
+          <TouchableOpacity onPress={handleRetry} className="mt-4 p-3 bg-blue-500 rounded-lg">
+            <Text className="text-white">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          className="flex-1 px-4 mt-2" contentContainerStyle={{ paddingBottom: 32 }}
+        >
+          {/* Header with Back Arrow */}
           <View className="flex-row items-center mb-4">
-            <TouchableOpacity onPress={navigateBack} className="bg-gray-100 p-2 rounded-full mr-4">
+            <TouchableOpacity onPress={navigateBack} className=" p-2 rounded-full ">
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
+            <Text className="text-lg font-bold text-center flex-1">Contributor</Text>
           </View>
       
-          {loading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator size="large" color="#0052CC" />
-              <Text className="mt-4 text-gray-600">Loading contributors...</Text>
-            </View>
-          ) : error ? (
-            <View className="flex-1 items-center justify-center">
-              <Text className="text-red-500 text-center mb-4">{error}</Text>
+          {/* Grouped Contributor Cards */}
+          {['daily', 'weekly', 'monthly', 'yearly'].map(group => (
               <TouchableOpacity 
-                onPress={handleRetry}
-                className="bg-blue-600 px-6 py-2 rounded-md"
-              >
-                <Text className="text-white font-semibold">Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList
-              data={frequencyTypes}
-              keyExtractor={(item) => item}
-              renderItem={({ item: duration }) => {
-                const { title, description } = frequencyDetails[duration as Frequency];
-                const totalCount = allContributors.filter(contributor => contributor.frequency === duration).length;
-                return (
-                  <TouchableOpacity
-                    onPress={() => handleCardPress(duration)}
-                    className="bg-primaryCard rounded-xl p-4 mb-4"
-                  >
-                    <Text className="text-lg font-semibold text-white">{title}</Text>
-                    <Text className="text-white mb-2">{description}</Text>
-                    <View className="flex-row mb-2 items-center">
-                      {allContributors.filter(contributor => contributor.frequency === duration).slice(0, 3).map((contributor, index) => (
-                        <View key={index} style={{ position: 'relative', marginLeft: index > 0 ? -15 : 0 }}>
-                          <Image 
-                            source={{ uri: contributor.photoUri }}
-                            style={{ width: 40, height: 40, borderRadius: 20 }} 
-                            className="rounded-full border border-white"
-                          />
-                        </View>
-                      ))}
-                      {totalCount > 3 && (
-                        <Text className="text-white ml-2">+{totalCount - 3}</Text>
-                      )}
-                    </View>
-                    <TouchableOpacity 
-                      className="bg-blue-600 p-2 rounded-lg mt-2 flex-row items-center justify-center"
-                      onPress={() => openReminderModal(duration)}
-                    >
-                      <MaterialIcons name="notifications" size={20} color="#fff" />
-                      <Text className="text-white text-center ml-2">Send Reminder</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                );
+              key={group}
+              activeOpacity={0.9}
+              onPress={() => router.push({ pathname: '/contributors/ContributorListScreen', params: { group } })}
+              style={{
+                backgroundColor: '#232335',
+                borderRadius: 24,
+                padding: 20,
+                marginBottom: 24,
+                shadowColor: '#000',
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
               }}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 80 }}
-              onRefresh={handleRetry}
-              refreshing={loading}
-            />
-          )}
-        </View>
-        <Footer />
-      </SafeAreaView>
+            >
+              <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 4 }}>
+                {groupTitles[group] || group.charAt(0).toUpperCase() + group.slice(1) + ' Contributors'}
+              </Text>
+              <Text style={{ color: '#B0B0C3', fontSize: 15, marginBottom: 16 }}>
+                {groupSubtitles[group] || ''}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+                {(groupedPhotos[group] || []).slice(0, 8).map((photoUri, idx) => (
+                            <Image 
+                    key={idx}
+                    source={{ uri: photoUri }}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      borderWidth: 2,
+                      borderColor: '#fff',
+                      marginLeft: idx === 0 ? 0 : -14,
+                      backgroundColor: '#eee',
+                    }}
+                  />
+                ))}
+                {(groupedPhotos[group] || []).length > 8 && (
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: '#2D2D44',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginLeft: -14,
+                      borderWidth: 2,
+                      borderColor: '#fff',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                      +{(groupedPhotos[group] || []).length - 8}
+                    </Text>
+                          </View>
+                        )}
+                      </View>
+                      <TouchableOpacity 
+                style={{
+                  backgroundColor: '#007AFF',
+                  borderRadius: 12,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                }}
+                onPress={e => {
+                  e.stopPropagation();
+                  openReminderModal(group);
+                }}
+              >
+                <Ionicons name="notifications" size={22} color="#5FF3E2" style={{ marginRight: 8 }} />
+                <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>Send Reminder</Text>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+      <Footer />
 
       {/* Reminder Modal */}
       <Modal 
@@ -289,8 +514,6 @@ const ContributorsScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
-
-export default ContributorsScreen;

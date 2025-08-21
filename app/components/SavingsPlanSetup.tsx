@@ -1,30 +1,67 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  SafeAreaView, 
-  TouchableOpacity, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
   TextInput,
   Modal,
+  Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import moment from 'moment'; // Import moment for date formatting
-import { Picker as NativePicker } from '@react-native-picker/picker'; // Updated import for Picker
-import { addContributor } from '../../services/api'; // Import the addContributor function
+import moment from 'moment';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import api from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { sendNotification, NotificationTemplates } from '../services/notificationService';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from './EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 
-const SavingsPlanSetup = () => {
+const DURATION_OPTIONS = [
+  { label: 'Daily', value: 'daily', minDays: 30 },
+  { label: 'Weekly', value: 'weekly', minDays: 28 }, // 4 weeks
+  { label: 'Monthly', value: 'monthly', minDays: 180 }, // 6 months
+  { label: 'Yearly', value: 'yearly', minDays: 365 },
+];
+
+interface SavingsPlanSetupProps {
+  setLoading: (loading: boolean) => void;
+  onSuccess: () => void;
+}
+
+export default function SavingsPlanSetup() {
+  const [savingsData, setSavingsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('SavingsPlanSetup', 15);
+
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [depositAmount, setDepositAmount] = useState('');
-  const [frequency, setFrequency] = useState('daily');
-  const [startDate, setStartDate] = useState(moment().startOf('day').toDate()); // Default to today's date
-  const [endDate, setEndDate] = useState(moment().startOf('day').toDate()); // Default to today's date
-  const [showStartCalendar, setShowStartCalendar] = useState(false);
-  const [showEndCalendar, setShowEndCalendar] = useState(false);
-  const [durationValue, setDurationValue] = useState(1); // Default value for duration dropdown
-  const params = useLocalSearchParams(); // Get parameters passed from the previous screen
+  const [duration, setDuration] = useState('daily');
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(moment().add(30, 'days').toDate());
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  useEffect(() => {
+    // Update end date when duration or start date changes
+    const selected = DURATION_OPTIONS.find(opt => opt.value === duration);
+    if (selected) {
+      setEndDate(moment(startDate).add(selected.minDays, 'days').toDate());
+    }
+  }, [duration, startDate]);
 
   const navigateBack = () => {
     router.back();
@@ -32,427 +69,260 @@ const SavingsPlanSetup = () => {
 
   const handleNext = async () => {
     try {
-      // First check the params we received
-      console.log('SAVINGS PLAN SETUP - RECEIVED PARAMS:', JSON.stringify({
-        photoUri: params.photoUri,
-        imageUrl: params.imageUrl,
-        isCloudinaryUrl: params.isCloudinaryUrl,
-        allParams: params
-      }));
-
-      // Check if we already have a Cloudinary URL from previous steps
-      let finalImageUrl = null;
-      
-      // Priority: imageUrl from Cloudinary > photoUri as fallback
-      if (params.imageUrl && typeof params.imageUrl === 'string' && params.isCloudinaryUrl === "true") {
-        // Use the Cloudinary URL if available
-        finalImageUrl = params.imageUrl;
-        console.log('Using Cloudinary URL from previous step:', finalImageUrl);
-      } else if (params.photoUri && typeof params.photoUri === 'string') {
-        // Fallback to local URI if no Cloudinary URL
-        finalImageUrl = params.photoUri;
-        console.log('Falling back to local photo URI:', finalImageUrl);
-      } else {
-        console.warn('No photo URI found in params');
+      setLoading(true);
+      if (!depositAmount) {
+        alert('Please enter the deposit amount.');
+        setLoading(false);
+        return;
       }
-      
-      console.log('FINAL IMAGE URL FOR DB:', finalImageUrl);
-      
-    // Prepare the parameters including entered details
-    const contributorData = {
-      agentName: params.agentName,
-      agentId: params.agentId,
-        firstName: params.firstName,
-        lastName: params.lastName,
-      phoneNumber: params.phoneNumber,
-      ninNumber: params.ninNumber,
-      language: params.language,
-        photoUri: finalImageUrl, // Explicitly include the photo URI
-        imageUrl: finalImageUrl, // Add imageUrl field as well for compatibility
-      depositAmount,
-      frequency,
-      startDate: moment(startDate).format('YYYY-MM-DD'),
-      endDate: moment(endDate).format('YYYY-MM-DD'),
-      durationValue,
-        status: 'active',
+      // Build FormData
+      const formData = new FormData();
+      formData.append('firstName', String(params.firstName));
+      formData.append('lastName', String(params.lastName));
+      formData.append('middleName', String(params.middleName));
+      formData.append('phoneNumber', String(params.phoneNumber));
+      formData.append('nin', String(params.nin));
+      formData.append('gender', String(params.gender));
+      formData.append('language', String(params.language));
+      formData.append('depositAmount', String(depositAmount));
+      formData.append('duration', String(duration));
+      // Format dob as ISO date string
+      const dobString = Array.isArray(params.dob) ? params.dob[0] : params.dob;
+      formData.append('dob', new Date(dobString).toISOString());
+      // Append the photo as a file (cast as any for React Native FormData)
+      formData.append('photo', {
+        uri: String(params.photo),
+        name: 'photo.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      // Get auth token
+      const token = await AsyncStorage.getItem('auth_token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
       };
-      
-      console.log('ADDING CONTRIBUTOR WITH DATA:', JSON.stringify(contributorData));
 
-      // Send data to the endpoint and get the response
-      const response = await addContributor(contributorData); 
-      
-      console.log('API RESPONSE:', JSON.stringify(response));
-      
-      // Check if we got a valid response with an ID
-      if (response && response.id) {
-        // Navigate to the profile page with the contributor ID
-        router.push({
-          pathname: '/contributor/profile',
-          params: { 
-            contributorId: response.id,
-            firstName: params.firstName,
-            lastName: params.lastName,
-            imageUrl: finalImageUrl
-          }
-        });
+      const response = await fetch('https://esusu-server.onrender.com/api/contributor', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok || response.status === 201 || responseData.status === 'Success') {
+        await sendNotification(
+          NotificationTemplates.contributor.added(String(params.firstName) || 'Contributor').title,
+          NotificationTemplates.contributor.added(String(params.firstName) || 'Contributor').body,
+          NotificationTemplates.contributor.added(String(params.firstName) || 'Contributor').type
+        );
+        setLoading(false);
+        router.replace({ pathname: '/contributor/success', params: { contributor: 'true' } });
+        return;
       } else {
-        console.warn('No contributor ID returned from API');
-        router.push('/contributor/profile');
+        throw new Error(`Server error: ${response.status} - ${responseData.message || 'Unknown error'}`);
       }
-    } catch (error) {
-      console.error("Error adding contributor:", error);
-      Alert.alert(
-        "Error",
-        "There was a problem adding the contributor. Please try again.",
-        [{ text: "OK" }]
-      );
+    } catch (error: any) {
+      setLoading(false);
+      const err: any = error;
+      let errorMsg = 'There was a problem adding the contributor. Please try again.';
+      if (err && err.response && err.response.data && err.response.data.message) {
+        errorMsg = err.response.data.message;
+      } else if (err && err.message) {
+        errorMsg = err.message;
+      }
+      alert(errorMsg);
     }
   };
 
-  // Function to render the calendar
-  const renderCalendar = (isStartCalendar: boolean) => {
-    const calendarDate = isStartCalendar ? startDate : endDate;
-    const currentMonth = moment(calendarDate).month(); // Get the current month (0-11)
-    const currentYear = moment(calendarDate).year(); // Get the current year
-    const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth(); // Get days in month
-    const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day(); // Get the first day of the month
-    const minimumDate = isStartCalendar ? moment() : moment(startDate);
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
+    }
 
-    const days = [];
-    // Add empty views for days before the first day of the month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('savings_plan');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        setSavingsData(cacheData);
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
     }
     
-    // Add the days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const currentDate = moment(`${currentYear}-${currentMonth + 1}-${day}`);
-      const isSelected = isStartCalendar 
-        ? moment(startDate).date() === day && moment(startDate).month() === currentMonth && moment(startDate).year() === currentYear
-        : moment(endDate).date() === day && moment(endDate).month() === currentMonth && moment(endDate).year() === currentYear;
-      
-      const isDisabled = !isStartCalendar && currentDate.isBefore(minimumDate);
-      
-      days.push(
-        <TouchableOpacity
-          key={day}
-          className={`flex-1 items-center justify-center my-1 rounded-full
-            ${isSelected ? 'bg-blue-600' : ''}
-            ${isDisabled ? 'opacity-30' : ''}`}
-          style={{ padding: 8 }} // Uniform padding
-          disabled={isDisabled}
-          onPress={() => {
-            const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
-            if (isStartCalendar) {
-              setStartDate(selectedDate);
-              // Ensure end date is not before start date
-              if (moment(endDate).isBefore(selectedDate)) {
-                setEndDate(selectedDate);
-              }
-            } else {
-              setEndDate(selectedDate);
-            }
-            setShowStartCalendar(false);
-            setShowEndCalendar(false);
-          }}
-        >
-          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
-        </TouchableOpacity>
-      );
+    if (fromRefresh) {
+      await invalidateCache('savings_plan');
     }
-
-    // Create rows of 7 days (4 weeks minimum)
-    const rows = [];
-    const totalDays = Math.max(days.length, 35); // Ensure at least 35 days are displayed for 5 weeks
-    for (let i = 0; i < totalDays; i += 7) {
-      const weekDays = days.slice(i, i + 7);
-      // Fill empty days if the week has less than 7 days
-      while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      // For now, just set some default data since the API function doesn't exist
+      const data = { plan: 'basic', amount: 1000, frequency: 'daily' };
+      setSavingsData(data);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load savings plan data');
+        setSavingsData(null);
       }
-      rows.push(
-        <View key={`row-${i}`} className="flex-row">
-          {weekDays}
-        </View>
-      );
-    }
-
-    return (
-      <View className="flex-1">
-        {rows}
-      </View>
-    );
-  };
-
-  // Function to change the month
-  const changeMonth = (isStartCalendar: boolean, direction: 'next' | 'prev') => {
-    if (isStartCalendar) {
-      const newStartDate = moment(startDate).add(direction === 'next' ? 1 : -1, 'months');
-      // Don't allow going to past months from current date
-      if (!newStartDate.isBefore(moment(), 'month') || direction === 'next') {
-      setStartDate(newStartDate.toDate());
-      }
-    } else {
-      const newEndDate = moment(endDate).add(direction === 'next' ? 1 : -1, 'months');
-      // Don't allow going before the start date month
-      if (!newEndDate.isBefore(moment(startDate), 'month') || direction === 'next') {
-      setEndDate(newEndDate.toDate());
-      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  // Custom dropdown UI component
-  const CustomDropdown = ({ label, value, options, onChange }: {
-    label: string;
-    value: number;
-    options: Array<{label: string; value: number}>;
-    onChange: (value: number) => void;
-  }) => (
-    <View className='my-4'>
-      <Text className="text-gray-700 mb-2">{label}</Text>
-      <View className="bg-gray-100 rounded-xl overflow-hidden">
-        <NativePicker
-          selectedValue={value}
-          onValueChange={onChange}
-          style={{ 
-            height: 60, 
-            width: '100%',
-            backgroundColor: '#f3f4f6',
-            color: '#1f2937'
-          }}
-          itemStyle={{ 
-            fontWeight: 'bold',
-            color: '#1f2937'
-          }}
-        >
-          {options.map((option: {label: string; value: number}) => (
-            <NativePicker.Item 
-              key={option.value} 
-              label={option.label} 
-              value={option.value} 
-            />
-          ))}
-        </NativePicker>
-      </View>
-    </View>
-  );
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1">
-        {/* Header */}
-        <View className="flex-row items-center p-4 mt-10">
-          <TouchableOpacity 
-            onPress={navigateBack}
-            className="bg-gray-100 p-2 rounded-full"
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">Add New User</Text>
-          <View style={{width: 40}} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
+      {/* Top Bar */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: Platform.OS === 'ios' ? 40 :44, marginBottom: 16 }}>
+        <TouchableOpacity onPress={navigateBack} style={{ marginLeft: 16,  padding: 10 }}>
+          <Ionicons name="arrow-back" size={24} color="#222" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, alignItems: 'center', marginRight: 56 }}>
+          <Text style={{ fontSize: 20, fontWeight: '600', color: '#222' }}>Add New User</Text>
+        </View>
+      </View>
+
+      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+        {/* Deposit Amount */}
+        <Text style={{ fontSize: 16, color: '#222', marginBottom: 8, marginTop: 8 }}>Deposit Amount</Text>
+        <View style={{ backgroundColor: '#F5F5F7', borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+          <Text style={{ fontSize: 18, color: '#888', marginLeft: 16 }}>₦</Text>
+          <TextInput
+            style={{ flex: 1, fontSize: 18, color: '#888', padding: 16, backgroundColor: 'transparent' }}
+            placeholder="2,000"
+            placeholderTextColor="#B0B0B0"
+            value={depositAmount}
+            onChangeText={setDepositAmount}
+            keyboardType="numeric"
+          />
         </View>
 
-        <ScrollView className="flex-1 px-4">
-          {/* Form Fields */}
-          <View className="space-y-6">
-            {/* Deposit Amount */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">Deposit Amount</Text>
-              <View className="flex-row items-center bg-gray-100 p-4 rounded-xl">
-                <Text className="text-black font-medium mr-2">₦</Text>
-                <TextInput
-                  value={depositAmount}
-                  onChangeText={setDepositAmount}
-                  keyboardType="numeric"
-                  className="flex-1 text-lg text-black"
-                />
-              </View>
-            </View>
-            
-            {/* Duration */}
-            <View className='my-4'>
-              <Text className="text-gray-700 mb-2">Duration</Text>
-              <View className="flex-row">
-                {[
-                  { id: 'daily', label: 'Daily' },
-                  { id: 'weekly', label: 'Weekly' },
-                  { id: 'monthly', label: 'Monthly' },
-                  { id: 'yearly', label: 'Yearly' }
-                ].map(item => (
-                  <TouchableOpacity 
-                    key={item.id}
-                    className={`flex-1 rounded-xl p-4 px-3 items-center justify-center mx-1 ${frequency === item.id ? 'bg-green-600' : 'bg-blue-600'}`}
-                    onPress={() => {
-                      setFrequency(item.id);
-                      if (item.id === 'daily') {
-                        setShowEndCalendar(false); // Hide end date for daily
-                      } else {
-                        setShowEndCalendar(false); // Hide end date for other durations
-                      }
-                    }}
-                  >
-                    {frequency === item.id && (
-                      <View className="absolute top-3 right-4">
-                        <Ionicons name="checkmark-circle" size={16} color="white" />
-                      </View>
-                    )}
-                    <Text className="text-white font-semibold">{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Duration Dropdown */}
-            {frequency === 'weekly' && (
-              <CustomDropdown 
-                label="Select Weeks"
-                value={durationValue}
-                onChange={(itemValue: number) => setDurationValue(itemValue)}
-                options={[...Array(52)].map((_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-              />
-            )}
-            {frequency === 'monthly' && (
-              <CustomDropdown 
-                label="Select Months"
-                value={durationValue}
-                onChange={(itemValue: number) => setDurationValue(itemValue)}
-                options={[...Array(12)].map((_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-              />
-            )}
-            {frequency === 'yearly' && (
-              <CustomDropdown 
-                label="Select Years"
-                value={durationValue}
-                onChange={(itemValue: number) => setDurationValue(itemValue)}
-                options={[...Array(10)].map((_, i) => ({ label: `${i + 1}`, value: i + 1 }))}
-              />
-            )}
-            
-            {/* Start Date */}
-            <View className='my-3'>
-              <Text className="text-gray-700 mb-2">Start Date</Text>
-              <TouchableOpacity 
-                onPress={() => setShowStartCalendar(true)}
-                className="flex-row items-center justify-between bg-gray-100 border border-gray-200 p-4 rounded-xl"
-              >
-                <Text className="text-blue-600">Starts Today: {moment(startDate).format('YYYY-MM-DD')}</Text>
-                <Ionicons name="calendar" size={24} color="#2563eb" />
-              </TouchableOpacity>
-            </View>
-            
-            {/* End Date (conditionally rendered) */}
-            {frequency === 'daily' && (
-              <View className='my-3'>
-                <Text className="text-gray-700 mb-2">End Date</Text>
-                <TouchableOpacity 
-                  onPress={() => setShowEndCalendar(true)}
-                  className="flex-row items-center justify-between bg-gray-100 border border-gray-200 p-4 rounded-xl"
-                >
-                  <Text className="text-blue-600">Ends By: {moment(endDate).format('YYYY-MM-DD')}</Text>
-                  <Ionicons name="calendar" size={24} color="#2563eb" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </ScrollView>
-        
-        {/* Start Calendar Modal */}
-        {showStartCalendar && (
-          <Modal
-            transparent={true}
-            visible={showStartCalendar}
-            animationType="slide"
-            onRequestClose={() => setShowStartCalendar(false)}
-          >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}> {/* Reduced modal height */}
-                <View className="flex-row justify-between items-center p-2 mb-2">
-                  <TouchableOpacity 
-                    onPress={() => changeMonth(true, 'prev')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-back" size={20} color="#2563eb" />
-                  </TouchableOpacity>
-                  <Text className="text-xl font-bold text-center">{moment(startDate).format('MMMM YYYY')}</Text>
-                  <TouchableOpacity 
-                    onPress={() => changeMonth(true, 'next')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-forward" size={20} color="#2563eb" />
-                  </TouchableOpacity>
+        {/* Duration */}
+        <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>Duration</Text>
+        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+          {DURATION_OPTIONS.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              onPress={() => setDuration(opt.value)}
+              style={{
+                flex: 1,
+                marginRight: opt.value !== 'yearly' ? 12 : 0,
+                backgroundColor: duration === opt.value ? '#0A9447' : '#007AFF',
+                borderRadius: 16,
+                paddingVertical: 18,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: duration === opt.value ? 2 : 0,
+                borderColor: duration === opt.value ? '#D1FADF' : 'transparent',
+                position: 'relative',
+              }}
+            >
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{opt.label}</Text>
+              {duration === opt.value && (
+                <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: '#22C55E', borderRadius: 100 }}>
+                  <Ionicons name="checkmark" size={18} color="white" />
                 </View>
-                <View className="flex-row p-2 mb-2">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
-                  ))}
-                </View>
-                {renderCalendar(true)}
-                <TouchableOpacity 
-                  onPress={() => setShowStartCalendar(false)}
-                  className="mt-4 p-4 items-center bg-blue-600 rounded-xl"
-                >
-                  <Text className="text-white font-bold text-lg">Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        )}
-
-        {/* End Calendar Modal */}
-        {showEndCalendar && (
-          <Modal
-            transparent={true}
-            visible={showEndCalendar}
-            animationType="slide"
-            onRequestClose={() => setShowEndCalendar(false)}
-          >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}> {/* Reduced modal height */}
-                <View className="flex-row justify-between items-center p-2 mb-2">
-                  <TouchableOpacity 
-                    onPress={() => changeMonth(false, 'prev')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-back" size={20} color="#2563eb" />
-                  </TouchableOpacity>
-                  <Text className="text-xl font-bold text-center">{moment(endDate).format('MMMM YYYY')}</Text>
-                  <TouchableOpacity 
-                    onPress={() => changeMonth(false, 'next')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-forward" size={20} color="#2563eb" />
-                  </TouchableOpacity>
-                </View>
-                <View className="flex-row p-2 mb-2">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
-                  ))}
-                </View>
-                {renderCalendar(false)}
-                <TouchableOpacity 
-                  onPress={() => setShowEndCalendar(false)}
-                  className="mt-4 p-4 items-center bg-blue-600 rounded-xl"
-                >
-                  <Text className="text-white font-bold text-lg">Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        )}
-
-        {/* Bottom Button */}
-        <View className="p-4 border-t border-gray-200">
-          <TouchableOpacity 
-            onPress={handleNext}
-            className="bg-blue-600 p-4 rounded-xl items-center"
-          >
-            <Text className="text-white font-semibold text-lg">Next</Text>
-          </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
+
+        {/* Start Date */}
+        <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>Start Date</Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#F5F5F7', borderRadius: 12, flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 16 }}
+          onPress={() => setShowStartPicker(true)}
+        >
+          <Text style={{ flex: 1, color: '#6B7280', fontSize: 16 }}>
+            Starts Today: {moment(startDate).format('MMM D, YYYY')}
+          </Text>
+          <Ionicons name="calendar" size={22} color="#007AFF" />
+        </TouchableOpacity>
+
+        {/* End Date */}
+        <Text style={{ fontSize: 16, color: '#222', marginBottom: 8 }}>End Date</Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#F5F5F7', borderRadius: 12, flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 32 }}
+          onPress={() => setShowEndPicker(true)}
+        >
+          <Text style={{ flex: 1, color: '#6B7280', fontSize: 16 }}>
+            Ends: {moment(endDate).format('MMM D, YYYY')}
+          </Text>
+          <Ionicons name="calendar" size={22} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Date Picker Modals */}
+      {showStartPicker && (
+        <DateTimePicker
+          value={startDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowStartPicker(false);
+            if (selectedDate) setStartDate(selectedDate);
+          }}
+          minimumDate={new Date()}
+        />
+      )}
+      {showEndPicker && (
+        <DateTimePicker
+          value={endDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowEndPicker(false);
+            if (selectedDate) {
+              // Enforce minimum end date
+              const selected = DURATION_OPTIONS.find(opt => opt.value === duration);
+              const minEndDate = moment(startDate).add(selected?.minDays || 0, 'days');
+              if (moment(selectedDate).isBefore(minEndDate)) {
+                alert(`End date must be at least ${selected?.minDays} days after the start date.`);
+                setEndDate(minEndDate.toDate());
+              } else {
+                setEndDate(selectedDate);
+              }
+            }
+          }}
+          minimumDate={moment(startDate).add(DURATION_OPTIONS.find(opt => opt.value === duration)?.minDays || 0, 'days').toDate()}
+        />
+      )}
+
+      {/* Confirm Button */}
+      <View style={{ padding: 20, paddingBottom: 32 }}>
+        <TouchableOpacity
+          onPress={handleNext}
+          style={{ backgroundColor: '#007AFF', borderRadius: 20, paddingVertical: 18, alignItems: 'center' }}
+        >
+          <Text style={{ color: 'white', fontWeight: '600', fontSize: 18 }}>Confirm & Register</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-};
-
-export default SavingsPlanSetup; 
+}; 

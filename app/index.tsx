@@ -1,20 +1,67 @@
-import { View, Text, Image, TouchableOpacity, ImageBackground } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Image, TouchableOpacity, ImageBackground, Dimensions, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useExitAppBackHandler } from './utils/backButtonHandler';
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(true);
+  
+  // Use exit app back handler for main index page
+  useExitAppBackHandler();
 
+  useEffect(() => {
+    let splashTimeout: NodeJS.Timeout | undefined;
+    const checkFirstTime = async () => {
+      try {
+        const phone = await AsyncStorage.getItem('userPhone');
+        if (phone) {
+          router.replace({ pathname: '/login/passcode', params: { phone } });
+          return;
+        }
+      } catch (e) {
+        // Ignore error, show onboarding
+      }
+      setCheckingSession(false);
+      splashTimeout = setTimeout(() => setShowSplash(false), 1800); // Show splash for ~1.8s
+    };
+    checkFirstTime();
+    return () => {
+      if (splashTimeout) clearTimeout(splashTimeout);
+    };
+  }, [router]);
+
+  if (checkingSession || showSplash) {
+    // Responsive splash screen
+    return (
+      <View style={{ flex: 1, backgroundColor: '#e6f0fb', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+        <Image
+          source={require("../assets/images/icon.png")}
+          style={{ width: Dimensions.get('window').width * 0.28, height: Dimensions.get('window').width * 0.28, resizeMode: 'contain' }}
+        />
+      </View>
+    );
+  }
+
+  // Always show onboarding/main content, even if offline
   return (
     <ImageBackground
       source={require("../assets/images/Onboarding1.png")}
       className="flex-1"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        width: '100%',
+        height: '100%'
+      }}
       resizeMode="cover"
     >
       {/* Overlay */}
       <View className="absolute inset-0 bg-[#0072CE] opacity-80" />
-      
       {/* Content */}
       <View className="flex-1">
         {/* Logo */}
@@ -27,7 +74,6 @@ export default function Index() {
           />
           <Text className="text-white text-4xl font-semibold -ml-6">esusu</Text>
         </View>
-
         {/* Main Content */}
         <View className="flex-1 items-center justify-center">
           <Text className="text-white text-3xl font-bold text-center leading-10">
@@ -38,7 +84,6 @@ export default function Index() {
             save securely while earning commissions on every deposit.
           </Text>
         </View>
-
         {/* Buttons */}
         <View className="flex-row justify-between px-6 mb-10 gap-4">
           <Link href="/login" asChild>

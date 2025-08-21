@@ -68,25 +68,42 @@ export const BankProvider = ({ children }: any) => {
     }, [userId]);
 
     const fetchUserBanks = async () => {
-        if (!userId) return;
-        
         setIsLoading(true);
         setError(null);
-        
         try {
-            const bankAccounts = await getUserBankAccounts(userId);
-            setBanks(bankAccounts);
-            
+            const bankAccounts = await getUserBankAccounts();
+            console.log('[BankContext] Raw bank accounts from API:', bankAccounts);
+            // Map the returned data to the expected Bank type
+            const mappedBanks = (bankAccounts || []).map((bank: any) => {
+                console.log('[BankContext] Mapping bank:', bank);
+                // Fallback for missing accountNumber or bankName
+                let accountNumber = bank.accountNumber || '';
+                let bankName = bank.bankName || '';
+                // If bankName is missing but bankCode is present, use bankCode as fallback
+                if (!bankName && bank.bankCode) {
+                  bankName = String(bank.bankCode);
+                }
+                return {
+                    id: bank.id || bank._id,
+                    accountName: bank.accountName || '',
+                    accountNumber,
+                    bankName,
+                    isPrimary: bank.isPrimary,
+                    createdAt: bank.createdAt,
+                };
+            });
+            console.log('[BankContext] Mapped banks:', mappedBanks);
+            setBanks(mappedBanks);
             // Set primary bank ID if any account is marked as primary
-            const primaryBank = bankAccounts.find(bank => bank.isPrimary);
+            const primaryBank = mappedBanks.find(bank => bank.isPrimary);
             if (primaryBank) {
-                setPrimaryBankId(primaryBank.id || null);
+                setPrimaryBankId(primaryBank.id);
+                console.log('[BankContext] Set primary bank ID:', primaryBank.id);
             }
-            
-            console.log("Loaded banks:", bankAccounts);
-        } catch (err) {
-            console.error("Error fetching banks:", err);
-            setError("Could not load your bank accounts");
+        } catch (error) {
+            console.error('[BankContext] Error fetching banks:', error);
+            setError(error instanceof Error ? error.message : 'Failed to fetch banks');
+            setBanks([]);
         } finally {
             setIsLoading(false);
         }

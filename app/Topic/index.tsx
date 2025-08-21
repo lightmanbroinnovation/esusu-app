@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { Ionicons } from '@expo/vector-icons';
 
 interface TopicSection {
     title: string;
@@ -30,6 +33,32 @@ export default function Topic() {
         router.back();
     };
 
+    const [loading, setLoading] = useState(true);
+    const [networkAvailable, setNetworkAvailable] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            setNetworkAvailable(!!state.isConnected);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        setLoading(false);
+    }, []);
+
+    if (loading) {
+        return <EsusuLoader />;
+    }
+
+    if (!networkAvailable && !topicData) {
+        return (
+            <View className="flex-1 justify-center items-center">
+                <Text>No network. Please connect to the internet to load topics.</Text>
+            </View>
+        );
+    }
+
     if (!topicData) {
         return (
             <View className="flex-1 px-4 pt-10 bg-white">
@@ -42,14 +71,12 @@ export default function Topic() {
         <ScrollView className="flex-1 px-4 pt-10 bg-white">
             {/* Header */}
             <View className="flex-row items-center justify-between mt-[2rem]">
-                <TouchableOpacity 
-                    onPress={handlePreviousPage} 
-                    className='bg-[#F2F8FF] h-8 w-8 rounded-full flex items-center justify-center p-3'
-                >
-                    <Image
-                        source={require('../assets/images/back-arrow.png')}
-                    />
-                </TouchableOpacity>
+            <TouchableOpacity
+            className="flex-row items-center"
+            onPress={handlePreviousPage}
+          >
+            <Ionicons name="arrow-back" size={28} />
+          </TouchableOpacity>
                 <Text className="text-lg font-semibold flex-1 text-center mr-8">
                     Help Center
                 </Text>

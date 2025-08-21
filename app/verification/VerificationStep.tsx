@@ -8,6 +8,7 @@ interface VerificationStepProps {
   completed: boolean;
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }
 
 const VerificationStep = ({ 
@@ -15,12 +16,15 @@ const VerificationStep = ({
   description, 
   completed, 
   selected, 
-  onPress 
+  onPress, 
+  disabled = false
 }: VerificationStepProps) => {
   return (
     <TouchableOpacity 
       className="bg-[#F0F8FF] rounded-xl my-2 p-6 relative"
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      activeOpacity={disabled ? 1 : 0.7}
+      disabled={disabled}
     >
       <View className="flex-col space-x-4 justify-center items-center">
         <View className="flex-1 pr-4">
@@ -31,8 +35,7 @@ const VerificationStep = ({
             {description}
           </Text>
         </View>
-        
-        {completed ? (
+        {(completed || disabled) ? (
           <View className="bg-green-100 mt-2 rounded-full w-12 h-12 items-center justify-center">
             <Ionicons name="checkmark" size={24} color="green" />
           </View>

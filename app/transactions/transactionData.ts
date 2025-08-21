@@ -1,29 +1,14 @@
-import { Transaction } from './index';
+import { Transaction } from '../components/types';
 
-// Helper function to create a date string in format MM/DD/YYYY
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric'
-  });
+// Generate realistic timestamps
+const generateCreatedAt = (daysAgo: number, hour: number, minute: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
 };
 
-// Today's date
-const today = new Date();
-const todayString = formatDate(today);
-
-// Yesterday's date
-const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-const yesterdayString = formatDate(yesterday);
-
-// Generate a timestamp string (HH:MM AM/PM)
-const formatTime = (): string => {
-  return '12:03 AM'; // For demo, using fixed time
-};
-
-// Generate dummy transaction data
+// Generate dummy transaction data with realistic timestamps
 export const transactions: Transaction[] = [
   // Today's transactions
   {
@@ -31,24 +16,33 @@ export const transactions: Transaction[] = [
     name: 'Aisha Bello',
     type: 'deposit',
     amount: 5000,
-    timestamp: formatTime(),
-    date: todayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date().toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(0, 0, 3), // Today at 12:03 AM
+    status: 'completed'
   },
   {
     id: '2',
     name: 'Ade Martins',
     type: 'withdrawal',
     amount: 10000,
-    timestamp: formatTime(),
-    date: todayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date().toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(0, 0, 3), // Today at 12:03 AM
+    status: 'completed'
   },
   {
     id: '3',
     name: 'Chioma',
     type: 'account_creation',
     amount: 50,
-    timestamp: formatTime(),
-    date: todayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date().toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(0, 0, 3), // Today at 12:03 AM
+    status: 'completed'
   },
   
   // Yesterday's transactions
@@ -57,31 +51,54 @@ export const transactions: Transaction[] = [
     name: 'Aisha Bello',
     type: 'deposit',
     amount: 5000,
-    timestamp: formatTime(),
-    date: yesterdayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(1, 0, 3), // Yesterday at 12:03 AM
+    status: 'completed'
   },
   {
     id: '5',
     name: 'Ade Martins',
     type: 'withdrawal',
     amount: 10000,
-    timestamp: formatTime(),
-    date: yesterdayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(1, 0, 3), // Yesterday at 12:03 AM
+    status: 'completed'
   },
   {
     id: '6',
     name: 'Chioma',
     type: 'account_creation',
     amount: 50,
-    timestamp: formatTime(),
-    date: yesterdayString
+    timestamp: '12:03 AM',
+    time: '12:03 AM',
+    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleDateString('en-US'),
+    createdAt: generateCreatedAt(1, 0, 3), // Yesterday at 12:03 AM
+    status: 'completed'
   }
 ];
+
+// Function to get transactions for a specific user (simulated)
+export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  console.log(`Getting transactions for user: ${userId}`);
+  console.log('Available transactions:');
+  transactions.forEach(transaction => {
+    console.log(`  - ${transaction.name}: ${transaction.type} of ${transaction.amount}`);
+  });
+  
+  return transactions;
+};
 
 // Export a function to get transactions filtered by date range
 export const getTransactionsByDateRange = (startDate: Date, endDate: Date): Transaction[] => {
   return transactions.filter(transaction => {
-    const transactionDate = new Date(transaction.date);
+    const transactionDate = new Date(transaction.createdAt);
     return transactionDate >= startDate && transactionDate <= endDate;
   });
 }; 

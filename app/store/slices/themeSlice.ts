@@ -25,8 +25,13 @@ const themeSlice = createSlice({
     setPrimaryColor: (state, action: PayloadAction<string>) => {
       state.primaryColor = action.payload;
     },
+    resetTheme: (state) => {
+      state.fontFamily = initialState.fontFamily;
+      state.isDarkMode = initialState.isDarkMode;
+      state.primaryColor = initialState.primaryColor;
+    },
   },
 });
 
-export const { setFontFamily, toggleDarkMode, setPrimaryColor } = themeSlice.actions;
+export const { setFontFamily, toggleDarkMode, setPrimaryColor, resetTheme } = themeSlice.actions;
 export default themeSlice.reducer; 

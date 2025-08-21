@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,151 +9,211 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Dimensions,
+  ScrollView
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { fetchUserByPhone, addPinToUser } from "../../services/api"; // Import the API functions
+
 
 export default function Login() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width, height } = Dimensions.get('window');
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Generate a random 4-digit PIN
-  const generateTemporaryPin = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
+  // Responsive sizing based on screen width
+  const getResponsiveSize = (baseSize: number) => {
+    if (width < 375) {
+      return baseSize * 0.9; // Small phones
+    } else if (width < 414) {
+      return baseSize; // Medium phones
+    } else {
+      return baseSize * 1.1; // Large phones and tablets
+    }
   };
 
-  const handleContinue = async () => {
-    // Validate phone number
-    if (!phone || phone.length < 10) {
-      setError("Please enter a valid phone number");
-      return;
-    }
 
+
+  const handleContinue = async () => {
+    console.log("[Login] handleContinue called with:", loginMethod === 'phone' ? phone : email);
+    
+    if (loginMethod === 'phone') {
+      // Validate phone number (must be 11 digits)
+      if (!phone || phone.length !== 11) {
+        setError("Please enter a valid 11-digit phone number");
+        return;
+      }
+    } else {
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        setError("Please enter a valid email address");
+        return;
+      }
+    }
+    
     setLoading(true);
     setError("");
-
     try {
-      const userData = await fetchUserByPhone(phone);
-      let userWithPin = userData;
-      
-      // If user doesn't have a PIN, generate a temporary one and update the user
-      if (!userData.pin) {
-        try {
-          const tempPin = generateTemporaryPin();
-          Alert.alert(
-            "Temporary PIN Generated",
-            `A temporary PIN (${tempPin}) has been generated for your account. Please use it to login and change it in your profile settings.`,
-            [{ text: "OK" }]
-          );
-          
-          // Try to update the user with the new PIN
-          userWithPin = await addPinToUser(userData.id, tempPin);
-        } catch (pinError) {
-          console.error("Error adding PIN:", pinError);
-          // Even if updating fails, we can still proceed with the temporary PIN
-          userWithPin = { ...userData, pin: generateTemporaryPin() };
-        }
-      }
-      
-      // Navigate to passcode screen with user data
+      console.log("[Login] Navigating to passcode with:", loginMethod === 'phone' ? phone : email);
+      // Navigate to passcode screen, pass phone or email as param
       router.push({
         pathname: "/login/passcode",
         params: { 
-          phone, 
-          userId: userWithPin.id,
-          pin: userWithPin.pin // Pass the user's PIN for verification
+          [loginMethod]: loginMethod === 'phone' ? phone : email,
+          loginMethod 
         }
       });
-    } catch (error: any) {
-      console.error("Login error:", error);
-      if (error.message && error.message.includes("User not found")) {
-        setError("User not found. Please register an account.");
-      } else {
-        setError("An error occurred. Please try again.");
-      }
+      console.log("[Login] Navigation to passcode attempted");
+    } catch (error) {
+      console.error("[Login] Navigation error:", error);
+      setError("An error occurred. Please try again.");
+      Alert.alert("Navigation Error", "Failed to navigate to passcode screen. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleLoginMethod = () => {
+    setLoginMethod(loginMethod === 'phone' ? 'email' : 'phone');
+    setPhone("");
+    setEmail("");
+    setError("");
+  };
+
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView 
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
     >
       <View
         className="flex-1 bg-white px-6"
         style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+            paddingTop: insets.top + getResponsiveSize(16),
+            paddingBottom: insets.bottom + getResponsiveSize(16),
+            paddingHorizontal: getResponsiveSize(24),
         }}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-2">
+          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
           <TouchableOpacity
             className="flex-row items-center"
             onPress={() => router.replace('/')}
+              style={{ padding: getResponsiveSize(8) }}
           >
-            <Ionicons name="arrow-back" size={28} />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
           </TouchableOpacity>
         </View>
         
-        <View className="mt-6">
-          <Text className="text-2xl font-bold text-[#0072CE] mb-2">
+          <View style={{ marginTop: getResponsiveSize(24) }}>
+            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
             Welcome Back!
           </Text>
-          <Text className="text-base text-[#4F4F4F]">
+            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
             Log in to manage savings, track earnings, and grow your business.
           </Text>
         </View>
 
         {/* Input */}
-        <View className="mt-8">
-          <Text className="text-sm text-[#4F4F4F] mb-1">Phone Number</Text>
-          <View className="flex-row items-center">
-            {/* NG Flag + Code */}
-            <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
-              <Image
-                source={{ uri: "https://flagcdn.com/w40/ng.png" }}
+        <View style={{ marginTop: getResponsiveSize(32) }}>
+          <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>
+            {loginMethod === 'phone' ? 'Phone Number' : 'Email Address'}
+          </Text>
+          
+          {loginMethod === 'phone' ? (
+            <View className="flex-row items-center">
+              {/* NG Flag + Code */}
+              <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]" style={{
+                paddingHorizontal: getResponsiveSize(12),
+                paddingVertical: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8)
+              }}>
+                <Image
+                  source={{ uri: "https://flagcdn.com/w40/ng.png" }}
+                  style={{
+                    width: getResponsiveSize(24),
+                    height: getResponsiveSize(18),
+                    borderRadius: 2,
+                    marginRight: getResponsiveSize(6),
+                  }}
+                />
+                <Text className="text-base text-[#BDBDBD]" style={{ fontSize: getResponsiveSize(16) }}>
+                  NGN
+                </Text>
+              </View>
+
+              {/* Phone input */}
+              <TextInput
+                placeholder="Enter phone number"
+                keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  setError("");
+                  console.log("[Login] User entered phone:", text);
+                }}
+                className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                placeholderTextColor="#BDBDBD"
                 style={{
-                  width: 24,
-                  height: 18,
-                  borderRadius: 2,
-                  marginRight: 6,
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
                 }}
               />
-              <Text className="text-base text-[#BDBDBD]">
-                NGN
-              </Text>
             </View>
-
-            {/* Phone input */}
+          ) : (
+            /* Email input */
             <TextInput
-              placeholder="Enter phone number"
-              keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
-              value={phone}
+              placeholder="Enter email address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
               onChangeText={(text) => {
-                setPhone(text);
+                setEmail(text);
                 setError("");
+                console.log("[Login] User entered email:", text);
               }}
-              className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholderTextColor="#BDBDBD"
+              style={{
+                paddingHorizontal: getResponsiveSize(12),
+                paddingVertical: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8),
+                fontSize: getResponsiveSize(16)
+              }}
             />
-          </View>
+          )}
           
           {/* Error message */}
           {error ? (
-            <Text className="text-red-500 mt-2">{error}</Text>
+            <Text className="text-red-500 mt-2" style={{ fontSize: getResponsiveSize(14) }}>{error}</Text>
           ) : null}
         </View>
         
+        {/* Dynamic sign in method text */}
+        <TouchableOpacity onPress={toggleLoginMethod}>
+          <Text className="text-[#0072CE] mt-4 mb-2 text-center font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+            {loginMethod === 'phone' ? 'Sign in with email' : 'Sign in with phone number'}
+          </Text>
+        </TouchableOpacity>
+        
         {/* Sign up text */}
-        <Text className="text-[#4F4F4F] my-2">
+          <Text className="text-[#4F4F4F] my-2" style={{ fontSize: getResponsiveSize(14) }}>
           Don't have an account?{" "}
           <Text 
             className="text-[#0072CE] font-semibold"
@@ -164,26 +224,32 @@ export default function Login() {
         </Text>
 
         {/* Spacer to push button down */}
-        <View className="flex-1 justify-end pb-4">
+          <View className="flex-1 justify-end" style={{ paddingBottom: getResponsiveSize(16) }}>
           {/* Continue Button */}
           <TouchableOpacity
             className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
             onPress={handleContinue}
             disabled={loading}
+              style={{
+                paddingVertical: getResponsiveSize(16),
+                borderRadius: getResponsiveSize(8),
+                opacity: loading ? 0.7 : 1
+              }}
           >
             {loading ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>
-                <Text className="text-white text-lg mr-2 font-semibold">
+                  <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>
                   Continue
                 </Text>
-                <MaterialIcons name="arrow-forward" size={18} color="white" />
+                  <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
               </>
             )}
           </TouchableOpacity>
         </View>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

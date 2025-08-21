@@ -14,16 +14,24 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { fetchUserByPhone } from "../../services/api"; // Import API function
+import { getOtpByPhone } from "../../services/api";
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function ResetPasscode() {
   const router = useRouter();
+  
+  // Use back button handler for reset page
+  useBackButtonHandler('/reset');
+  
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState(params.phone as string || "");
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false); // State to track keyboard visibility
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [networkAvailable, setNetworkAvailable] = useState(true);
 
   useEffect(() => {
     // Add event listeners for keyboard show and hide
@@ -41,6 +49,13 @@ export default function ResetPasscode() {
     };
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleContinue = async () => {
     // Validate phone
     if (!phone || phone.length < 10) {
@@ -52,41 +67,52 @@ export default function ResetPasscode() {
     setError("");
 
     try {
-      // Check if user exists
-      const user = await fetchUserByPhone(phone);
-      
-      // Use user's PIN as OTP or generate a 4-digit OTP
-      let otp;
-      if (user.pin) {
-        // Use existing PIN as OTP for demo
-        otp = user.pin;
-      } else {
-        // Generate 4-digit OTP
-        otp = Math.floor(1000 + Math.random() * 9000).toString();
+      // Send POST request to getOtp endpoint
+      const res = await fetch('https://esusu-server.onrender.com/api/merchant/getOtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: phone })
+      });
+      let data = null;
+      let text = '';
+      try {
+        text = await res.text();
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        console.error('JSON parse error:', jsonErr, 'Response text:', text);
+        setError('Server error: Invalid response format.');
+        setLoading(false);
+        return;
       }
-      
-      console.log("OTP generated:", otp); // In real app, this would be sent via SMS
-      
-      // Proceed to OTP verification step
+      console.log('getOtp response:', data);
+      // Navigate to OTP page, passing phone as param
       router.push({
         pathname: "/reset/otp",
-        params: {
-          phone,
-          userId: user.id,
-          otp, // In production, don't pass OTP in params
-        }
+        params: { phone }
       });
     } catch (error: any) {
       console.error("Reset error:", error);
-      if (error.message && error.message.includes("User not found")) {
-        setError("User not found. Please register an account.");
-      } else {
-        setError("An error occurred. Please try again.");
-      }
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handlePreviousPage = () => {
+    router.replace('/login');
+  }
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  if (!networkAvailable && !phone) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text>No network. Please connect to the internet to load reset page.</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -101,14 +127,14 @@ export default function ResetPasscode() {
         }}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+        <View className="flex-row justify-between items-center mt-4">
           <TouchableOpacity
             className="flex-row items-center"
-            onPress={() => router.back()}
+            onPress={handlePreviousPage}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="font-semibold">Step 1 of 3</Text>
+          <Text className="font-semibold text-lg flex-1 text-center"></Text>
         </View>
 
         <View className="mt-8">

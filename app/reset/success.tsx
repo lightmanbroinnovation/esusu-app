@@ -3,22 +3,22 @@ export const options = {
 };
 
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function SuccessScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  
+  // Use back button handler for reset success page
+  useBackButtonHandler('/reset/success');
+  
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   
-  // Get phone from params for login
-  const phone = params.phone as string;
-
   const handleGoToLogin = () => {
     // Show success notification
     dispatch(addNotification({
@@ -26,45 +26,107 @@ export default function SuccessScreen() {
       title: 'Passcode Reset Complete',
       body: 'Your passcode has been reset successfully. Please log in with your new passcode.'
     }));
-
     // Replace the entire navigation stack with the login screen
-    // This prevents users from going back to the reset flow
-    router.replace({
-      pathname: "/login",
-      params: { phone }
-    });
+    router.replace("/login");
   };
 
+  const { width, height } = Dimensions.get('window');
   return (
-    <View
-      className="flex-1 bg-white px-6 items-center justify-center"
-      style={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }}
-    >
-      {/* Success animation or icon */}
-      <View className="items-center mb-8">
-        <MaterialIcons name="check-circle" size={120} color="#0072CE" />
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}> 
+      {/* Confetti background as image */}
+      <Image
+        source={require('../assets/images/success.png')}
+        style={styles.confettiBg}
+        resizeMode="contain"
+      />
+      {/* Checkmark in green circle as image */}
+      <View style={styles.checkContainer}>
+        <Image
+          source={require('../assets/images/check.png')}
+          style={styles.checkImage}
+          resizeMode="contain"
+        />
       </View>
-
-      {/* Success message */}
-      <Text className="text-2xl font-bold text-primaryText text-center mb-4">
-        Passcode Reset Successfully!
-      </Text>
-      <Text className="text-base text-gray-600 text-center mb-12">
+      {/* Title */}
+      <Text style={styles.successTitle}>Passcode Reset Successfully!</Text>
+      {/* Subtitle (dynamic) */}
+      <Text style={styles.successSubtitle}>
         Your passcode has been reset successfully. You can now log in with your new passcode.
       </Text>
-
-      {/* Go to login button */}
-      <TouchableOpacity
-        className="bg-[#0072CE] w-full py-4 rounded-lg"
-        onPress={handleGoToLogin}
-      >
-        <Text className="text-white text-center font-semibold text-lg">
-          Go to Login
-        </Text>
+      {/* Go to Login Button */}
+      <TouchableOpacity style={styles.button} onPress={handleGoToLogin}>
+        <Text style={styles.buttonText}>Go to Login</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  confettiBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
+  },
+  checkContainer: {
+    marginTop: 120,
+    marginBottom: 32,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+    alignSelf: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkImage: {
+    width: 140,
+    height: 140,
+  },
+  successTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#0A369D',
+    marginBottom: 12,
+    textAlign: 'center',
+    marginTop: 12,
+    zIndex: 2,
+  },
+  successSubtitle: {
+    fontSize: 18,
+    color: '#22223B',
+    textAlign: 'center',
+    marginHorizontal: 24,
+    marginBottom: 40,
+    fontWeight: '400',
+    zIndex: 2,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    width: '85%',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 32,
+    position: 'absolute',
+    bottom: 40,
+    left: '7.5%',
+    zIndex: 2,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+});

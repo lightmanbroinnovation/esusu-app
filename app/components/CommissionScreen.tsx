@@ -5,17 +5,21 @@ import {
   SafeAreaView, 
   TouchableOpacity, 
   Image,
+  ImageBackground,
   ScrollView,
   Modal,
   ActivityIndicator,
-  Alert
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Footer from './Footer';
-import { fetchCommissions, fetchUser } from '../../services/api'; // Import the fetchUser function
+import { fetchAccountCommission } from '../../services/api'; // Import the new API function
 import StatusBarAdapter from './StatusBarAdapter';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from './EsusuLoader';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
+// TODO: Replace with Moti Skeleton
 
 // Define the CommissionTransaction type
 interface CommissionTransaction {
@@ -41,166 +45,121 @@ interface UserDetails {
   commissions?: CommissionTransaction[];
 }
 
+const fetchCommissionData = async () => {
+  return await fetchAccountCommission();
+};
+
 const CommissionScreen = () => {
   const router = useRouter();
+  
+  // Use back button handler for commission screen
+  useBackButtonHandler('/commission');
+  
   const [showRatesModal, setShowRatesModal] = useState(false);
-  const [commissionTransactions, setCommissionTransactions] = useState<CommissionTransaction[]>([]); // Specify the type
-  const [loading, setLoading] = useState(true); // State to manage loading state
-  const [userId, setUserId] = useState<string | null>(null);
+  const [commission, setCommission] = useState<number>(0);
+  const [commissionHistory, setCommissionHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [settlementAccounts, setSettlementAccounts] = useState<any[]>([]);
+  const [commissionRaw, setCommissionRaw] = useState<number>(0); // for passing
 
-  // Fetch user ID from AsyncStorage
-  useEffect(() => {
-    const getUserId = async () => {
-      try {
-        const storedUserId = await AsyncStorage.getItem('userId');
-        if (!storedUserId) {
-          console.error('User ID not found in AsyncStorage');
-          setError('User ID not found. Please log in again.');
-          return;
-        }
-        
-        setUserId(storedUserId);
-        console.log('Retrieved user ID from storage:', storedUserId);
-      } catch (error) {
-        console.error('Error retrieving user ID:', error);
-        setError('Failed to retrieve user ID');
+  const fetchData = async (fromRefresh = false) => {
+    setLoading(true);
+    setError(null);
+    if (fromRefresh) {
+      await invalidateCache('commission_data');
+    }
+    try {
+      const response = await getCachedData('commission_data', fetchCommissionData);
+      if (response && response.status === 'Success' && response.data) {
+        setCommission(response.data.commission || 0);
+        setCommissionRaw(response.data.commission || 0);
+        setTransactions(Array.isArray(response.data.transactions) ? response.data.transactions : []);
+        setSettlementAccounts(Array.isArray(response.data.settlementAccounts) ? response.data.settlementAccounts : []);
+      } else {
+        setError('Failed to load commission data.');
       }
-    };
-    
-    getUserId();
+    } catch (err: any) {
+      console.error('Commission data fetch error:', err);
+      
+      // Set fallback values to prevent crashes
+      setCommission(0);
+      setCommissionRaw(0);
+      setTransactions([]);
+      setSettlementAccounts([]);
+      
+      // Show user-friendly error message
+      if (err.message) {
+        setError(err.message);
+      } else if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+        setError('Network error - please check your internet connection and try again.');
+      } else {
+        setError('Failed to load commission data. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  // Fetch user details and commissions when userId is available
-  useEffect(() => {
-    if (!userId) return;
-    
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch user details
-        const userData = await fetchUser(userId);
-        setUserDetails(userData);
-        
-        // Get commissions from user data or from dedicated API function
-        const commissions = userData.commissions || await fetchCommissions(userId);
-        setCommissionTransactions(commissions);
-        
-        console.log('User data and commissions fetched successfully');
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        setError("Failed to load data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [userId]);
-
   const handleRetry = () => {
-    if (userId) {
-      // Re-fetch data if userId is available
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          
-          // Fetch user details
-          const userData = await fetchUser(userId);
-          setUserDetails(userData);
-          
-          // Get commissions from user data or from dedicated API function
-          const commissions = userData.commissions || await fetchCommissions(userId);
-          setCommissionTransactions(commissions);
-          
-          console.log('User data and commissions fetched successfully');
-        } catch (error) {
-          console.error("Failed to fetch data:", error);
-          setError("Failed to load data. Please try again.");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    } else {
-      // Retry getting userId from AsyncStorage
-      const getUserId = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const storedUserId = await AsyncStorage.getItem('userId');
-          if (!storedUserId) {
-            setError('User ID not found. Please log in again.');
-            setLoading(false);
-            return;
-          }
-          
-          setUserId(storedUserId);
-        } catch (error) {
-          console.error('Error retrieving user ID:', error);
-          setError('Failed to retrieve user ID. Please try again.');
-          setLoading(false);
-        }
-      };
-      
-      getUserId();
-    }
+    fetchData();
   };
 
   const navigateBack = () => {
     router.back();
   };
-  
+
   const handleWithdraw = () => {
-    router.push('/commission/withdraw' as any);
-  };
-  
-  const viewAllTransactions = () => {
-    router.push('/commission/CommissionTransactions'); // Adjusted to remove transactions from the push
-  };
-
-  // Function to group commissions by date
-  const groupCommissionsByDate = (transactions: CommissionTransaction[]) => {
-    return transactions.reduce((acc, transaction) => {
-      const dateKey = transaction.date; // Use the date as the key
-      if (!acc[dateKey]) {
-        acc[dateKey] = []; // Initialize an array for this date if it doesn't exist
+    router.push({
+      pathname: '/commission/withdraw',
+      params: {
+        commission: commissionRaw,
+        settlementAccounts: JSON.stringify(settlementAccounts)
       }
-      acc[dateKey].push(transaction); // Push the transaction into the corresponding date array
-      return acc;
-    }, {} as Record<string, CommissionTransaction[]>);
+    });
   };
 
-  const groupedCommissions = groupCommissionsByDate(commissionTransactions); // Group the commissions
+  const viewAllTransactions = () => {
+    router.push({
+      pathname: '/commission/CommissionTransactions',
+      params: {
+        transactions: JSON.stringify(transactions)
+      }
+    });
+  };
 
-  // Determine financial values with defaults
-  const balance = userDetails?.balance || 0;
-  const totalDeposit = userDetails?.totalDeposit || 0;
-  const totalWithdraw = userDetails?.totalWithdraw || 0;
-  const weeklyEarnings = userDetails?.weeklyEarnings || 0;
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData(true);
+    setRefreshing(false);
+  };
 
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  // Always render the main layout, even if error
   return (
     <View className="flex-1 bg-white">
-       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-
+      <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       <SafeAreaView className="flex-1">
-        <View className="flex-1 mt-2">
+        <View className="flex-1 mt-4">
           {/* Header */}
           <View className="flex-row items-center justify-between px-4 mb-4">
             <TouchableOpacity 
               onPress={navigateBack}
-              className="bg-gray-100 p-2 rounded-full"
+              className=" p-2 rounded-full"
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            
-            <Text className="text-2xl font-bold">Commission</Text>
-            
+            <Text className="text-lg font-bold">Commission</Text>
             <TouchableOpacity 
               className="bg-gray-100 p-2 rounded-full"
               onPress={() => setShowRatesModal(true)}
@@ -208,60 +167,75 @@ const CommissionScreen = () => {
               <Ionicons name="help-circle-outline" size={24} color="#000" />
             </TouchableOpacity>
           </View>
-          
-          {loading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator size="large" color="#0052CC" />
-              <Text className="mt-4 text-gray-600">Loading your commission data...</Text>
-            </View>
-          ) : error ? (
-            <View className="flex-1 items-center justify-center px-4">
-              <Text className="text-red-500 text-center mb-4">{error}</Text>
+          {/* Show error as a banner, not as a full screen */}
+          {error && (
+            <View className="mx-4 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <View className="flex-row items-center mb-2">
+                <Ionicons name="alert-circle-outline" size={20} color="#DC2626" />
+                <Text className="text-red-800 font-medium ml-2">Connection Error</Text>
+              </View>
+              <Text className="text-red-700 text-sm mb-3">{error}</Text>
               <TouchableOpacity 
                 onPress={handleRetry}
-                className="bg-blue-600 px-6 py-2 rounded-md"
+                className="bg-red-600 px-4 py-2 rounded-md self-start"
               >
-                <Text className="text-white font-semibold">Retry</Text>
+                <Text className="text-white font-semibold text-sm">Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <ScrollView 
-              className="flex-1"
-              showsVerticalScrollIndicator={false}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 0 }} // Add padding for footer
+          )}
+          <ScrollView 
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 0 }}
+          >
+            {/* Commission Card */}
+            <ImageBackground
+              source={require('../../assets/images/Onboarding1.png')}
+              style={{
+                marginHorizontal: 16,
+                borderRadius: 24,
+                overflow: 'hidden',
+                minHeight: 200
+              }}
+              imageStyle={{
+                opacity: 0.3,
+                borderRadius: 24
+              }}
+              resizeMode="cover"
             >
-              {/* Commission Card */}
-              <View className="bg-blue-600 mx-4 rounded-xl p-6">
+              <View className="bg-blue-600 p-6" style={{ minHeight: 200 }}>
+                {/* Content */}
+                <View style={{ position: 'relative' }}>
                 {/* Profile Image and Balance */}
                 <View className="items-center mb-4">
                   <View className="w-20 h-20 rounded-full bg-blue-300 items-center justify-center mb-3">
                     <Image 
-                      source={userDetails?.userImg ? { uri: userDetails.userImg } : require('../../assets/images/icon.png')}
+                      source={require('../../assets/images/icon.png')}
                       className="w-16 h-16 rounded-full"
                     />
                   </View>
                   <Text className="text-white text-sm">Your available balance is</Text>
-                  <Text className="text-white text-3xl font-bold">₦{balance.toLocaleString()}</Text>
-                  
+                  <Text className="text-white text-3xl font-bold">₦{commission ? commission.toLocaleString() : '--'}</Text>
                   {/* Earned this week tag */}
                   <View className="flex-row bg-white/20 rounded-full px-3 py-1 mt-2">
-                    <Text className="text-white">+₦{weeklyEarnings.toLocaleString()}</Text>
+                    <Text className="text-white">+₦{commission ? commission.toLocaleString() : '--'}</Text>
                     <Text className="text-white ml-1">earned this week!</Text>
                   </View>
                 </View>
                 
                 {/* Total deposits and withdrawals */}
-                <View className="flex-row justify-between mb-4">
+                {/* <View className="flex-row justify-between mb-4">
                   <View>
                     <Text className="text-white/80 text-sm">Total deposits done</Text>
-                    <Text className="text-white font-medium">₦{totalDeposit.toLocaleString()}</Text>
+                    <Text className="text-white font-medium">₦{commission.toLocaleString()}</Text>
                   </View>
                   <View>
                     <Text className="text-white/80 text-sm">Total withdraw done</Text>
-                    <Text className="text-white font-medium">₦{totalWithdraw.toLocaleString()}</Text>
+                    <Text className="text-white font-medium">₦{commission.toLocaleString()}</Text>
                   </View>
-                </View>
+                </View> */}
                 
                 {/* Withdraw Button */}
                 <TouchableOpacity 
@@ -272,48 +246,54 @@ const CommissionScreen = () => {
                 </TouchableOpacity>
                 
                 {/* Commission payout notice */}
-                <Text className="text-white/80 text-sm text-center mt-3">
+                {/* <Text className="text-white/80 text-sm text-center mt-3">
                   Your commission will be paid out every Friday
+                </Text> */}
+              </View>
+            </View>
+            </ImageBackground>
+            
+            <View className="mx-4 mt-6">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-gray-500">Recents</Text>
+                <TouchableOpacity onPress={viewAllTransactions}>
+                  <Text className="text-blue-600">View all</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* Display latest 3 transactions as recents */}
+            {transactions.length === 0 ? (
+              <View className="bg-white py-10 rounded-xl mt-2">
+                <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
+                <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+                  It looks like you haven't made any commission transactions yet.
                 </Text>
               </View>
-              
-              <View className="mx-4 mt-6">
-                <View className="flex-row justify-between items-center mb-4">
-                  <Text className="text-gray-500">Recents</Text>
-                  <TouchableOpacity onPress={viewAllTransactions}>
-                    <Text className="text-blue-600">View all</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              
-              {/* Grouped Transactions */}
-              {commissionTransactions.length === 0 ? (
-                <View className="bg-white py-10 rounded-xl mt-2">
-                  <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
-                  <Text className="text-gray-400 text-sm text-center mt-2 px-4">
-                    It looks like you haven't made any commission transactions yet.
-                  </Text>
-                </View>
-              ) : (
-                Object.entries(groupedCommissions).map(([date, transactions]) => (
-                  <View key={date} className="mx-4 mt-2">
-                    <Text className="text-gray-500 mb-4">{date}</Text>
-                    {transactions.map((transaction) => (
-                      <View key={transaction.id} className="mb-4">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="font-medium">{transaction.type}</Text>
-                          <Text className={`font-semibold ${transaction.type === 'Withdrawn' ? 'text-red-600' : 'text-green-600'}`}>
-                            {transaction.amount > 0 ? `₦${transaction.amount.toLocaleString()}` : `-₦${Math.abs(transaction.amount).toLocaleString()}`}
-                          </Text>
-                        </View>
-                        <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
-                      </View>
-                    ))}
+            ) : (
+              transactions.slice(0, 3).map((transaction: any) => {
+                const title = (transaction.title || '').trim().toLowerCase();
+                const isDebit = title === 'debit';
+                const isCredit = title === 'credit';
+                return (
+                  <View key={transaction._id || transaction.id} className="mx-4 mt-2 mb-2">
+                    <View className="flex-row justify-between items-center">
+                      <Text className="font-medium">{transaction.description || transaction.type}</Text>
+                      <Text
+                        className={`font-semibold ${isDebit ? 'text-red-600' : isCredit ? 'text-green-600' : 'text-gray-600'}`}
+                      >
+                        {isDebit
+                          ? `-₦${Math.abs(transaction.amount).toLocaleString()}`
+                          : isCredit
+                          ? `+₦${transaction.amount.toLocaleString()}`
+                          : `₦${transaction.amount.toLocaleString()}`}
+                      </Text>
+                    </View>
+                    <Text className="text-gray-500 text-sm">{transaction.date || transaction.createdAt} {transaction.time || ''}</Text>
                   </View>
-                ))
-              )}
-            </ScrollView>
-          )}
+                );
+              })
+            )}
+          </ScrollView>
         </View>
         <Footer />
       </SafeAreaView>

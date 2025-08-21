@@ -8,7 +8,7 @@ interface TransactionItemProps {
 }
 
 const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress }) => {
-  const { name, type, amount, timestamp } = transaction;
+  const { name, type, amount, time } = transaction;
   
   // Format the amount with the Nigerian Naira symbol (₦)
   const formattedAmount = () => {
@@ -18,11 +18,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
     if (type === 'withdrawal') {
       return `-${nairaSymbol}${Math.abs(amount).toLocaleString()}`;
     }
-    // For deposits, show a positive amount with Naira symbol
-    else if (type === 'deposit') {
-      return `${nairaSymbol}${amount.toLocaleString()}`;
-    }
-    // For account creations, show the commission amount
+    // For deposits and other transactions, show a positive amount with Naira symbol
     else {
       return `${nairaSymbol}${amount.toLocaleString()}`;
     }
@@ -37,40 +33,35 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
   
   const getTransactionSubtitle = () => {
     if (type === 'deposit') {
-      return `Deposit at ${timestamp}`;
+      return `Deposit at ${time}`;
     } else if (type === 'withdrawal') {
-      return `Withdrawal at ${timestamp}`;
+      return `Withdrawal at ${time}`;
+    } else if (type === 'account_creation') {
+      return `for ${name} at ${time}`;
     } else {
-      return `for ${name} at ${timestamp}`;
+      return `${type} at ${time}`;
     }
   };
   
   // Determine text color based on transaction type
   const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
   
-  // Platform specific styling to ensure consistent rendering
-  const containerClass = Platform.OS === 'web' 
-    ? 'flex-row justify-between items-center py-4 border-b border-gray-100' 
-    : 'flex-row justify-between items-center py-4 border-b border-gray-200';
-  
   return (
     <TouchableOpacity 
-      className={containerClass}
+      className="flex-row justify-between items-center py-4 px-4 bg-white border-b border-gray-100"
       onPress={onPress}
-      style={{ 
-        marginBottom: 2, // Ensure some space between items on all platforms
-      }}
+      activeOpacity={0.7}
     >
       <View className="flex-1 pr-4">
         <Text 
-          className="text-base font-semibold text-gray-800"
+          className="text-base font-semibold text-gray-800 mb-1"
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {getTransactionTitle()}
         </Text>
         <Text 
-          className="text-gray-500 text-sm"
+          className="text-sm text-gray-500"
           numberOfLines={1}
         >
           {getTransactionSubtitle()}

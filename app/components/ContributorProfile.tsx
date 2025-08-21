@@ -12,10 +12,14 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { fetchContributors, fetchContributorTransactions } from '../../services/api';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { fetchContributors, fetchContributorTransactions, fetchContributorById } from '../../services/api';
 import { Contributor } from '../contributors/ContributorsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from './EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 
 // Define Transaction interface
 interface Transaction {
@@ -39,22 +43,31 @@ interface ContributorProfileProps {
   status?: string;
 }
 
-const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName: propLastName, imageUrl: propImageUrl }: ContributorProfileProps) => {
+export default function ContributorProfile() {
+  const [contributorData, setContributorData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('ContributorProfile', 15);
+
   const router = useRouter();
+  const params = useLocalSearchParams();
   
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [contributor, setContributor] = useState<Contributor | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
   
   // Use props or fallback to API data
   const displayName = contributor ? 
     `${contributor.firstName} ${contributor.lastName}` : 
-    (propFirstName && propLastName) ? 
-    `${propFirstName} ${propLastName}` : 
+    (params.firstName && params.lastName) ? 
+    `${params.firstName} ${params.lastName}` : 
     'Contributor';
   
   // Ensure we have a valid URL for the image
@@ -79,12 +92,12 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
   };
   
   // Process the image URI to ensure it's valid
-  const imageSource = getValidImageUri(propImageUrl || contributor?.photoUri);
+  const imageSource = getValidImageUri(params.imageUrl as string || contributor?.photoUri);
 
   // Generate initials for the fallback avatar
   const getInitials = () => {
-    const first = propFirstName || contributor?.firstName || '';
-    const last = propLastName || contributor?.lastName || '';
+    const first = params.firstName as string || contributor?.firstName || '';
+    const last = params.lastName as string || contributor?.lastName || '';
     
     const firstInitial = first.length > 0 ? first[0].toUpperCase() : '';
     const lastInitial = last.length > 0 ? last[0].toUpperCase() : '';
@@ -94,7 +107,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
 
   // Get a random background color based on the contributor's name
   const getAvatarColor = () => {
-    const name = `${propFirstName || contributor?.firstName || ''}${propLastName || contributor?.lastName || ''}`;
+    const name = `${params.firstName as string || contributor?.firstName || ''}${params.lastName as string || contributor?.lastName || ''}`;
     if (!name) return '#3b82f6'; // Default blue if no name
     
     // Generate a consistent color based on name
@@ -117,99 +130,73 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
     console.log('Using image source:', JSON.stringify(imageSource));
   }, [imageSource]);
 
-  useEffect(() => {
-    const getContributorData = async () => {
-      try {
-        // If we already have first name, last name, and image from props,
-        // we can skip the API call or set loading to false
-        if (propFirstName && propLastName && propImageUrl) {
-          setLoading(false);
-          // We can still fetch the other details in the background
-        }
-        
-        // First, try to get contributor data from AsyncStorage
-        try {
-          const storedContributorData = await AsyncStorage.getItem('selectedContributor');
-          if (storedContributorData) {
-            const parsedData = JSON.parse(storedContributorData);
-            if (parsedData && parsedData.id === contributorId) {
-              console.log('Found contributor data in storage:', parsedData.id);
-              setContributor(parsedData);
-              setLoading(false);
-              return; // We have the data, no need to fetch from API
-            }
-          }
-        } catch (storageError) {
-          console.error('Error reading from AsyncStorage:', storageError);
-          // Continue to API call if AsyncStorage fails
-        }
-        
-        // Get userId from AsyncStorage
-        const userId = await AsyncStorage.getItem('userId');
-        if (!userId) {
-          console.error('User ID not found in AsyncStorage');
-          if (!(propFirstName && propLastName)) {
-            setError('User ID not found. Please log in again.');
-          }
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Fetching contributors using user ID:', userId);
-        
-        // Fetch all contributors 
-        const contributors = await fetchContributors(userId);
-        // Find the selected contributor by ID
-        const selectedContributor = contributors.find(
-          (c: Contributor) => c.id === contributorId
-        );
-        
-        if (selectedContributor) {
-          setContributor(selectedContributor);
-          
-          // Save to AsyncStorage for future use
-          try {
-            await AsyncStorage.setItem('selectedContributor', JSON.stringify(selectedContributor));
-          } catch (saveError) {
-            console.error('Error saving contributor to AsyncStorage:', saveError);
-            // Continue anyway, this is just a cache optimization
-          }
-        } else {
-          // Only show error if we don't have prop data to display
-          if (!(propFirstName && propLastName)) {
-            setError("Contributor not found");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching contributor:", err);
-        // Only show error if we don't have prop data to display
-        if (!(propFirstName && propLastName)) {
-          setError("Failed to load contributor data");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (contributorId) {
-      getContributorData();
-    } else {
-      // Only show error if we don't have prop data to display
-      if (!(propFirstName && propLastName)) {
-        setError("No contributor ID provided");
-      }
-      setLoading(false);
+  const fetchData = async (fromRefresh = false) => {
+    // Check if we can fetch data
+    if (!fromRefresh && !fetchGuard.canFetch()) {
+      console.log('🚨 Data fetch blocked by guard');
+      return;
     }
-  }, [contributorId, propFirstName, propLastName, propImageUrl]);
+
+    // Check render guard
+    if (!renderGuard.checkRender()) {
+      console.log('🚨 Render blocked by guard');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    let cacheData = null;
+    
+    try {
+      const cached = await AsyncStorage.getItem('contributor_profile');
+      if (cached) {
+        cacheData = JSON.parse(cached);
+        setContributorData(cacheData);
+      }
+    } catch {}
+    
+    if (!networkAvailable && cacheData) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    if (fromRefresh) {
+      await invalidateCache('contributor_profile');
+    }
+    
+    try {
+      // Record the fetch attempt
+      fetchGuard.recordFetch();
+      
+      const data = await getCachedData('contributor_profile', () => fetchContributorById(params.contributorId as string));
+      setContributorData(data);
+    } catch (err) {
+      if (!cacheData) {
+        setError('Failed to load contributor profile');
+        setContributorData(null);
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch data once on mount
+    if (!fetchGuard.isInitialized()) {
+      fetchData();
+    }
+  }, []);
 
   // Fetch transactions for the contributor
   useEffect(() => {
     const getTransactions = async () => {
-      if (!contributorId) return;
+      if (!params.contributorId) return;
       
       setTransactionsLoading(true);
       try {
-        const transactionData = await fetchContributorTransactions(contributorId);
+        const transactionData = await fetchContributorTransactions(params.contributorId);
         setTransactions(transactionData);
       } catch (err) {
         console.error("Error fetching transactions:", err);
@@ -219,7 +206,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
     };
 
     getTransactions();
-  }, [contributorId]);
+  }, [params.contributorId]);
 
   const navigateBack = () => {
   router.push('/dashboard');
@@ -229,7 +216,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
     router.push({
       pathname: '/contributor/transactions',
       params: { 
-        contributorId,
+        contributorId: params.contributorId,
         contributorName: displayName
       }
     });
@@ -328,7 +315,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
   };
 
   // Loading state
-  if (loading && !(propFirstName && propLastName)) {
+  if (loading && !(params.firstName && params.lastName)) {
     return (
       <SafeAreaView className="flex-1 bg-white justify-center items-center">
         <ActivityIndicator size="large" color="#0066FF" />
@@ -338,7 +325,7 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
   }
 
   // Error state
-  if (error && !(propFirstName && propLastName)) {
+  if (error && !(params.firstName && params.lastName)) {
     return (
       <SafeAreaView className="flex-1 bg-white justify-center items-center">
         <Ionicons name="alert-circle" size={48} color="red" />
@@ -354,9 +341,9 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
   }
 
   // Create a merged data object that uses props when available and falls back to API data
-  const contributorData = {
-    firstName: propFirstName || contributor?.firstName || '',
-    lastName: propLastName || contributor?.lastName || '',
+  const mergedContributorData = {
+    firstName: params.firstName || contributor?.firstName || '',
+    lastName: params.lastName || contributor?.lastName || '',
     photoUri: typeof imageSource === 'string' ? imageSource : imageSource?.uri,
     depositAmount: contributor?.depositAmount || 0,
     startDate: contributor?.startDate || new Date().toISOString(),
@@ -382,43 +369,63 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
 
         <ScrollView className="flex-1">
           {/* Profile Card */}
-          <View className="bg-blue-600 rounded-xl p-4">
-            {/* Profile Image and Balance */}
-            <View className="items-center mb-4">
-              {imageSource ? (
-                <Image
-                  source={imageSource}
-                  className="w-20 h-20 rounded-full"
-                  onError={(e) => {
-                    console.error('Error loading image:', e.nativeEvent.error);
-                    setImageLoadError(true);
-                  }}
-                />
-              ) : (
-                <View 
-                  className="w-20 h-20 rounded-full items-center justify-center"
-                  style={{ backgroundColor: getAvatarColor() }}
-                >
-                  <Text className="text-white text-xl font-bold">{getInitials()}</Text>
-                </View>
-              )}
-              <Text className="text-white text-sm mt-2">Total Contributions Made</Text>
-              <Text className="text-white text-3xl font-bold">₦{contributorData.depositAmount}</Text>
-            </View>
+          <View className="bg-blue-600 rounded-xl p-4 relative overflow-hidden">
+            {/* Background Image */}
+            <Image
+              source={require('../../assets/images/Onboarding1.png')}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+                opacity: 0.3,
+                borderRadius: 12
+              }}
+              resizeMode="cover"
+            />
             
-            {/* Action Buttons */}
-            <View className="flex-row justify-between">
-              <TouchableOpacity onPress={handleDeposit} className="bg-black rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 mr-2">
-                <Ionicons name="add-circle" size={20} color="white" />
-                <Text className="text-white ml-2">Deposit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className="bg-white rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 ml-2"
-                onPress={handleWithdraw}
-              >
-                <Ionicons name="remove-circle-outline" size={20} color="#0066FF" />
-                <Text className="text-blue-600 ml-2">Withdraw</Text>
-              </TouchableOpacity>
+            {/* Content */}
+            <View style={{ zIndex: 1 }}>
+              {/* Profile Image and Balance */}
+              <View className="items-center mb-4">
+                {imageSource ? (
+                  <Image
+                    source={imageSource}
+                    className="w-20 h-20 rounded-full"
+                    onError={(e) => {
+                      console.error('Error loading image:', e.nativeEvent.error);
+                      setImageLoadError(true);
+                    }}
+                  />
+                ) : (
+                  <View 
+                    className="w-20 h-20 rounded-full items-center justify-center"
+                    style={{ backgroundColor: getAvatarColor() }}
+                  >
+                    <Text className="text-white text-xl font-bold">{getInitials()}</Text>
+                  </View>
+                )}
+                <Text className="text-white text-sm mt-2">Total Contributions Made</Text>
+                <Text className="text-white text-3xl font-bold">₦{mergedContributorData.depositAmount}</Text>
+              </View>
+              
+              {/* Action Buttons */}
+              <View className="flex-row justify-between">
+                <TouchableOpacity onPress={handleDeposit} className="bg-black rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 mr-2">
+                  <Ionicons name="add-circle" size={20} color="white" />
+                  <Text className="text-white ml-2">Deposit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  className="bg-white rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 ml-2"
+                  onPress={handleWithdraw}
+                >
+                  <Ionicons name="remove-circle-outline" size={20} color="#0066FF" />
+                  <Text className="text-blue-600 ml-2">Withdraw</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
           
@@ -436,23 +443,23 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Start Date</Text>
-                <Text className="font-medium">{formatDate(contributorData.startDate)}</Text>
+                <Text className="font-medium">{formatDate(mergedContributorData.startDate)}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">End Date</Text>
-                <Text className="font-medium">{formatDate(contributorData.endDate)}</Text>
+                <Text className="font-medium">{formatDate(mergedContributorData.endDate)}</Text>
               </View>
             </View>
             
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Frequency</Text>
-                <Text className="font-medium">₦{contributorData.depositAmount} {contributorData.frequency}</Text>
+                <Text className="font-medium">₦{mergedContributorData.depositAmount} {mergedContributorData.frequency}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Days Left</Text>
                 <Text className="font-medium">
-                  {calculateDaysLeft(contributorData.startDate, contributorData.endDate)} days
+                  {calculateDaysLeft(mergedContributorData.startDate, mergedContributorData.endDate)} days
                 </Text>
               </View>
             </View>
@@ -460,16 +467,16 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
             <View className="flex-row justify-between mb-4">
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Language</Text>
-                <Text className="font-medium">{contributorData.language}</Text>
+                <Text className="font-medium">{mergedContributorData.language}</Text>
               </View>
               <View className="flex-1">
                 <Text className="text-gray-500 text-sm">Status</Text>
                 <Text className={`font-medium ${
-                  contributorData.status === 'Active' ? 'text-green-600' : 
-                  contributorData.status === 'Pending' ? 'text-yellow-600' : 
+                  mergedContributorData.status === 'Active' ? 'text-green-600' : 
+                  mergedContributorData.status === 'Pending' ? 'text-yellow-600' : 
                   'text-red-600'
                 }`}>
-                  {contributorData.status || 'N/A'}
+                  {mergedContributorData.status || 'N/A'}
                 </Text>
               </View>
             </View>
@@ -546,6 +553,4 @@ const ContributorProfile = ({ contributorId, firstName: propFirstName, lastName:
       </View>
     </SafeAreaView>
   );
-};
-
-export default ContributorProfile; 
+}; 

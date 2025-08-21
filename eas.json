@@ -1,19 +1,23 @@
 {
   "cli": {
-    "version": ">= 16.3.2",
+    "version": ">= 5.9.1",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+      }
     },
     "development-slim": {
       "developmentClient": true,
       "distribution": "internal",
       "android": {
         "gradleCommand": ":app:assembleDebug",
-        "withoutCredentials": true
+        "withoutCredentials": true,
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
       },
       "ios": {
         "buildConfiguration": "Debug",
@@ -21,18 +25,18 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+      }
     },
     "production": {
       "distribution": "store",
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease",
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
         "autoIncrement": true,
-        "image": "latest",
-        "env": {
-          "ANDROID_NDK_HOME": "/opt/android/ndk/23.1.7779620"
-        }
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
       },
       "ios": {
         "buildConfiguration": "Release",

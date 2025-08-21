@@ -15,16 +15,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { fetchContributorByPhone } from '../../services/api';
+import { fetchContributorDetailsForWithdrawal } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import EsusuLoader from '../components/EsusuLoader';
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 const WithdrawalScreen = () => {
   const router = useRouter();
+  
+  // Use back button handler for withdrawal page
+  useBackButtonHandler('/withdrawal');
+  
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -44,9 +52,14 @@ const WithdrawalScreen = () => {
       }
     });
 
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkAvailable(!!state.isConnected);
+    });
+
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
+      unsubscribe();
     };
   }, []);
 
@@ -54,12 +67,14 @@ const WithdrawalScreen = () => {
     // Check if user is logged in
     if (!loggedInUserId) {
       setError("You must be logged in to make withdrawals");
+      setTimeout(() => setError(null), 4000);
       return;
     }
 
     // Validate phone number
     if (!phoneNumber || phoneNumber.length < 10) {
       setError("Please enter a valid phone number");
+      setTimeout(() => setError(null), 4000);
       return;
     }
 
@@ -69,39 +84,47 @@ const WithdrawalScreen = () => {
     try {
       // Format phone number with or without country code
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : phoneNumber;
-      console.log("Searching for contributor with phone:", formattedPhone);
-      
-      // Fetch contributor details by phone number for this agent
-      const contributorData = await fetchContributorByPhone(loggedInUserId, formattedPhone);
-      
-      // Log contributor details for debugging
-      console.log("CONTRIBUTOR DETAILS:", JSON.stringify(contributorData, null, 2));
-      
+      // Fetch contributor details for withdrawal
+      const contributorData = await fetchContributorDetailsForWithdrawal(formattedPhone);
       if (!contributorData) {
         throw new Error("No contributor found with this phone number");
       }
-      
       // Navigate to the withdrawal type screen with the contributor data
       router.push({ 
         pathname: "/withdrawal/subpages/withdrawal-type", 
         params: { 
-          userDataString: JSON.stringify({
-            id: contributorData.id,
-            firstname: contributorData.firstname || contributorData.firstName,
-            lastname: contributorData.lastname || contributorData.lastName,
-            phonenumber: formattedPhone,
-            balance: contributorData.balance || contributorData.depositAmount || 0,
-            imageUrl: contributorData.photoUri || null
-          })
+          userDataString: JSON.stringify(contributorData),
+          phoneNumber: phoneNumber
         } 
       });
     } catch (error: any) {
-      console.error("Error fetching contributor details:", error);
-      setError(error.message || "Could not find contributor with this phone number");
+      const err: any = error;
+      if (err && err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+        setTimeout(() => setError(null), 4000);
+      } else if (err && err.message) {
+        setError(err.message);
+        setTimeout(() => setError(null), 4000);
+      } else {
+        setError("Could not find contributor with this phone number");
+        setTimeout(() => setError(null), 4000);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return <EsusuLoader />;
+  }
+
+  if (!networkAvailable && !loggedInUserId) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text>No network. Please connect to the internet to load withdrawal data.</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -111,12 +134,12 @@ const WithdrawalScreen = () => {
       <View className="flex-1 px-4">
         <SafeAreaView className="flex-1">
           {/* Header */}
-          <View className="flex-row items-center justify-between mt-10">
+          <View className="flex-row items-center justify-between mt-16">
             <TouchableOpacity
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+              className="w-10 h-10 rounded-full  items-center justify-center"
             >
-              <Ionicons name="chevron-back" size={24} color="#000" />
+              <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
             <Text className="text-lg font-semibold">Withdraw</Text>
             <View className="w-10" />
@@ -129,12 +152,7 @@ const WithdrawalScreen = () => {
               Enter the contributor's registered phone number to retrieve their details
             </Text>
 
-            {/* Error Message */}
-            {error && (
-              <View className="mb-4 p-3 bg-red-50 rounded-lg">
-                <Text className="text-red-600">{error}</Text>
-              </View>
-            )}
+          
 
             {/* Phone Input */}
             <Text className="text-base font-medium mb-2">Phone Number</Text>
@@ -164,6 +182,12 @@ const WithdrawalScreen = () => {
                 }}
               />
             </View>
+              {/* Error Message */}
+              {error && (
+                <View className="mb-4 p-3 bg-red-50 rounded-lg">
+                  <Text className="text-red-600">{error}</Text>
+                </View>
+              )}
           </View>
 
           <View className="flex-1 justify-end pb-4">

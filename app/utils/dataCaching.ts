@@ -81,6 +81,82 @@ export async function clearAllCaches(): Promise<void> {
 }
 
 /**
+ * Clear ALL data including cache and non-cache keys
+ * This is a nuclear option that clears everything
+ */
+export async function clearAllData(): Promise<void> {
+  try {
+    console.log('🧹 Starting comprehensive data clear...');
+    
+    // Get all keys
+    const allKeys = await AsyncStorage.getAllKeys();
+    console.log(`Found ${allKeys.length} total keys to clear`);
+    
+    if (allKeys.length > 0) {
+      // Clear everything
+      await AsyncStorage.multiRemove(allKeys);
+      console.log(`✅ Cleared all ${allKeys.length} keys`);
+    }
+    
+    // Double-check that everything is cleared
+    const remainingKeys = await AsyncStorage.getAllKeys();
+    if (remainingKeys.length > 0) {
+      console.log(`⚠️ Found ${remainingKeys.length} remaining keys, clearing them...`);
+      await AsyncStorage.multiRemove(remainingKeys);
+      console.log('✅ Remaining keys cleared');
+    }
+    
+    console.log('🎉 ALL DATA CLEARED SUCCESSFULLY!');
+    
+  } catch (error) {
+    console.error('❌ Error clearing all data:', error);
+    
+    // Fallback: try to clear everything again
+    try {
+      await AsyncStorage.clear();
+      console.log('Fallback: AsyncStorage.clear() completed');
+    } catch (fallbackError) {
+      console.error('Even fallback clear failed:', fallbackError);
+    }
+  }
+}
+
+/**
+ * Clear specific types of data with pattern matching
+ * @param patterns Array of patterns to match against keys
+ */
+export async function clearDataByPatterns(patterns: string[]): Promise<void> {
+  try {
+    console.log('🧹 Clearing data by patterns:', patterns);
+    
+    const allKeys = await AsyncStorage.getAllKeys();
+    const keysToRemove: string[] = [];
+    
+    for (const pattern of patterns) {
+      const matchingKeys = allKeys.filter(key => 
+        key.toLowerCase().includes(pattern.toLowerCase()) ||
+        key.startsWith(pattern) ||
+        key.endsWith(pattern)
+      );
+      keysToRemove.push(...matchingKeys);
+    }
+    
+    // Remove duplicates
+    const uniqueKeys = [...new Set(keysToRemove)];
+    
+    if (uniqueKeys.length > 0) {
+      await AsyncStorage.multiRemove(uniqueKeys);
+      console.log(`✅ Cleared ${uniqueKeys.length} keys matching patterns:`, patterns);
+    } else {
+      console.log('No keys found matching the patterns');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error clearing data by patterns:', error);
+  }
+}
+
+/**
  * Pre-fetch and cache frequently used data
  * @param keyFetchPairs Object with keys and their fetch functions
  */

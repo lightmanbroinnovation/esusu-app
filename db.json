@@ -757,7 +757,7 @@
           "bankName": "Gtb",
           "accountName": "Davido ",
           "accountNumber": "8112880",
-          "isPrimary": true,
+          "isPrimary": false,
           "id": "1744736810240",
           "createdAt": "2025-04-15T17:06:50.240Z"
         },
@@ -765,7 +765,7 @@
           "bankName": "Uba",
           "accountName": "Bayo ",
           "accountNumber": "852345",
-          "isPrimary": false,
+          "isPrimary": true,
           "id": "1744736867713",
           "createdAt": "2025-04-15T17:07:47.713Z"
         }
@@ -1323,6 +1323,15 @@
       "verificationStatus": "pending",
       "verify_business": true,
       "transactions": []
+    },
+    {
+      "id": "xd0j",
+      "phonenumber": "8100000000",
+      "gender": "Not specified",
+      "verificationStatus": "pending",
+      "verify_business": true,
+      "transactions": [],
+      "pin": "6657"
     }
   ],
   "contributors": [

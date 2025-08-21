@@ -5,18 +5,27 @@ export const options = {
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router"; // Correct import
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { requestWithdrawalCode, verifyWithdrawalCode } from '../../../services/api';
+import { sendNotification, NotificationTemplates } from '../../services/notificationService';
+import { useBackButtonHandler } from '../../utils/backButtonHandler';
 
 export default function OTPScreen() {
-    const [pin, setPin] = useState<string>(""); // State for the entered PIN
-    const [showKeypad, setShowKeypad] = useState<boolean>(false); // State to toggle keypad visibility
+    const router = useRouter();
+    
+    // Use back button handler for withdrawal OTP page
+    useBackButtonHandler('/withdrawal/subpages/otp');
+    
+    const [pin, setPin] = useState<string>("");
+    const [showKeypad, setShowKeypad] = useState<boolean>(false);
     const [withdrawAmount, setWithdrawAmount] = useState<string>("0");
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-    const router = useRouter();
     const insets = useSafeAreaInsets();
+    const params = useLocalSearchParams();
+    const [phoneNumber, setPhoneNumber] = useState<string>("");
 
     const navigateBack = () => {
         router.back();
@@ -50,6 +59,25 @@ export default function OTPScreen() {
         getData();
     }, []);
 
+    // Request withdrawal code on page load
+    useEffect(() => {
+        const sendWithdrawalCode = async () => {
+            const phone = Array.isArray(params.phoneNumber)
+                ? params.phoneNumber[0] || ''
+                : params.phoneNumber || '';
+            setPhoneNumber(phone);
+            if (phone) {
+                try {
+                    const response = await requestWithdrawalCode(phone);
+                    console.log('Withdrawal code request response:', response);
+                } catch (err) {
+                    console.error('Error requesting withdrawal code:', err);
+                }
+            }
+        };
+        sendWithdrawalCode();
+    }, [params.phoneNumber]);
+
     const handleKeyPress = (digit: string) => {
         if (pin.length < 4) {
             setPin(pin + digit);
@@ -67,26 +95,37 @@ export default function OTPScreen() {
             return;
         }
 
-        if (!userId || !withdrawAmount) {
-            Alert.alert('Error', 'Unable to process withdrawal. Missing required information.');
+        if (!phoneNumber) {
+            Alert.alert('Error', 'Unable to process withdrawal. Missing phone number.');
             return;
         }
 
         setLoading(true);
 
         try {
-            // In a real app, you would validate the OTP with your backend here
-            // For this demo, we'll simulate a successful OTP verification
-
-            // Simulate a network delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // After successful OTP verification, you would process the withdrawal
-            // Here we'll just navigate to the success screen
-            router.replace('/withdrawal/subpages/success');
+            const response = await verifyWithdrawalCode(phoneNumber, pin);
+            console.log('Verify withdrawal code response:', response);
+            if (response.status === 'Success') {
+                await sendNotification(
+                    NotificationTemplates.transaction.withdrawal(withdrawAmount).title,
+                    NotificationTemplates.transaction.withdrawal(withdrawAmount).body,
+                    NotificationTemplates.transaction.withdrawal(withdrawAmount).type
+                );
+                router.replace('./success');
+            } else {
+                Alert.alert('Error', response.message || 'Failed to verify code.');
+            }
         } catch (error) {
             console.error('Error processing withdrawal:', error);
-            Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
+            const err: any = error;
+            if (err && err.response && err.response.data && err.response.data.message) {
+                Alert.alert('Error', err.response.data.message);
+            } else if (err && err.message) {
+                Alert.alert('Error', err.message);
+            } else {
+                Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
+            }
+        } finally {
             setLoading(false);
         }
     };

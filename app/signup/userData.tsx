@@ -4,48 +4,81 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Modal,
+  Alert,
+  Dimensions,
+  ScrollView,
   FlatList,
+  Modal
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import moment from "moment"; // Import moment for date formatting
+import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function UserData() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { phone, pin } = useLocalSearchParams(); // Retrieve phone and pin from query params
-
-  // Calculate minimum birth date (18 years ago)
-  const minBirthYear = moment().subtract(18, 'years').year();
   
-  // State for input fields
-  const [firstname, setFirstname] = useState("");
-  const [lastname, setLastname] = useState("");
+  // Use back button handler for signup userData page
+  useBackButtonHandler('/signup/userData');
+  
+  const insets = useSafeAreaInsets();
+  const { width, height } = Dimensions.get('window');
+  const params = useLocalSearchParams();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [business, setBusiness] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [gender, setGender] = useState("");
-  const [dob, setDob] = useState(moment().subtract(18, 'years').toDate()); // Default to 18 years ago
+  const [dob, setDob] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
-  const [showGenderPicker, setShowGenderPicker] = useState(false);
-  
-  // Available years (going back 100 years from minimum age)
-  const availableYears = Array.from({length: 82}, (_, i) => minBirthYear - i).sort((a, b) => b - a);
-
-  // State to track keyboard visibility
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'error' | 'info' | null>(null);
+  const [messageTimeout, setMessageTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Helper function to set message with auto-clear
+  const setMessageWithTimeout = (msg: string, type: 'error' | 'info', timeoutMs: number = 4000) => {
+    // Clear any existing timeout
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+    }
+    
+    setMessage(msg);
+    setMessageType(type);
+    
+    // Set new timeout to clear message
+    const timeout = setTimeout(() => {
+      setMessage(null);
+      setMessageType(null);
+    }, timeoutMs);
+    
+    setMessageTimeout(timeout);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+      }
+    };
+  }, [messageTimeout]);
+
+  // Responsive sizing based on screen width
+  const getResponsiveSize = (baseSize: number) => {
+    if (width < 375) {
+      return baseSize * 0.9; // Small phones
+    } else if (width < 414) {
+      return baseSize; // Medium phones
+    } else {
+      return baseSize * 1.1; // Large phones and tablets
+    }
+  };
 
   useEffect(() => {
-    // Add event listeners for keyboard show and hide
     const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () =>
       setIsKeyboardVisible(true)
     );
@@ -53,341 +86,245 @@ export default function UserData() {
       setIsKeyboardVisible(false)
     );
 
-    // Cleanup event listeners on unmount
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
   }, []);
 
-  // Function to handle form submission
   const handleSubmit = () => {
-    // Validate age
-    const userAge = moment().diff(moment(dob), 'years');
-    if (userAge < 18) {
-      alert("You must be at least 18 years old to register.");
+    // Validate required fields
+    if (!firstName.trim()) {
+      setMessageWithTimeout("Please enter your first name", "error", 3000);
+      return;
+    }
+    if (!lastName.trim()) {
+      setMessageWithTimeout("Please enter your last name", "error", 3000);
+      return;
+    }
+    if (!email.trim()) {
+      setMessageWithTimeout("Please enter your email address", "error", 3000);
       return;
     }
 
-    const userData = {
-      phone,
-      pin,
-      firstname,
-      lastname,
-      email,
-      business,
-      address,
-      city,
-      state,
-      gender,
-      dob: moment(dob).format('YYYY-MM-DD'),
-    };
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessageWithTimeout("Please enter a valid email address", "error", 3000);
+      return;
+    }
 
-    // Log data being passed to the next screen
-    console.log('===== USER DATA SCREEN - PASSING DATA =====');
-    console.log('Data being passed to document screen:', JSON.stringify(userData, null, 2));
-    console.log('=============================================');
-
-    // Navigate to the next page with the user data
+    // Navigate to next screen with user data
     router.push({
-      pathname: "/signup/document",
-      params: userData, // Pass all user data to the next page
+      pathname: "/signup/passcode",
+      params: {
+        phone: params.phone as string,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        dob: dob.toISOString(),
+      },
     });
   };
 
-  // Function to select a year
   const selectYear = (year: number) => {
-    const newDate = moment(dob).year(year).toDate();
+    const newDate = new Date(dob);
+    newDate.setFullYear(year);
     setDob(newDate);
     setShowYearSelector(false);
   };
 
-  // Function to render the calendar
   const renderCalendar = () => {
-    const currentMonth = moment(dob).month(); // Get the current month (0-11)
-    const currentYear = moment(dob).year(); // Get the current year
-    const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth(); // Get days in month
-    const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day(); // Get the first day of the month
-    
-    // Check if user will be 18 after selecting this date
-    const isValidYear = currentYear <= minBirthYear;
-
+    const startOfMonth = moment(dob).startOf('month');
+    const endOfMonth = moment(dob).endOf('month');
+    const startDate = startOfMonth.clone().startOf('week');
+    const endDate = endOfMonth.clone().endOf('week');
     const days = [];
-    // Add empty views for days before the first day of the month
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+    let day = startDate.clone();
+
+    while (day.isSameOrBefore(endDate)) {
+      days.push(day.clone());
+      day.add(1, 'day');
     }
-    
-    // Add the days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const currentDate = moment(`${currentYear}-${currentMonth + 1}-${day}`);
-      const isSelected = moment(dob).date() === day && 
-                         moment(dob).month() === currentMonth && 
-                         moment(dob).year() === currentYear;
-      
-      // Check if this date would make the user at least 18 years old
-      const wouldBeEighteen = moment().diff(currentDate, 'years') >= 18;
-      const isDisabled = !wouldBeEighteen;
-      
-      days.push(
+
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
+    }
+
+    return weeks.map((week, weekIndex) => (
+      <View key={weekIndex} className="flex-row">
+        {week.map((day, dayIndex) => {
+          const isCurrentMonth = day.isSame(dob, 'month');
+          const isSelected = day.isSame(dob, 'day');
+          const isToday = day.isSame(moment(), 'day');
+          
+          return (
         <TouchableOpacity
-          key={day}
-          className={`flex-1 items-center justify-center my-1 rounded-full
-            ${isSelected ? 'bg-blue-600' : ''}
-            ${isDisabled ? 'opacity-30' : ''}`}
-          style={{ padding: 8 }} // Uniform padding
-          disabled={isDisabled}
-          onPress={() => {
-            const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
-            setDob(selectedDate);
-          }}
-        >
-          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
+              key={dayIndex}
+              className={`flex-1 items-center justify-center py-2 ${isSelected ? 'bg-blue-500 rounded-full' : ''}`}
+              onPress={() => setDob(day.toDate())}
+              style={{
+                paddingVertical: getResponsiveSize(8),
+                borderRadius: getResponsiveSize(20)
+              }}
+            >
+              <Text className={`text-sm ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'} ${isSelected ? 'text-white font-bold' : ''} ${isToday ? 'font-bold' : ''}`} style={{ fontSize: getResponsiveSize(14) }}>
+                {day.format('D')}
+              </Text>
         </TouchableOpacity>
       );
-    }
-
-    // Create rows of 7 days
-    const rows = [];
-    const totalDays = Math.max(days.length, 35); // Ensure at least 35 days are displayed for 5 weeks
-    for (let i = 0; i < totalDays; i += 7) {
-      const weekDays = days.slice(i, i + 7);
-      // Fill empty days if the week has less than 7 days
-      while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
-      }
-      rows.push(
-        <View key={`row-${i}`} className="flex-row">
-          {weekDays}
-        </View>
-      );
-    }
-
-    return (
-      <View className="flex-1">
-        {rows}
+        })}
       </View>
-    );
+    ));
   };
 
-  // Function to change the month
   const changeMonth = (direction: 'next' | 'prev') => {
-    const newDate = moment(dob).add(direction === 'next' ? 1 : -1, 'months');
-    
-    // Prevent going beyond today's date minus 18 years
-    if (direction === 'next' && newDate.isAfter(moment().subtract(18, 'years'))) {
-      return;
+    const newDate = new Date(dob);
+    if (direction === 'next') {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() - 1);
     }
-    
-    setDob(newDate.toDate());
+    setDob(newDate);
   };
+
+  const availableYears = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - 18 - i);
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView 
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
     >
       <View
-        className="flex-1 bg-white px-6"
+          className="flex-1 px-6"
         style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+            paddingTop: insets.top + getResponsiveSize(16),
+            paddingBottom: insets.bottom + getResponsiveSize(16),
+            paddingHorizontal: getResponsiveSize(24),
         }}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
           <TouchableOpacity
             className="flex-row items-center"
             onPress={() => router.back()}
+              style={{ padding: getResponsiveSize(8) }}
           >
-            <Ionicons name="arrow-back" size={28} />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
           </TouchableOpacity>
-          <Text className="font-semibold">Step 2 of 4</Text>
-        </View>
+            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 2 of 4</Text>
+          </View>
 
-        <ScrollView className="mt-8" showsVerticalScrollIndicator={false}>
-          {/* Title */}
-          <View>
-            <Text className="text-[24px] font-bold text-primaryText mb-2">
-              Tell Us About You
+          {/* Message Display */}
+          {message && (
+            <View style={{
+              marginBottom: getResponsiveSize(16),
+              padding: getResponsiveSize(12),
+              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+              borderRadius: getResponsiveSize(8)
+            }}>
+              <Text style={{
+                color: messageType === 'error' ? '#D92D20' : '#0072CE',
+                textAlign: 'center',
+                fontSize: getResponsiveSize(14)
+              }}>{message}</Text>
+            </View>
+          )}
+
+          <View style={{ marginTop: getResponsiveSize(16) }}>
+            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+              Tell us about yourself
             </Text>
-            <Text className="text-base text-[#4F4F4F]">
-              Help us set up your profile with a few basic details.
+            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+              We need some basic information to set up your account.
             </Text>
           </View>
 
           {/* Input Fields */}
-          <View className="mt-6 space-y-4">
-            {/* Firstname */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">First Name</Text>
+          <View style={{ marginTop: getResponsiveSize(32) }}>
+            {/* First Name */}
+            <View style={{ marginBottom: getResponsiveSize(20) }}>
+              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>First Name</Text>
               <TextInput
-                value={firstname}
-                onChangeText={setFirstname}
                 placeholder="Enter your first name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-inputBg"
+                value={firstName}
+                onChangeText={setFirstName}
+                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                placeholderTextColor="#BDBDBD"
                 style={{
-                  backgroundColor: "#F4F4F5",
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
                 }}
               />
             </View>
 
-            {/* Lastname */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Last Name</Text>
+            {/* Last Name */}
+            <View style={{ marginBottom: getResponsiveSize(20) }}>
+              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Last Name</Text>
               <TextInput
-                value={lastname}
-                onChangeText={setLastname}
                 placeholder="Enter your last name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                value={lastName}
+                onChangeText={setLastName}
+                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                placeholderTextColor="#BDBDBD"
                 style={{
-                  backgroundColor: "#F4F4F5",
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
                 }}
               />
             </View>
 
             {/* Email */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Email</Text>
+            <View style={{ marginBottom: getResponsiveSize(20) }}>
+              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Email Address</Text>
               <TextInput
+                placeholder="Enter your email address"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Enter your email"
                 keyboardType="email-address"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                autoCapitalize="none"
+                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                placeholderTextColor="#BDBDBD"
                 style={{
-                  backgroundColor: "#F4F4F5",
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
                 }}
               />
             </View>
-
-            {/* Business */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Business</Text>
-              <TextInput
-                value={business}
-                onChangeText={setBusiness}
-                placeholder="Enter your business name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
-              />
-            </View>
-
-            {/* Address */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Address</Text>
-              <TextInput
-                value={address}
-                onChangeText={setAddress}
-                placeholder="Enter your address"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
-              />
-            </View>
-
-            {/* Gender Selection */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Gender</Text>
-              <TouchableOpacity 
-                onPress={() => setShowGenderPicker(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-              >
-                <Text>{gender || "Select your gender"}</Text>
-                <Ionicons name="chevron-down" size={24} color="#0072CE" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Gender Picker Modal */}
-            {showGenderPicker && (
-              <Modal
-                transparent={true}
-                visible={showGenderPicker}
-                animationType="slide"
-                onRequestClose={() => setShowGenderPicker(false)}
-              >
-                <View className="flex-1 justify-end bg-black bg-opacity-30">
-                  <View className="bg-white rounded-t-3xl p-4">
-                    <Text className="text-xl font-bold text-center mb-4">Select Gender</Text>
-                    <TouchableOpacity
-                      className="py-3 px-4 mb-1 rounded-lg"
-                      onPress={() => {
-                        setGender('Male');
-                        setShowGenderPicker(false);
-                      }}
-                    >
-                      <Text className="text-center text-lg">Male</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className="py-3 px-4 mb-1 rounded-lg"
-                      onPress={() => {
-                        setGender('Female');
-                        setShowGenderPicker(false);
-                      }}
-                    >
-                      <Text className="text-center text-lg">Female</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setShowGenderPicker(false)}
-                      className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
-                    >
-                      <Text className="text-white font-bold text-lg">Cancel</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
-            )}
 
             {/* Date of Birth */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Date of Birth</Text>
+            <View style={{ marginBottom: getResponsiveSize(20) }}>
+              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Date of Birth</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                className="flex-row items-center justify-between text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                style={{
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8)
+                }}
               >
-                <Text>{moment(dob).format('YYYY-MM-DD')}</Text>
-                <Ionicons name="calendar" size={24} color="#0072CE" />
+                <Text className="text-base text-[#1A1A1A]" style={{ fontSize: getResponsiveSize(16) }}>
+                  {moment(dob).format('MMMM DD, YYYY')}
+                </Text>
+                <Ionicons name="calendar-outline" size={getResponsiveSize(20)} color="#0072CE" />
               </TouchableOpacity>
-              <Text className="text-xs text-gray-500 mt-1">You must be at least 18 years old</Text>
-            </View>
-
-            <View className="flex-row justify-between">
-              {/* City */}
-              <View className="my-2 flex-1 mr-2">
-                <Text className="text-[#4F4F4F] mb-2">City</Text>
-                <TextInput
-                  value={city}
-                  onChangeText={setCity}
-                  placeholder="Enter your city"
-                  className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                  style={{
-                    backgroundColor: "#F4F4F5",
-                  }}
-                />
-              </View>
-
-              {/* State */}
-              <View className="my-2 flex-1">
-                <Text className="text-[#4F4F4F] mb-2">State</Text>
-                <TextInput
-                  value={state}
-                  onChangeText={setState}
-                  placeholder="Enter your state"
-                  className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                  style={{
-                    backgroundColor: "#F4F4F5",
-                  }}
-                />
-              </View>
             </View>
           </View>
-
-          {/* Spacer to push button down */}
-          <View className="h-16" />
-        </ScrollView>
 
         {/* Calendar Modal */}
         {showCalendar && (
@@ -403,34 +340,41 @@ export default function UserData() {
                   <TouchableOpacity 
                     onPress={() => changeMonth('prev')}
                     className="p-2 rounded-full bg-gray-100"
+                      style={{ padding: getResponsiveSize(8), borderRadius: getResponsiveSize(20) }}
                   >
-                    <Ionicons name="chevron-back" size={20} color="#0072CE" />
+                      <Ionicons name="chevron-back" size={getResponsiveSize(20)} color="#0072CE" />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => setShowYearSelector(true)}
                     className="flex-row items-center"
                   >
-                    <Text className="text-xl font-bold text-center">{moment(dob).format('MMMM YYYY')}</Text>
-                    <Ionicons name="chevron-down" size={20} color="#0072CE" className="ml-1" />
+                      <Text className="text-xl font-bold text-center" style={{ fontSize: getResponsiveSize(20) }}>{moment(dob).format('MMMM YYYY')}</Text>
+                      <Ionicons name="chevron-down" size={getResponsiveSize(20)} color="#0072CE" style={{ marginLeft: getResponsiveSize(4) }} />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => changeMonth('next')}
                     className="p-2 rounded-full bg-gray-100"
+                      style={{ padding: getResponsiveSize(8), borderRadius: getResponsiveSize(20) }}
                   >
-                    <Ionicons name="chevron-forward" size={20} color="#0072CE" />
+                      <Ionicons name="chevron-forward" size={getResponsiveSize(20)} color="#0072CE" />
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row p-2 mb-2">
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
+                      <Text key={day} className="flex-1 text-center font-medium text-gray-500" style={{ fontSize: getResponsiveSize(14) }}>{day}</Text>
                   ))}
                 </View>
                 {renderCalendar()}
                 <TouchableOpacity 
                   onPress={() => setShowCalendar(false)}
                   className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                    style={{
+                      marginTop: getResponsiveSize(16),
+                      paddingVertical: getResponsiveSize(16),
+                      borderRadius: getResponsiveSize(12)
+                    }}
                 >
-                  <Text className="text-white font-bold text-lg">Done</Text>
+                    <Text className="text-white font-bold text-lg" style={{ fontSize: getResponsiveSize(18) }}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -447,7 +391,7 @@ export default function UserData() {
           >
             <View className="flex-1 justify-end bg-black bg-opacity-30">
               <View className="bg-white rounded-t-3xl p-4" style={{ height: '50%' }}>
-                <Text className="text-xl font-bold text-center mb-4">Select Year</Text>
+                  <Text className="text-xl font-bold text-center mb-4" style={{ fontSize: getResponsiveSize(20) }}>Select Year</Text>
                 <FlatList
                   data={availableYears}
                   keyExtractor={(item) => item.toString()}
@@ -455,23 +399,34 @@ export default function UserData() {
                     <TouchableOpacity
                       className={`py-3 px-4 mb-1 rounded-lg ${moment(dob).year() === item ? 'bg-blue-100' : ''}`}
                       onPress={() => selectYear(item)}
-                    >
-                      <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`}>{item}</Text>
+                        style={{
+                          paddingVertical: getResponsiveSize(12),
+                          paddingHorizontal: getResponsiveSize(16),
+                          marginBottom: getResponsiveSize(4),
+                          borderRadius: getResponsiveSize(8)
+                        }}
+                      >
+                        <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`} style={{ fontSize: getResponsiveSize(18) }}>{item}</Text>
                     </TouchableOpacity>
                   )}
                   showsVerticalScrollIndicator={true}
                   initialScrollIndex={availableYears.findIndex(year => year === moment(dob).year())}
                   getItemLayout={(data, index) => ({
-                    length: 48, // height of item
-                    offset: 48 * index,
+                      length: getResponsiveSize(48), // height of item
+                      offset: getResponsiveSize(48) * index,
                     index,
                   })}
                 />
                 <TouchableOpacity 
                   onPress={() => setShowYearSelector(false)}
                   className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                    style={{
+                      marginTop: getResponsiveSize(16),
+                      paddingVertical: getResponsiveSize(16),
+                      borderRadius: getResponsiveSize(12)
+                    }}
                 >
-                  <Text className="text-white font-bold text-lg">Cancel</Text>
+                    <Text className="text-white font-bold text-lg" style={{ fontSize: getResponsiveSize(18) }}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -479,18 +434,21 @@ export default function UserData() {
         )}
 
         {/* Continue Button */}
-        <View className="pb-4">
-          {!isKeyboardVisible && (
+          <View className="pb-4" style={{ paddingBottom: getResponsiveSize(16) }}>
             <TouchableOpacity
               className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
               onPress={handleSubmit} // Use handleSubmit to pass data to the next page
+              style={{
+                paddingVertical: getResponsiveSize(16),
+                borderRadius: getResponsiveSize(8)
+              }}
             >
-              <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
-              <MaterialIcons name="arrow-forward" size={18} color="white" />
+              <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
+              <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
             </TouchableOpacity>
-          )}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

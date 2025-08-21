@@ -116,12 +116,12 @@ export const NotificationTemplates = {
   transaction: {
     deposit: (amount: string) => ({
       title: 'Deposit Successful',
-      body: `₦${amount} has been successfully deposited to your account.`,
+      body: `₦${amount} has been successfully deposited to your contributor account.`,
       type: 'success' as const,
     }),
     withdrawal: (amount: string) => ({
       title: 'Withdrawal Successful',
-      body: `₦${amount} has been successfully withdrawn from your account.`,
+      body: `₦${amount} has been successfully withdrawn from your contributor account.`,
       type: 'success' as const,
     }),
   },

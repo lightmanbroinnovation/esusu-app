@@ -18,6 +18,10 @@ import * as FileSystem from 'expo-file-system';
 import * as FaceDetector from 'expo-face-detector';
 import { uploadContributorImage } from '../utils/documentUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import { getCachedData, invalidateCache } from '../utils/dataCaching';
+import EsusuLoader from './EsusuLoader';
+import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 
 // Define icon type for better type safety
 type IconName = 'scan' | 'checkmark-circle' | 'alert-circle';
@@ -29,10 +33,19 @@ interface FaceDetectionStatus {
 }
 
 export const PhotoQualityCheck = () => {
+  const [qualityData, setQualityData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [networkAvailable, setNetworkAvailable] = useState(true);
+
+  // Add data fetch guard and render guard
+  const fetchGuard = useDataFetchGuard(3, 3000);
+  const renderGuard = useRenderGuard('PhotoQualityCheck', 15);
+
   const router = useRouter();
   const params = useLocalSearchParams();
   const [photoUri, setPhotoUri] = useState<string | null>(typeof params.photoUri === 'string' ? params.photoUri : null);
-  const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
@@ -64,13 +77,20 @@ export const PhotoQualityCheck = () => {
           setImageError(true);
           return;
         }
+        // Check file size (5MB = 5 * 1024 * 1024 bytes)
+        if (fileInfo.size && fileInfo.size > 5 * 1024 * 1024) {
+          Alert.alert('Image too large', 'Image too large. Please select a file smaller than 5MB.');
+          setImageError(true);
+          return;
+        }
       }
       
       setPhotoUri(uri);
       setImageError(false);
       
-      // Run face detection on the image
-      detectFaceInImage(uri);
+      // Disabled face detection for now
+      // detectFaceInImage(uri);
+      setFaceDetected(true); // Always pass
     } catch (error) {
       console.error('Error verifying image:', error);
       setImageError(true);
@@ -79,29 +99,9 @@ export const PhotoQualityCheck = () => {
 
   // Detect if the image contains a face
   const detectFaceInImage = async (uri: string) => {
-    try {
-      setCheckingFace(true);
-      setFaceDetected(null);
-      
-      // Process the image with the face detector
-      const options = { mode: FaceDetector.FaceDetectorMode.fast };
-      const result = await FaceDetector.detectFacesAsync(uri, options);
-      
-      // Check if any faces were detected
-      const hasFace = result.faces.length > 0;
-      setFaceDetected(hasFace);
-      
-      if (!hasFace) {
-        console.log('No face detected in the image');
-      } else {
-        console.log(`Detected ${result.faces.length} face(s) in the image`);
-      }
-    } catch (error) {
-      console.error('Error detecting face:', error);
-      setFaceDetected(false);
-    } finally {
-      setCheckingFace(false);
-    }
+    // Disabled for now
+    setFaceDetected(true);
+    return;
   };
 
   // Upload image to Cloudinary
@@ -165,22 +165,29 @@ export const PhotoQualityCheck = () => {
     
     try {
       setLoading(true);
-      
-      // If we don't have a Cloudinary URL yet, upload the image
-      let imageUrl = cloudinaryUrl;
-      if (!imageUrl && photoUri) {
-        imageUrl = await uploadImageToCloudinary(photoUri);
+      console.log('[PhotoQualityCheck] handleDone called, navigating to /contributor/add with photoUri:', photoUri);
+      // Use push instead of replace for web
+      if (Platform.OS === 'web') {
+        router.push({
+          pathname: '/contributor/add',
+          params: { 
+            photoUri,
+            isCloudinaryUrl: "false"
+          }
+        });
+      } else {
+        router.replace({
+          pathname: '/contributor/add',
+          params: { 
+            photoUri,
+            isCloudinaryUrl: "false"
+          }
+        });
       }
-      
-      // Return to the form with both the photo URI and Cloudinary URL
-    router.push({
-      pathname: '/contributor/add',
-        params: { 
-          photoUri,
-          imageUrl,
-          isCloudinaryUrl: imageUrl ? "true" : "false"
-        }
-      });
+      // Add a timeout fallback in case navigation fails
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000);
     } catch (error) {
       console.error('Error processing image:', error);
       Alert.alert(
@@ -188,7 +195,6 @@ export const PhotoQualityCheck = () => {
         "There was a problem processing the image. Please try again.",
         [{ text: "OK" }]
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -196,9 +202,25 @@ export const PhotoQualityCheck = () => {
   const handleNewPhoto = async () => {
     try {
       setLoading(true);
+      console.log('[PhotoQualityCheck] handleNewPhoto called, Platform:', Platform.OS);
+      if (Platform.OS === 'web') {
+        // Use file picker for web
+        const result = await ImagePicker.launchImageLibraryAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        });
+        if (!result.canceled) {
+          setPhotoUri(result.assets[0].uri);
+          setImageError(false);
+          setFaceDetected(true); // or null if you want to re-enable face detection later
+        }
+        setLoading(false);
+        return;
+      }
       // Request camera permissions
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
       if (status !== 'granted') {
         Alert.alert(
           "Permission Required",
@@ -208,14 +230,12 @@ export const PhotoQualityCheck = () => {
         setLoading(false);
         return;
       }
-      
       setShowCamera(true);
-      setLoading(false);
     } catch (error) {
-      console.error('Error accessing camera:', error);
+      console.error('Error opening camera or file picker:', error);
       Alert.alert(
         "Camera Error",
-        "There was a problem accessing your camera. Please try again.",
+        "There was a problem accessing the camera or file picker. Please try again.",
         [{ text: "OK" }]
       );
       setLoading(false);

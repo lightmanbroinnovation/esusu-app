@@ -1,8 +1,9 @@
 import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { useLoading } from '../context/LoadingContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Base API URL
-const API_BASE_URL = 'http://192.168.0.116:8082';
+const API_BASE_URL = 'https://esusu-server.onrender.com/api/merchant';
 
 // Setup axios instance with defaults
 const api = axios.create({
@@ -56,9 +57,9 @@ export const useApi = () => {
 
 // Configure API request interceptors for token handling if needed
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Get token from storage
-    const token = localStorage.getItem('auth_token');
+    const token = await AsyncStorage.getItem('auth_token');
     
     // If token exists, add to headers
     if (token && config.headers) {
@@ -108,4 +109,6 @@ api.interceptors.response.use(
     
     return Promise.reject(error);
   }
-); 
+);
+
+export default api; 
