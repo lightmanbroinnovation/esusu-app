@@ -23,7 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.example.esusuappv1",
-      "googleServicesFile": "./android/app/google-services.json"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
