@@ -1,11 +1,13 @@
 import * as FileSystem from 'expo-file-system';
 
-// Cloudinary configuration
-const CLOUD_NAME = 'daskmqzyy';
-const API_KEY = '829652354354175';
-const API_SECRET = 'KaM9eff0roQcE8AF61mBGaEo090';
-const UPLOAD_FOLDER = 'esusu_assets';
-const UPLOAD_PRESET = 'f1quj50x';
+import { ENV } from '../config/environment';
+
+// Cloudinary configuration from environment
+const CLOUD_NAME = ENV.CLOUDINARY_CLOUD_NAME;
+const API_KEY = ENV.CLOUDINARY_API_KEY;
+const API_SECRET = ENV.CLOUDINARY_API_SECRET;
+const UPLOAD_FOLDER = ENV.CLOUDINARY_UPLOAD_FOLDER;
+const UPLOAD_PRESET = ENV.CLOUDINARY_UPLOAD_PRESET;
 
 /**
  * Converts an image file to base64

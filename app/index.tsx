@@ -5,6 +5,9 @@ import { Link, useRouter } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useExitAppBackHandler } from './utils/backButtonHandler';
 
+// Import background message handler
+import '../backgroundMessaging';
+
 export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -18,8 +21,12 @@ export default function Index() {
     let splashTimeout: NodeJS.Timeout | undefined;
     const checkFirstTime = async () => {
       try {
-        const phone = await AsyncStorage.getItem('userPhone');
-        if (phone) {
+        const [phone, token] = await Promise.all([
+          AsyncStorage.getItem('userPhone'),
+          AsyncStorage.getItem('auth_token')
+        ]);
+        // Only redirect to passcode if there is both a phone and a valid token
+        if (phone && token) {
           router.replace({ pathname: '/login/passcode', params: { phone } });
           return;
         }

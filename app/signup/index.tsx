@@ -110,9 +110,13 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      // Format phone number with +234 prefix for the API call
-      const formattedPhone = `0${phone.substring(1)}`; // Assuming phone starts with '0' e.g., 080xxxxxxxx
+      // Format phone number - ensure it starts with '0' for Nigerian numbers
+      let formattedPhone = phone;
+      if (!phone.startsWith('0')) {
+        formattedPhone = `0${phone}`;
+      }
       console.log("Attempting to check phone number availability for:", formattedPhone);
+      console.log("Email being sent:", email.trim());
 
       const response = await checkPhoneNumberAvailability(formattedPhone, email.trim());
       

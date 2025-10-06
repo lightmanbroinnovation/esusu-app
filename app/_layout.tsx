@@ -17,6 +17,7 @@ import { Provider } from 'react-redux';
 import { store } from './store/store';
 
 import { LoadingProvider } from './context/LoadingContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ConnectionStatus from './components/ConnectionStatus';
 import NotificationToast from './components/NotificationToast';
 import { PerformanceMonitor } from './utils/performanceMonitor';
@@ -225,14 +226,16 @@ function RootLayoutWithAuth() {
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <LoadingProvider>
-          <ConnectionStatus />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          />
-          <NotificationToast />
-          <PerformanceMonitor visible={__DEV__} />
+          <NotificationProvider>
+            <ConnectionStatus />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+              }}
+            />
+            <NotificationToast />
+            <PerformanceMonitor visible={__DEV__} />
+          </NotificationProvider>
         </LoadingProvider>
         <StatusBar style="auto" />
       </ThemeProvider>

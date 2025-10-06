@@ -1,97 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Switch } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  RefreshControl,
+  ActivityIndicator,
+  FlatList
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
-
-
+import { useNotifications } from '../context/NotificationContext';
+import { usePerformanceMonitor } from '../utils/performanceOptimizer';
+import moment from 'moment';
 
 export default function Notifications() {
+  // Use back button handler for notifications
+  useBackButtonHandler('/notifications');
+  
+  // Performance monitoring
+  usePerformanceMonitor('NotificationsScreen');
 
-    // Use back button handler for notifications
-    useBackButtonHandler('/notifications');
+  // Use notification context
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead
+  } = useNotifications();
 
-    const [settings, setSettings] = useState({
-        transactionAlerts: true,
-        securityAlerts: false,
-        generalUpdates: false,
-    });
+  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
-    const toggleSwitch = (key: keyof typeof settings) => {
-        setSettings({ ...settings, [key]: !settings[key] });
-    };
+  // Refresh notifications
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshNotifications();
+    setRefreshing(false);
+  }, [refreshNotifications]);
 
-    const router = useRouter()
+  // Initialize
+  useEffect(() => {
+    // Component is ready
+  }, []);
 
-    const handlePreviousPage = () => {
-        router.back()
-    }
+  const handlePreviousPage = () => {
+    router.back();
+  };
 
-    const handleNextPage = (route: string) => {
-        router.push(route as any)
-    }
+  const formatDate = (dateString: string) => {
+    return moment(dateString).format('MMM DD, YYYY [at] h:mm A');
+  };
 
+  // Use unreadCount from context
+
+  // Render notification item
+  const renderNotificationItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      onPress={() => markAsRead(item._id)}
+      className={`p-4 mb-3 rounded-xl border ${
+        item.isRead 
+          ? 'bg-gray-50 border-gray-200' 
+          : 'bg-blue-50 border-blue-200'
+      }`}
+    >
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1 mr-3">
+          <Text className={`text-lg font-semibold mb-1 ${
+            item.isRead ? 'text-gray-900' : 'text-blue-900'
+          }`}>
+            {item.subject}
+          </Text>
+          <Text className={`text-sm mb-2 ${
+            item.isRead ? 'text-gray-600' : 'text-blue-700'
+          }`}>
+            {item.text}
+          </Text>
+          <Text className="text-xs text-gray-500">
+            {formatDate(item.createdAt)}
+          </Text>
+        </View>
+        {!item.isRead && (
+          <View className="w-3 h-3 bg-blue-500 rounded-full" />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Render empty state
+  const renderEmptyState = () => (
+    <View className="flex-1 items-center justify-center py-20">
+      <Ionicons name="notifications-outline" size={64} color="#9CA3AF" />
+      <Text className="text-lg font-semibold text-gray-900 mt-4 mb-2">
+        No Notifications
+      </Text>
+      <Text className="text-sm text-gray-500 text-center px-8">
+        You're all caught up! New notifications will appear here.
+      </Text>
+    </View>
+  );
+
+  // Render loading state
+  if (loading) {
     return (
-        <ScrollView className="px-4 pt-10 bg-white">
+      <View className="flex-1 bg-white">
+        <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
+          <TouchableOpacity 
+            onPress={handlePreviousPage}
+            className="p-2 rounded-full"
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text className="text-lg font-semibold">Notifications</Text>
+          <View className="w-10" />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#0074FF" />
+          <Text className="text-gray-500 mt-4">Loading notifications...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-white">
             {/* Header */}
-            <View className="flex-row items-center gap-[100px] mt-6">
+      <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
             <TouchableOpacity 
               onPress={handlePreviousPage}
-              className=" p-2 rounded-full mr-4"
+          className="p-2 rounded-full"
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-                <Text className="text-lg font-semibold">Notification</Text>
+        <View className="flex-row items-center">
+          <Text className="text-lg font-semibold">Notifications</Text>
+          {unreadCount > 0 && (
+            <View className="ml-2 bg-red-500 rounded-full px-2 py-1">
+              <Text className="text-white text-xs font-bold">
+                {unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
+        {notifications.length > 0 && (
+          <TouchableOpacity
+            onPress={markAllAsRead}
+            className="p-2"
+          >
+            <Text className="text-blue-600 text-sm font-medium">Mark All Read</Text>
+          </TouchableOpacity>
+        )}
             </View>
 
+      {/* Notifications List */}
+      <View className="flex-1 px-4">
+        {notifications.length > 0 ? (
+          <FlatList
+            data={notifications}
+            renderItem={renderNotificationItem}
+            keyExtractor={(item) => item._id}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#0074FF']}
+                tintColor="#0074FF"
+              />
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        ) : (
+          renderEmptyState()
+        )}
+      </View>
 
-            <View className="flex flex-col items-start gap-10 mt-12">
-                <View className="flex flex-row items-start justify-between w-full">
-                    <View className="flex flex-col gap-1 w-[80%]">
-                        <Text className="text-[14px] font-semibold text-black">Transaction Alerts</Text>
-                        <Text className="text-[#A9A8AF] text-[12px]">
-                            Get notified when contributions are deposited or withdrawn
-                        </Text>
-                    </View>
-                    <Switch
-                        value={settings.transactionAlerts}
-                        onValueChange={() => toggleSwitch('transactionAlerts')}
-                        trackColor={{ false: '#ccc', true: '#0074FF' }} // Customize toggle color
-                        thumbColor="#fff"
-                    />
-                </View>
-
-                <View className="flex flex-row items-start justify-between w-full">
-                    <View className="flex flex-col gap-1 w-[80%]">
-                        <Text className="text-[14px] font-semibold text-black">Security Alerts</Text>
-                        <Text className="text-[#A9A8AF] text-[12px]">
-                            Receive alerts for suspicious activities or login attempts.
-                        </Text>
-                    </View>
-                    <Switch
-                        value={settings.securityAlerts}
-                        onValueChange={() => toggleSwitch('securityAlerts')}
-                        trackColor={{ false: '#ccc', true: '#0074FF' }}
-                        thumbColor="#fff"
-                    />
-                </View>
-
-                <View className="flex flex-row items-start justify-between w-full">
-                    <View className="flex flex-col gap-1 w-[80%]">
-                        <Text className="text-[14px] font-semibold text-black">General Updates</Text>
-                        <Text className="text-[#A9A8AF] text-[12px]">
-                            Stay informed about app updates, new features, and announcements.
-                        </Text>
-                    </View>
-                    <Switch
-                        value={settings.generalUpdates}
-                        onValueChange={() => toggleSwitch('generalUpdates')}
-                        trackColor={{ false: '#ccc', true: '#0074FF' }}
-                        thumbColor="#fff"
-                    />
-                </View>
+      {/* Settings Button */}
+      <View className="px-4 pb-6">
+        <TouchableOpacity
+          onPress={() => router.push('/settings')}
+          className="bg-gray-50 border border-gray-200 rounded-xl p-4"
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Ionicons name="settings-outline" size={20} color="#6B7280" />
+              <Text className="text-gray-700 font-medium ml-3">
+                Notification Settings
+              </Text>
             </View>
-        </ScrollView>
+            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
     );
 }
 

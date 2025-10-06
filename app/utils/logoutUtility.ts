@@ -310,6 +310,21 @@ export const performHardLogout = async () => {
   try {
     console.log('💥 Performing hard logout (clearing everything)...');
     
+    // Step 0: Immediately clear critical auth/session keys to unblock navigation
+    try {
+      await AsyncStorage.multiRemove([
+        'auth_token',
+        'userPhone',
+        'userEmail',
+        'userId',
+        'isLoggedIn',
+        'userData'
+      ]);
+      console.log('✓ Critical auth keys cleared');
+    } catch (e) {
+      console.log('Error clearing critical auth keys (non-fatal):', e);
+    }
+    
     // Step 1: Clear all device storage and caches
     await forceClearAllData();
     
@@ -364,26 +379,9 @@ export const performHardLogout = async () => {
       console.log('Final cleanup failed:', e);
     }
     
-    // Step 7: Navigate to login index page
+    // Step 7: Logout successful - navigation will be handled by the calling component
     console.log('🎉 HARD LOGOUT SUCCESSFUL - Everything cleared!');
-    
-    // Small delay to ensure all cleanup is complete before navigation
-    setTimeout(() => {
-      console.log('Navigating to login index page...');
-      try {
-        router.replace('/login');
-        console.log('✅ Navigation to login page successful');
-      } catch (navError) {
-        console.error('❌ Navigation failed:', navError);
-        // Try alternative navigation method
-        try {
-          router.push('/login');
-          console.log('✅ Alternative navigation successful');
-        } catch (altNavError) {
-          console.error('❌ Alternative navigation also failed:', altNavError);
-        }
-      }
-    }, 100);
+    console.log('✅ Ready for navigation to index page');
     
   } catch (error) {
     console.error('❌ Error during hard logout:', error);
@@ -392,8 +390,7 @@ export const performHardLogout = async () => {
     try {
       await AsyncStorage.clear();
       store.dispatch(logoutUser());
-      router.replace('/login');
-      console.log('Fallback hard logout completed');
+      console.log('Fallback hard logout completed - ready for navigation');
     } catch (fallbackError) {
       console.error('Even fallback hard logout failed:', fallbackError);
     }

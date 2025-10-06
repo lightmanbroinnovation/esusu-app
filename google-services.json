@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "6594253485",
+    "project_id": "esusu-ss",
+    "storage_bucket": "esusu-ss.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6594253485:android:5dde9833065c45300aec24",
+        "android_client_info": {
+          "package_name": "com.example.esusuappv1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRlxsKNZDjmk-QLZ2PTsOCNfZ-7SaaJ_s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

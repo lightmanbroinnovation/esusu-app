@@ -1,9 +1,11 @@
 import axios from "axios";
 import { getCachedData, invalidateCache, clearAllCaches, clearAllData, clearDataByPatterns } from "../app/utils/dataCaching";
 import { trackApiCall } from "../app/utils/performanceMonitor";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Storage, SECURE_KEYS, STORAGE_KEYS } from "../app/utils/secureStorage";
+import { ENV } from "../config/environment";
 
-const API_BASE_URL = 'https://esusu-server.onrender.com/api/merchant'; // Adjusted base URL for merchant API
+const API_BASE_URL = ENV.API_BASE_URL;
+const API_TIMEOUT = ENV.API_TIMEOUT;
 
 // Global API error handler
 const handleApiError = (error, endpoint) => {
@@ -48,16 +50,16 @@ const enhancedFetch = async (url, options = {}) => {
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // Increased timeout
+  timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
 // Add request interceptor to track performance and include token
-axiosInstance.interceptors.request.use(async request => { // Made async to await AsyncStorage
+axiosInstance.interceptors.request.use(async request => { // Made async to await secure storage
   request.metadata = { startTime: new Date().getTime() };
-  const token = await AsyncStorage.getItem('auth_token'); // Get token from AsyncStorage
+  const token = await Storage.getItem(SECURE_KEYS.AUTH_TOKEN, true); // Get token from secure storage
   
   // Debug logging for authentication issues
   console.log(`🔐 API Request to: ${request.url}`);
@@ -104,10 +106,20 @@ const getCacheKey = (endpoint, id) => `${endpoint}_${id}`;
 export const checkPhoneNumberAvailability = async (phoneNumber, email) => {
   try {
     console.log("API: Checking phone number availability:", phoneNumber, "and Email:", email);
-    const response = await axiosInstance.post('/checkAvailable', { 
-      phoneNumber,
-      email 
-    });
+    
+    // Ensure we have valid values
+    if (!phoneNumber || !email) {
+      throw new Error("Phone number and email are required");
+    }
+    
+    const payload = {
+      phoneNumber: phoneNumber.trim(),
+      email: email.trim()
+    };
+    
+    console.log("API: Sending payload to /checkAvailable:", JSON.stringify(payload, null, 2));
+    
+    const response = await axiosInstance.post('/checkAvailable', payload);
     console.log("API Response - checkAvailable:", response.data);
     return response.data;
     

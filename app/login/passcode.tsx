@@ -28,6 +28,7 @@ export default function PasscodeScreen() {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
   const [showFingerprintModal, setShowFingerprintModal] = useState<boolean>(false);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+  const [logoutLoading, setLogoutLoading] = useState<boolean>(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -107,6 +108,18 @@ export default function PasscodeScreen() {
       console.log('❌ BIOMETRIC DISABLED - Should show keypad');
     }
   }, [isBiometricEnabled, showFingerprintModal, showKeypad]);
+
+  // Safety guard: if logout has started, force navigation to login after a short delay
+  useEffect(() => {
+    if (logoutLoading) {
+      const forceNav = setTimeout(() => {
+        try {
+          router.replace('/login');
+        } catch {}
+      }, 1500);
+      return () => clearTimeout(forceNav);
+    }
+  }, [logoutLoading, router]);
 
   const fetchAndLogCachedData = async () => {
     try {
@@ -508,15 +521,30 @@ export default function PasscodeScreen() {
             onPress: async () => {
               try {
                 setIsLoggingOut(true);
+                setLogoutLoading(true);
                 console.log('🔄 Setting logout flag to prevent session checks...');
                 
                 // Perform hard logout to clear everything
                 await performHardLogout();
+                
+                // If successful, navigate directly to login to avoid index redirect race
+                console.log('✅ Hard logout successful, navigating to login page...');
+                try {
+                  router.replace('/login');
+                  setTimeout(() => {
+                    try { router.replace('/login'); } catch {}
+                  }, 300);
+                } catch (navErr) {
+                  console.log('Navigation to /login failed:', navErr);
+                }
+                
               } catch (logoutError) {
                 console.error('Hard logout failed:', logoutError);
                 setIsLoggingOut(false);
-                // Fallback: try to navigate to login page anyway
+                setLogoutLoading(false);
+                // Fallback: try to navigate to login anyway
                 try {
+                  console.log('➡️ Fallback navigate to "/login" after logout error');
                   router.replace('/login');
                 } catch (navError) {
                   console.error('Navigation failed:', navError);
@@ -686,14 +714,37 @@ export default function PasscodeScreen() {
         <TouchableOpacity
           className="mt-8 mb-4 items-center"
           onPress={handleSwitchAccount}
-          disabled={loading}
+          disabled={loading || logoutLoading}
+          style={{ opacity: (loading || logoutLoading) ? 0.6 : 1 }}
         >
-          <Text className="text-base text-[#0072CE] font-semibold">Switch Account</Text>
+          {logoutLoading ? (
+            <View className="flex-row items-center">
+              <ActivityIndicator size="small" color="#0072CE" style={{ marginRight: 8 }} />
+              <Text className="text-base text-[#0072CE] font-semibold">Switching Account...</Text>
+            </View>
+          ) : (
+            <Text className="text-base text-[#0072CE] font-semibold">Switch Account</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
       {/* Fingerprint Modal Overlay */}
       {showFingerprintModal && renderFingerprintModal()}
+      
+      {/* Logout Loading Overlay */}
+      {logoutLoading && (
+        <View className="absolute inset-0 bg-black bg-opacity-50 flex-1 justify-center items-center z-50">
+          <View className="bg-white rounded-2xl p-8 items-center">
+            <ActivityIndicator size="large" color="#0072CE" />
+            <Text className="text-lg font-semibold text-gray-800 mt-4 text-center">
+              Switching Account...
+            </Text>
+            <Text className="text-sm text-gray-600 mt-2 text-center">
+              Please wait while we clear your data
+            </Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
