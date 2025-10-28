@@ -32,7 +32,7 @@ export default function EsusuLoader() {
           style={[styles.icon, { transform: [{ scale: scaleAnim }] }]}
           resizeMode="contain"
         />
-        <Animated.Text style={[styles.text, { transform: [{ scale: scaleAnim }] }]}>esusu</Animated.Text>
+        {/* <Animated.Text style={[styles.text, { transform: [{ scale: scaleAnim }] }]}></Animated.Text> */}
       </View>
     </View>
   );
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   icon: {
     width: 80,
     height: 80,
-    marginRight: 16,
+    // marginRight: 16,
   },
   text: {
     fontSize: 40,

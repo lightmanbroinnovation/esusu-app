@@ -23,7 +23,8 @@ export default function SupportCenter() {
     }
 
     // Support contact details
-    const supportPhoneNumber = '+2348012345678'; // Replace with your support number
+    const supportPhoneNumber = '+2348012345678'; // Call support number
+    const whatsappNumber = '+2349160135000'; // WhatsApp support number
     const supportEmail = 'support@esusuapp.com'; // Replace with your support email
 
     const handleCallSupport = () => {
@@ -37,6 +38,35 @@ export default function SupportCenter() {
                 }
             })
             .catch((err) => Alert.alert('Error', 'Failed to open dialer.'));
+    };
+
+    const handleWhatsAppSupport = () => {
+        // Remove any non-digit characters except the + sign
+        const cleanNumber = whatsappNumber.replace(/[^\d+]/g, '');
+        // WhatsApp URL format
+        const whatsappUrl = `https://wa.me/${cleanNumber}`;
+
+        // Try to open WhatsApp directly, as canOpenURL might not work reliably in all environments
+        Linking.openURL(whatsappUrl)
+            .then(() => {
+                console.log('WhatsApp opened successfully');
+            })
+            .catch((err) => {
+                console.error('Failed to open WhatsApp:', err);
+                // Fallback: try alternative WhatsApp URL format
+                const alternativeUrl = `whatsapp://send?phone=${cleanNumber}`;
+                Linking.canOpenURL(alternativeUrl)
+                    .then((supported) => {
+                        if (supported) {
+                            return Linking.openURL(alternativeUrl);
+                        } else {
+                            Alert.alert('Error', 'WhatsApp is not available on this device. Please install WhatsApp or contact support through another method.');
+                        }
+                    })
+                    .catch((err2) => {
+                        Alert.alert('Error', 'Unable to open WhatsApp. Please check if WhatsApp is installed and try again.');
+                    });
+            });
     };
 
     const handleEmailSupport = () => {
@@ -101,27 +131,21 @@ export default function SupportCenter() {
                                 Send us an email for detailed inquiries
                             </Text>
                         </View>
-                        <Image
-                            source={require('../assets/images/arrow-right.png')}
-                            className="w-[16px] h-[16px]"
-                        />
+                        <Ionicons name="chevron-forward" size={16} color="#6B7280" />
                     </TouchableOpacity>
 
                     {/* Chat Support */}
                     <TouchableOpacity
                         className="flex flex-row items-start justify-between"
-                        onPress={() => handleNextPage('/chat-support')}
+                        onPress={handleWhatsAppSupport}
                     >
                         <View className="flex flex-col gap-1 w-[95%]">
-                            <Text className="text-[14px] font-semibold text-black">Chat Support</Text>
+                            <Text className="text-[14px] font-semibold text-black">WhatsApp Support</Text>
                             <Text className="text-[#A9A8AF] text-[12px]">
-                                Chat with our support team in real-time
+                                Chat with our support team on WhatsApp
                             </Text>
                         </View>
-                        <Image
-                            source={require('../assets/images/arrow-right.png')}
-                            className="w-[16px] h-[16px]"
-                        />
+                        <Ionicons name="chevron-forward" size={16} color="#6B7280" />
                     </TouchableOpacity>
                 </View>
 

@@ -193,7 +193,7 @@ export default function ResetPasscode() {
         </View>
 
         {/* Login text */}
-        <Text className="text-[#4F4F4F] my-2">
+        {/* <Text className="text-[#4F4F4F] my-2">
           Remember your passcode?{" "}
           <Text 
             className="text-[#0072CE] font-semibold"
@@ -201,7 +201,7 @@ export default function ResetPasscode() {
           >
             Login
           </Text>
-        </Text>
+        </Text> */}
 
         {/* Spacer to push button down */}
         <View className="flex-1 justify-end pb-4">

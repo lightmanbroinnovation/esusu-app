@@ -105,8 +105,8 @@ export default function VerificationScreen() {
       await AsyncStorage.setItem('verification_user', JSON.stringify(user));
       setSteps(prevSteps => {
         const newSteps = { ...prevSteps };
-        // Personal Info
-        if (user.documentsVerified) {
+        // Personal Info - Check for accountCreated to mark as completed
+        if (user.accountCreated) {
           newSteps.personalInfo.completed = true;
           newSteps.personalInfo.disabled = true;
         }

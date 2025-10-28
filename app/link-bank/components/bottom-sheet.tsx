@@ -40,6 +40,7 @@ export default function BankBottomSheet({
   // Get user ID from AsyncStorage
   useEffect(() => {
     AsyncStorage.getItem('userId').then(id => {
+      console.log('User ID from AsyncStorage:', id);
       if (id) setUserId(id);
     });
   }, []);
@@ -67,6 +68,16 @@ export default function BankBottomSheet({
         isPrimary: item.id === bank.id ? value : false
       }));
       await updateUser(userId, { bankAccounts: updatedBanks });
+      
+      // Invalidate settlement accounts cache to force refetch
+      try {
+        const { invalidateCache } = await import('../../utils/dataCaching');
+        await invalidateCache('settlement_accounts');
+        console.log('Settlement accounts cache invalidated after setting primary bank');
+      } catch (cacheError) {
+        console.error('Error invalidating settlement accounts cache:', cacheError);
+      }
+      
       await refreshBanks();
       if (value) {
         Alert.alert("Success", "This account has been set as your primary account");
@@ -81,39 +92,77 @@ export default function BankBottomSheet({
   };
 
   const handleRemoveBank = async () => {
+    console.log('handleRemoveBank called');
+    console.log('Bank prop:', bank);
+    console.log('Bank ID:', bank.id);
+    console.log('User ID:', userId);
     if (!userId) {
+      console.log('User ID not found, showing error alert');
       Alert.alert("Error", "User not logged in");
       return;
     }
 
-    Alert.alert(
-      "Remove Bank Account",
-      "Are you sure you want to remove this bank account?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const updatedBanks = banks.filter(item => item.id !== bank.id);
-              if (bank.isPrimary && updatedBanks.length > 0) {
-                updatedBanks[0].isPrimary = true;
-              }
-              await updateUser(userId, { bankAccounts: updatedBanks });
-              await refreshBanks();
-              handleClose();
-            } catch (error) {
-              console.error("Error removing bank account:", error);
-              Alert.alert("Error", "Failed to remove bank account");
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    console.log('Proceeding with account removal for bank:', bank.id);
+    setLoading(true);
+    try {
+      // Get auth token from AsyncStorage
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      console.log('Sending PATCH request to delete account:', bank.id);
+      // Send PATCH request to delete settlement account
+      const response = await fetch('https://esusu-server.onrender.com/api/account/settlement-accounts', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: bank.id,
+        }),
+      });
+
+      console.log('API response status:', response.status);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Settlement account deleted successfully:', data);
+
+      // Invalidate settlement accounts cache to force refetch
+      try {
+        const { invalidateCache } = await import('../../utils/dataCaching');
+        await invalidateCache('settlement_accounts');
+        console.log('Settlement accounts cache invalidated after removing bank');
+      } catch (cacheError) {
+        console.error('Error invalidating settlement accounts cache:', cacheError);
+      }
+
+      // Refresh banks list from server to update cache
+      await refreshBanks();
+
+      // Close the bottom sheet
+      handleClose();
+
+      // Show success confirmation popup
+      Alert.alert(
+        "Account Removed",
+        "The settlement account has been successfully removed from your account.",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      console.error("Error removing settlement account:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to remove settlement account. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Helper function to get bank logo based on bank name
@@ -183,12 +232,15 @@ export default function BankBottomSheet({
 
           {/* Remove Button */}
           <TouchableOpacity
-            onPress={handleRemoveBank}
+            onPress={() => {
+              console.log('Remove button pressed');
+              handleRemoveBank();
+            }}
             disabled={loading}
             className="bg-red-100 py-4 rounded-2xl mt-8 w-full"
             style={{ opacity: loading ? 0.7 : 1 }}
           >
-            <Text className="text-red-500 font-bold text-center text-lg">Remove</Text>
+            <Text className="text-red-500 font-bold text-center text-lg">Remove Settlement Account</Text>
           </TouchableOpacity>
         </View>
       </Pressable>

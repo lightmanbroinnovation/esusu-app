@@ -195,6 +195,14 @@ export default function AddBankScreen() {
       });
       console.log('Save bank account response:', result);
       if (result && result.status === 'Success') {
+        // Invalidate settlement accounts cache to force refetch
+        try {
+          await invalidateCache('settlement_accounts');
+          console.log('Settlement accounts cache invalidated after adding bank');
+        } catch (cacheError) {
+          console.error('Error invalidating settlement accounts cache:', cacheError);
+        }
+        
         setSuccessMessage(result.message || 'Bank account added successfully!');
         setTimeout(() => {
           setSuccessMessage(null);

@@ -398,6 +398,7 @@ export default function UserData() {
               <TextInput
                 value={email}
                 onChangeText={setEmail}
+                editable={false}
                 placeholder="Enter email address"
                 keyboardType="email-address"
                 className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"

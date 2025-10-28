@@ -1,151 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   View, 
   Text, 
   SafeAreaView, 
   TouchableOpacity, 
   Image,
-  StyleSheet,
   ActivityIndicator,
   Alert,
   Modal,
-  Platform
+  Platform,
+  Dimensions
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
-import * as FaceDetector from 'expo-face-detector';
-import { uploadContributorImage } from '../utils/documentUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { getCachedData, invalidateCache } from '../utils/dataCaching';
-import EsusuLoader from './EsusuLoader';
-import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
-
-// Define icon type for better type safety
-type IconName = 'scan' | 'checkmark-circle' | 'alert-circle';
-
-interface FaceDetectionStatus {
-  message: string;
-  icon: IconName;
-  color: string;
-}
+import * as FaceDetector from 'expo-face-detector';
 
 export const PhotoQualityCheck = () => {
-  const [qualityData, setQualityData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [networkAvailable, setNetworkAvailable] = useState(true);
-
-  // Add data fetch guard and render guard
-  const fetchGuard = useDataFetchGuard(3, 3000);
-  const renderGuard = useRenderGuard('PhotoQualityCheck', 15);
-
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [photoUri, setPhotoUri] = useState<string | null>(typeof params.photoUri === 'string' ? params.photoUri : null);
+  
+  // Simplified state management
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
-  const [faceDetected, setFaceDetected] = useState<boolean | null>(null);
   const [checkingFace, setCheckingFace] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [cloudinaryUrl, setCloudinaryUrl] = useState<string | null>(null);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Get screen dimensions for responsive sizing
+  const { width } = Dimensions.get('window');
+  const imageSize = useMemo(() => Math.min(width * 0.7, 280), [width]);
+
+  // Simplified initialization - no heavy operations
   useEffect(() => {
-    // When receiving a photoUri parameter, check if the file exists
-    if (params.photoUri && typeof params.photoUri === 'string') {
-      verifyImageExists(params.photoUri);
-    }
-  }, [params.photoUri]);
-
-  // Verify that the image file exists and is readable
-  const verifyImageExists = async (uri: string) => {
-    try {
-      if (!uri) {
-        setImageError(true);
-        return;
-      }
-      
-      // Check if the file exists (for file:// URIs)
-      if (uri.startsWith('file://')) {
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        if (!fileInfo.exists) {
-          console.log('Image file does not exist:', uri);
-          setImageError(true);
-          return;
-        }
-        // Check file size (5MB = 5 * 1024 * 1024 bytes)
-        if (fileInfo.size && fileInfo.size > 5 * 1024 * 1024) {
-          Alert.alert('Image too large', 'Image too large. Please select a file smaller than 5MB.');
-          setImageError(true);
-          return;
-        }
-      }
-      
-      setPhotoUri(uri);
-      setImageError(false);
-      
-      // Disabled face detection for now
-      // detectFaceInImage(uri);
-      setFaceDetected(true); // Always pass
-    } catch (error) {
-      console.error('Error verifying image:', error);
-      setImageError(true);
-    }
-  };
-
-  // Detect if the image contains a face
-  const detectFaceInImage = async (uri: string) => {
-    // Disabled for now
-    setFaceDetected(true);
-    return;
-  };
-
-  // Upload image to Cloudinary
-  const uploadImageToCloudinary = async (uri: string) => {
-    try {
-      setUploading(true);
-      console.log('Starting Cloudinary upload...');
-      
-      // Try to get user ID from AsyncStorage
-      let userId = null;
+    const initializeComponent = () => {
       try {
-        const userDataStr = await AsyncStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          userId = userData.id;
+    if (params.photoUri && typeof params.photoUri === 'string') {
+      console.log('PhotoQualityCheck: Received photoUri:', params.photoUri);
+
+      // Check if it's already a Cloudinary URL
+          // For face detection we treat any uri the same
+          setPhotoUri(params.photoUri);
+          setImageError(false);
+          setFileSizeError(false);
+          // Run face detection without blocking paint
+          setTimeout(() => {
+            runFaceDetection(params.photoUri as string).catch(err => console.error('Init face detection failed:', err));
+          }, 200);
         }
       } catch (error) {
-        console.log('Could not get user data from AsyncStorage:', error);
+        console.error('PhotoQualityCheck: Initialization error:', error);
+        setImageError(true);
+        setFileSizeError(false);
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Use a temporary ID if no user ID is found
-      if (!userId) {
-        userId = `temp_user_${Date.now()}`;
+    };
+
+    // Use requestAnimationFrame to ensure UI is ready
+    requestAnimationFrame(initializeComponent);
+  }, [params.photoUri]);
+
+  // Face detection using expo-face-detector
+  const runFaceDetection = useCallback(async (uri: string): Promise<boolean> => {
+    try {
+      setCheckingFace(true);
+      setFaceDetected(false);
+      const options: FaceDetector.DetectionOptions = {
+        mode: FaceDetector.FaceDetectorMode.fast,
+        detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
+        runClassifications: FaceDetector.FaceDetectorClassifications.none,
+      };
+      const result = await FaceDetector.detectFacesAsync(uri, options);
+      const hasFace = Array.isArray(result.faces) && result.faces.length > 0;
+      setFaceDetected(hasFace);
+      if (!hasFace) {
+        Alert.alert('No face detected', 'Please ensure your face is clearly visible and try again.');
       }
-      
-      // Generate a temporary contributor ID for the upload
-      const tempContributorId = `temp_contributor_${Date.now()}`;
-      
-      // Upload the image to Cloudinary
-      const url = await uploadContributorImage(uri, tempContributorId, userId);
-      console.log('Cloudinary upload successful:', url);
-      setCloudinaryUrl(url);
-      return url;
-    } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
-      // Continue without the Cloudinary URL if it fails
-      return null;
+      return hasFace;
+    } catch (err) {
+      console.error('Face detection error:', err);
+      Alert.alert('Detection error', 'We could not analyze the photo. Please try another photo.');
+      setFaceDetected(false);
+      return false;
     } finally {
-      setUploading(false);
+      setCheckingFace(false);
     }
-  };
+  }, []);
+
+  // File size validation utility
+  const validateImageSize = useCallback(async (uri: string, asset?: any): Promise<boolean> => {
+    const maxSizeInMB = 5;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+
+    try {
+      if (Platform.OS === 'web' && asset?.fileSize) {
+        // For web, use the fileSize from ImagePicker result
+        if (asset.fileSize > maxSizeInBytes) {
+          return false;
+        }
+      } else if (asset?.fileSize) {
+        // For some native platforms, fileSize might be available in asset
+        if (asset.fileSize > maxSizeInBytes) {
+          return false;
+        }
+      } else {
+        // For native platforms without fileSize in asset, try to get file size
+        try {
+          const response = await fetch(uri);
+          const contentLength = response.headers.get('content-length');
+          if (contentLength && parseInt(contentLength) > maxSizeInBytes) {
+            return false;
+          }
+        } catch (fetchError) {
+          // If fetch fails, we can't determine file size, so assume it's okay
+          console.warn('Could not fetch file size for validation:', fetchError);
+        }
+      }
+      return true;
+    } catch (error) {
+      console.warn('Could not validate file size:', error);
+      // If we can't check the size, assume it's okay to avoid blocking users
+      return true;
+    }
+  }, []);
 
   const handleDone = async () => {
-    if (!photoUri || imageError) {
+    if (!photoUri || imageError || fileSizeError) {
       Alert.alert(
         "No Valid Photo",
         "Please take a photo before proceeding.",
@@ -154,40 +139,31 @@ export const PhotoQualityCheck = () => {
       return;
     }
 
-    if (faceDetected === false) {
-      Alert.alert(
-        "No Face Detected",
-        "The photo must clearly show your face. Please take another photo.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-    
     try {
-      setLoading(true);
       console.log('[PhotoQualityCheck] handleDone called, navigating to /contributor/add with photoUri:', photoUri);
-      // Use push instead of replace for web
+      console.log('[PhotoQualityCheck] faceDetected:', faceDetected);
+      console.log('[PhotoQualityCheck] Platform:', Platform.OS);
+
+      // Navigate immediately
       if (Platform.OS === 'web') {
+        console.log('[PhotoQualityCheck] Web navigation - pushing to /contributor/add');
         router.push({
           pathname: '/contributor/add',
-          params: { 
-            photoUri,
+          params: {
+            photoUri: photoUri,
             isCloudinaryUrl: "false"
           }
         });
       } else {
+        console.log('[PhotoQualityCheck] Native navigation - replacing to /contributor/add');
         router.replace({
           pathname: '/contributor/add',
-          params: { 
-            photoUri,
+          params: {
+            photoUri: photoUri,
             isCloudinaryUrl: "false"
           }
         });
       }
-      // Add a timeout fallback in case navigation fails
-      setTimeout(() => {
-        setLoading(false);
-      }, 2000);
     } catch (error) {
       console.error('Error processing image:', error);
       Alert.alert(
@@ -195,30 +171,46 @@ export const PhotoQualityCheck = () => {
         "There was a problem processing the image. Please try again.",
         [{ text: "OK" }]
       );
-      setLoading(false);
     }
   };
 
   const handleNewPhoto = async () => {
     try {
-      setLoading(true);
       console.log('[PhotoQualityCheck] handleNewPhoto called, Platform:', Platform.OS);
+
       if (Platform.OS === 'web') {
         // Use file picker for web
         const result = await ImagePicker.launchImageLibraryAsync({
           allowsEditing: true,
           aspect: [1, 1],
-          quality: 1,
+          quality: 0.8,
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
         });
-        if (!result.canceled) {
+        if (!result.canceled && result.assets[0]) {
+          console.log('[PhotoQualityCheck] Web image selected:', result.assets[0].uri);
+
+          // Check file size before proceeding
+          const isValidSize = await validateImageSize(result.assets[0].uri, result.assets[0]);
+          if (!isValidSize) {
+            setFileSizeError(true);
+            setImageError(false);
+            Alert.alert(
+              "Image Too Large",
+              "Please take an image with smaller size and move camera closer to the face.",
+              [{ text: "OK" }]
+            );
+            return;
+          }
+
           setPhotoUri(result.assets[0].uri);
           setImageError(false);
-          setFaceDetected(true); // or null if you want to re-enable face detection later
+          setFileSizeError(false);
+          // Run face detection
+          runFaceDetection(result.assets[0].uri);
         }
-        setLoading(false);
         return;
       }
+
       // Request camera permissions
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -227,7 +219,6 @@ export const PhotoQualityCheck = () => {
           "Camera access is needed to take photos. Please enable it in your device settings.",
           [{ text: "OK" }]
         );
-        setLoading(false);
         return;
       }
       setShowCamera(true);
@@ -238,105 +229,90 @@ export const PhotoQualityCheck = () => {
         "There was a problem accessing the camera or file picker. Please try again.",
         [{ text: "OK" }]
       );
-      setLoading(false);
     }
   };
 
-  const takePicture = async () => {
+  // Simplified camera function
+  const takePicture = useCallback(async () => {
     setSavingImage(true);
     try {
-      // Open camera with improved options
+      // Use optimized camera settings
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 1,
+        quality: 0.8, // Reduced quality for better performance
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        exif: true,
-        cameraType: ImagePicker.CameraType.front, // Use front camera for face photos
+        exif: false, // Disable EXIF for better performance
+        cameraType: ImagePicker.CameraType.front,
       });
       
-      if (!result.canceled) {
-        // Reset Cloudinary URL since we have a new image
-        setCloudinaryUrl(null);
-        
-        // Create a unique filename
-        const timestamp = new Date().getTime();
-        const newUri = `${FileSystem.documentDirectory}contributor_photo_${timestamp}.jpg`;
-        
-        // Copy the image to app's document directory for persistence
-        await FileSystem.copyAsync({
-          from: result.assets[0].uri,
-          to: newUri
-        });
-        
-        console.log('Image saved to:', newUri);
+      if (!result.canceled && result.assets[0]) {
+        // Use the original URI directly
+        const newUri = result.assets[0].uri;
+
+        // Check file size before proceeding
+        const isValidSize = await validateImageSize(newUri, result.assets[0]);
+        if (!isValidSize) {
+          setFileSizeError(true);
+          setImageError(false);
+          Alert.alert(
+            "Image Too Large",
+            "Please take an image with smaller size and move camera closer to the face.",
+            [{ text: "OK" }]
+          );
+          setShowCamera(false);
+          setSavingImage(false);
+          return;
+        }
+
         setPhotoUri(newUri);
         setImageError(false);
-        setFaceDetected(null); // Reset face detection
+        setFileSizeError(false);
         setShowCamera(false);
-        
-        // Run face detection on the new image
-        detectFaceInImage(newUri);
-        
-        // Try to upload the image to Cloudinary in the background
-        uploadImageToCloudinary(newUri).then(url => {
-          console.log('Background upload complete, URL:', url);
-        }).catch(error => {
-          console.error('Background upload failed:', error);
-        });
+        // Run face detection
+        runFaceDetection(newUri);
       } else {
-        // User canceled taking photo
         setShowCamera(false);
       }
     } catch (error) {
       console.error('Error taking picture:', error);
-      Alert.alert(
-        "Camera Error",
-        "There was a problem capturing the photo. Please try again.",
-        [{ text: "OK" }]
-      );
+      Alert.alert("Camera Error", "There was a problem capturing the photo. Please try again.");
       setShowCamera(false);
     } finally {
       setSavingImage(false);
     }
-  };
+  }, [runFaceDetection]);
 
   const handleImageError = () => {
     setImageError(true);
-    setFaceDetected(null);
   };
 
-  // Get face detection status message and icon
-  const getFaceDetectionStatus = (): FaceDetectionStatus => {
-    if (faceDetected === null || checkingFace) {
-      return {
-        message: "Analyzing image...",
-        icon: "scan",
-        color: "#0052CC"
-      };
-    } else if (faceDetected) {
-      return {
-        message: "Face detected ✓",
-        icon: "checkmark-circle",
-        color: "#4CAF50"
-      };
-    } else {
-      return {
-        message: "No face detected! Please take another photo.",
-        icon: "alert-circle",
-        color: "#F44336"
-      };
+  // Handle back navigation
+  const handleBack = () => {
+    console.log('PhotoQualityCheck: Back button pressed');
+    try {
+      router.back();
+    } catch (error) {
+      console.error('PhotoQualityCheck: Error navigating back:', error);
+      try {
+        router.replace('/contributor/add');
+      } catch (fallbackError) {
+        console.error('PhotoQualityCheck: Fallback navigation failed:', fallbackError);
+        Alert.alert(
+          "Navigation Error",
+          "Please use your device back button to return to the previous screen.",
+          [{ text: "OK" }]
+        );
+      }
     }
   };
-
-  const faceStatus = getFaceDetectionStatus();
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 p-6 mt-10">
         {/* Header with back button */}
-        <TouchableOpacity 
-          onPress={() => router.back()}
+        <TouchableOpacity
+          onPress={handleBack}
           className="bg-gray-100 p-2 rounded-full self-start mb-6"
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -348,66 +324,79 @@ export const PhotoQualityCheck = () => {
           Make sure your face is not blurred or out of frame before continuing
         </Text>
         
-        {/* Photo Display */}
+        {/* Simplified Photo Display */}
         <View className="items-center mb-4">
-          {loading ? (
-            <View className="bg-gray-100 w-[280px] h-[280px] rounded-3xl items-center justify-center">
+          {isLoading ? (
+            <View className="bg-gray-100 rounded-3xl items-center justify-center" style={{ width: imageSize, height: imageSize }}>
               <ActivityIndicator size="large" color="#0052CC" />
             </View>
-          ) : imageError || !photoUri ? (
-            <View className="bg-gray-100 w-[280px] h-[280px] rounded-3xl items-center justify-center">
+          ) : imageError || fileSizeError || !photoUri ? (
+            <View className="bg-gray-100 rounded-3xl items-center justify-center" style={{ width: imageSize, height: imageSize }}>
               <Text className="text-gray-500 text-center px-4">
-                {imageError ? "Image could not be loaded. Please take a new photo." : "No photo taken yet."}
+                {imageError ? "Image could not be loaded. Please take a new photo." :
+                 fileSizeError ? "Image file size is too large (max 5MB). Please take a smaller photo." :
+                 "No photo taken yet."}
               </Text>
             </View>
           ) : (
-          <Image 
-            source={{ uri: photoUri }}
-            style={{ 
-              width: 280, 
-              height: 280, 
-              borderRadius: 20,
-            }}
-            resizeMode="cover"
-              onError={handleImageError}
-          />
+            <View className="items-center">
+              <Image
+                source={{ uri: photoUri }}
+                style={{
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: 20,
+                }}
+                resizeMode="cover"
+                onError={handleImageError}
+                onLoadStart={() => console.log('Image loading started')}
+                onLoadEnd={() => console.log('Image loading completed')}
+              />
+              {/* Status indicator */}
+              <View className="flex-row items-center mt-2 bg-gray-100 px-3 py-1 rounded-full">
+                {checkingFace ? (
+                  <ActivityIndicator size="small" color="#0052CC" />
+                ) : faceDetected ? (
+                  <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
+                ) : (
+                  <Ionicons name="warning" size={16} color="#F59E0B" />
+                )}
+                <Text className="text-xs ml-1 text-gray-600">
+                  {checkingFace ? "Analyzing..." : faceDetected ? "Face detected" : "No face detected"}
+                </Text>
+              </View>
+            </View>
           )}
         </View>
-        
-        {/* Face Detection Status */}
-        {photoUri && !imageError && (
-          <View className="items-center mb-6 flex-row justify-center">
-            {checkingFace ? (
-              <ActivityIndicator size="small" color="#0052CC" style={{ marginRight: 8 }} />
-            ) : (
-              <Ionicons name={faceStatus.icon} size={20} color={faceStatus.color} style={{ marginRight: 8 }} />
-            )}
-            <Text style={{ color: faceStatus.color, fontWeight: '500' }}>
-              {faceStatus.message}
-            </Text>
-          </View>
-        )}
-        
+
         <View className="flex-1" />
-        
+
         {/* Action Buttons */}
         <View className="space-y-4">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleDone}
             className="bg-blue-600 p-4 rounded-xl items-center w-full"
-            disabled={loading || imageError || !photoUri || faceDetected === false || checkingFace}
-            style={{ opacity: (loading || imageError || !photoUri || faceDetected === false || checkingFace) ? 0.7 : 1 }}
+            disabled={isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected}
+            style={{ opacity: (isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected) ? 0.7 : 1 }}
           >
-            <Text className="text-white font-semibold text-lg">Done</Text>
+            <Text className="text-white font-semibold text-lg">
+              {isLoading ? "Loading..." :
+               checkingFace ? "Analyzing..." :
+               imageError ? "Fix Image Error" :
+               fileSizeError ? "Image Too Large" :
+               !photoUri ? "Take Photo First" :
+               !faceDetected ? "No Face Detected" : "Continue"}
+            </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={handleNewPhoto}
             className="p-4 items-center w-full"
-            disabled={loading}
+            disabled={isLoading || checkingFace}
+            style={{ opacity: (isLoading || checkingFace) ? 0.7 : 1 }}
           >
             <Text className="text-blue-600 font-semibold text-lg">
-              {loading ? "Opening Camera..." : "Take a New Photo"}
+              {isLoading ? "Loading..." : checkingFace ? "Analyzing..." : "Take a New Photo"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -422,7 +411,6 @@ export const PhotoQualityCheck = () => {
       >
         <View className="flex-1 bg-black">
           <SafeAreaView className="flex-1">
-            {/* Camera Preview (simulated in this example) */}
             <View className="flex-1 justify-center items-center">
               {savingImage ? (
                 <View className="bg-white/20 p-8 rounded-xl">
@@ -452,7 +440,6 @@ export const PhotoQualityCheck = () => {
                     <TouchableOpacity 
                       className="bg-white/20 p-4 rounded-full"
                       onPress={() => {
-                        // This would switch between front/back camera in a real implementation
                         Alert.alert("Camera Switch", "Switching camera");
                       }}
                     >

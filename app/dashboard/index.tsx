@@ -6,16 +6,17 @@ import RecentActivity from '../components/RecentActivity';
 import { Ionicons } from "@expo/vector-icons";
 import VerificationController from '../verification/VerificationController';
 import { useRouter } from 'expo-router';
-import { fetchUser, fetchMerchantDashboardAccount, fetchTransactionHistory } from '../../services/api';
 import LatestTransactions from '../components/LatestTransactions';
 import StatusBarAdapter from '../components/StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthGuard } from '../../authGuard';
 import { getCachedData, invalidateCache } from '../utils/dataCaching';
-import { refreshAllUserData } from '../utils/dataRefresh';
-import EsusuLoader from '../components/EsusuLoader';
 import { useExitAppBackHandler } from '../utils/backButtonHandler';
-// TODO: Replace with Moti Skeleton
+import { refreshAllUserData } from '../utils/dataRefresh';
+import { fetchUser, fetchMerchantDashboardAccount, fetchTransactionHistory } from '../../services/api';
+import { hasMerchantAccount } from '../utils/accountUtils';
+import { DeviceRegistrationService } from '../utils/deviceRegistrationService';
+import EsusuLoader from '../components/EsusuLoader';
 
 
 interface User {
@@ -144,6 +145,9 @@ const HomeScreen = () => {
 
   useEffect(() => {
     fetchUserDetails();
+    
+    // Initialize device registration when app loads
+    DeviceRegistrationService.initializeDeviceRegistration();
   }, []);
 
   useEffect(() => {
@@ -154,12 +158,27 @@ const HomeScreen = () => {
         if (cachedAccount) {
           setAccountData(JSON.parse(cachedAccount));
         }
+        
         // Always fetch fresh data in the background
         const response = await fetchMerchantDashboardAccount();
         console.log('Fetched merchant dashboard account:', response);
-        if ((response.status === 'Success' || response.status === 'success') && response.data) {
-          setAccountData(response.data);
-          await AsyncStorage.setItem('merchantDashboardAccount', JSON.stringify(response.data));
+        
+        // Check if response has merchantObj and extract it
+        const merchantData = response?.data?.merchantObj || response?.data;
+        
+        if ((response.status === 'Success' || response.status === 'success') && merchantData) {
+          // Format the data to match what the UserCard component expects
+          const formattedData = {
+            ...merchantData,
+            accountName: merchantData.accountName || '',
+            accountNumber: merchantData.accountNumber || '',
+            balance: merchantData.balance?.toString() || '0',
+            commission: merchantData.commission?.toString() || '0',
+            bankName: merchantData.bankName || 'SafeHaven MFB' // Default bank name if not provided
+          };
+          
+          setAccountData(formattedData);
+          await AsyncStorage.setItem('merchantDashboardAccount', JSON.stringify(formattedData));
         } else {
           setAccountData(null);
           await AsyncStorage.removeItem('merchantDashboardAccount');
@@ -360,7 +379,7 @@ const HomeScreen = () => {
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             />
           </View>
-          <Footer disabled={!userData} />
+          <Footer disabled={!userData} disableCommissionButton={!userData || !hasMerchantAccount(accountData)} />
         </SafeAreaView>
         <Modal
           animationType="slide"

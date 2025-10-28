@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Dimensions,
   ScrollView
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
@@ -39,6 +40,9 @@ export default function Login() {
   };
 
 
+
+  // Note: Removed auto-redirect to allow users to access login page even with existing token
+  // Users should be able to re-authenticate or switch accounts if needed
 
   const handleContinue = async () => {
     console.log("[Login] handleContinue called with:", loginMethod === 'phone' ? phone : email);

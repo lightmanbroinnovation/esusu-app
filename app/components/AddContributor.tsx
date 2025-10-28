@@ -89,12 +89,24 @@ export default function AddContributor() {
   
   // If photoUri is present in params, use it as the image
   useEffect(() => {
-    if (params.photoUri && typeof params.photoUri === 'string' && params.photoUri !== imageUri) {
-      setImageUri(params.photoUri);
-      setHasImage(true);
-      setImageError(false);
+    console.log('[AddContributor] useEffect triggered, params:', params);
+    console.log('[AddContributor] params.photoUri:', params.photoUri);
+    console.log('[AddContributor] current imageUri:', imageUri);
+    console.log('[AddContributor] processedPhotoUri.current:', processedPhotoUri.current);
+
+    if (params.photoUri && typeof params.photoUri === 'string') {
+      // Check if this is a new photoUri that hasn't been processed yet
+      if (params.photoUri !== processedPhotoUri.current) {
+        console.log('[AddContributor] Processing new photoUri:', params.photoUri);
+        processedPhotoUri.current = params.photoUri;
+        setImageUri(params.photoUri);
+        setHasImage(true);
+        setImageError(false);
+        setImageLoading(false);
+      } else {
+        console.log('[AddContributor] PhotoUri already processed, skipping');
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.photoUri]);
 
   // Verify that the image file exists and is readable
@@ -534,6 +546,8 @@ export default function AddContributor() {
                   className="w-24 h-24 rounded-2xl"
                   style={{borderRadius: 10, height: 150, width: 150}}
                   onError={handleImageError}
+                  onLoadStart={() => console.log('[AddContributor] Image loading started:', imageUri)}
+                  onLoadEnd={() => console.log('[AddContributor] Image loading completed:', imageUri)}
                 />
                 <TouchableOpacity onPress={handleAddImage}>
                   <Text className="text-green-500 text-center mt-2 font-medium">+ Change Image</Text>

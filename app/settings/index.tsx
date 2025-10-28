@@ -223,24 +223,40 @@ export default function Index() {
     const handlePress = (route: string) => {
         console.log("Navigating to:", route);
 
-        // Handle logout specially
-        if (route === "/logout") {
-            // Show confirmation dialog
-            Alert.alert(
-                "Logout",
-                "Are you sure you want to logout?",
-                [
-                    {
-                        text: "Cancel",
-                        style: "cancel"
-                    },
-                    {
-                        text: "Logout",
-                        onPress: handleLogout
-                    }
-                ]
-            );
+    // Handle logout specially
+    if (route === "/login/passcode") {
+      // Navigate to passcode with phone parameter
+      try {
+        const userPhone = userDetails?.phoneNumber;
+        if (userPhone) {
+          router.push({
+            pathname: '/login/passcode',
+            params: { phone: userPhone, loginMethod: 'phone' }
+          });
         } else {
+          Alert.alert("Error", "Phone number not found. Please log in again.");
+        }
+      } catch (error) {
+        console.error("Navigation error:", error);
+        Alert.alert("Error", "Failed to navigate. Please try again.");
+      }
+    } else if (route === "/logout") {
+      // Show confirmation dialog
+      Alert.alert(
+        "Logout",
+        "Are you sure you want to logout?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Logout",
+            onPress: handleLogout
+          }
+        ]
+      );
+    } else {
             try {
                 // For all other routes, just navigate
                 router.push(route as any);
@@ -309,18 +325,18 @@ export default function Index() {
             paddingBottom: getResponsiveSize(40),
             paddingHorizontal: getResponsiveSize(32)
         }}>
-            <Text className="text-[#A2A0A8] text-center" style={{ fontSize: getResponsiveSize(14) }}>
+            {/* <Text className="text-[#A2A0A8] text-center" style={{ fontSize: getResponsiveSize(14) }}>
                 You joined Esusu on March 2025. It's been 1 month since then and our mission is still the same.
-            </Text>
+            </Text> */}
         </View>
     );
 
     return (
         <View className="flex-1 bg-[#0074FF]">
-            <StatusBarAdapter backgroundColor="#0074FF" barStyle="dark-content" />
+            {/* <StatusBarAdapter backgroundColor="#0074FF" barStyle="dark-content" /> */}
             
             {/* Header */}
-            <View className="py-8 items-center mb-5 mt-10" style={{ 
+            <View className="py-8 items-center mb-5 mt-30" style={{ 
                 paddingVertical: getResponsiveSize(32),
                 marginBottom: getResponsiveSize(20),
                 marginTop: getResponsiveSize(40)

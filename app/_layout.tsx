@@ -1,20 +1,24 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from 'expo-status-bar';
-import { Platform, useColorScheme as useNativeColorScheme, ScrollView, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Platform, useColorScheme as useNativeColorScheme, ScrollView, View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import "./global.css";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { Asset } from 'expo-asset';
 import Constants from 'expo-constants';
 import { usePathname, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
+import { setToken } from './store/slices/notificationSlice';
+import * as Application from 'expo-application';
 
 import { LoadingProvider } from './context/LoadingContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -44,7 +48,7 @@ function useColorScheme(): 'light' | 'dark' {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index',
 };
 
 // Keep the splash screen visible while we fetch resources
@@ -104,6 +108,92 @@ export default function RootLayout() {
   );
 }
 
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+async function registerForPushNotificationsAsync() {
+  let token;
+  
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#0072CE',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    
+    if (finalStatus !== 'granted') {
+      Alert.alert('Failed to get push token for push notification!');
+      return null;
+    }
+    
+    // Get project ID from app configuration
+    let projectId = Constants?.expoConfig?.extra?.eas?.projectId;
+    
+    // Fallback to get project ID from app.json if not found in Constants
+    if (!projectId) {
+      try {
+        const appConfig = require('../app.json');
+        projectId = appConfig?.expo?.extra?.eas?.projectId;
+      } catch (error) {
+        console.warn('Could not load app.json:', error);
+      }
+    }
+    
+    // Final fallback to get project ID from native app ID
+    if (!projectId) {
+      try {
+        projectId = Application.applicationId;
+      } catch (error) {
+        console.warn('Could not get application ID:', error);
+      }
+    }
+    
+    if (!projectId) {
+      console.warn('Project ID not found in app configuration. Push notifications may not work correctly.');
+      // Continue without project ID - some platforms might work without it
+    }
+
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      token = tokenData.data;
+      console.log('Expo push token:', token);
+      
+      // Save the token to your backend
+      if (token) {
+        // Save to Redux store if needed
+        store.dispatch(setToken(token));
+        
+        // If you need to save to your backend, you can make an API call here
+        // Example: await api.savePushToken(token);
+      }
+    } catch (error) {
+      console.error('Error getting push token:', error);
+      return null;
+    }
+  } else {
+    console.log('Must use physical device for Push Notifications');
+  }
+
+  return token;
+}
+
 function RootLayoutWithAuth() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
   const colorScheme = useColorScheme();
@@ -111,6 +201,10 @@ function RootLayoutWithAuth() {
   const [isConnected, setIsConnected] = useState(true);
   const [isTryingToReconnect, setIsTryingToReconnect] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -130,7 +224,40 @@ function RootLayoutWithAuth() {
       }
     }, 5000); // 5 second timeout
 
-    return () => clearTimeout(splashTimeout);
+    // Register for push notifications
+    const registerPushNotifications = async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          setExpoPushToken(token);
+        }
+      } catch (error) {
+        console.error('Error registering for push notifications:', error);
+      }
+    };
+
+    registerPushNotifications();
+
+    // Set up notification listeners
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification response received:', response);
+      // Handle notification tap here if needed
+    });
+
+    // Clean up on unmount
+    return () => {
+      clearTimeout(splashTimeout);
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
   }, []);
 
   // Check for network connectivity
@@ -206,11 +333,10 @@ function RootLayoutWithAuth() {
           router.replace('/login/passcode');
         }
       } else {
-        // Only redirect to '/' if not already on index
-        if (pathname !== '/' && pathname !== '/index') {
-          router.replace('/');
+        // If no user found in storage and offline with no cache, redirect to login page
+        if (pathname !== '/login' && !pathname.startsWith('/login')) {
+          router.replace('/login');
         }
-        // If already on '/', do nothing so onboarding is shown
       }
     }
   }, [isConnected, checkedCache, hasCache, user, pathname]);

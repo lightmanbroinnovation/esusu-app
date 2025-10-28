@@ -4,9 +4,8 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { NotificationService, Notification } from '../../services/notificationService';
-import { FirebaseMessagingService } from '../services/firebaseMessaging';
-import { Storage, STORAGE_KEYS } from '../utils/secureStorage';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notificationFetchService';
+import { Notification } from '../../services/notificationService';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -44,9 +43,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const loadNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const fetchedNotifications = await NotificationService.getNotifications();
+      const fetchedNotifications = await getNotifications();
       setNotifications(fetchedNotifications);
-      
+
       // Calculate unread count
       const unread = fetchedNotifications.filter(n => !n.isRead).length;
       setUnreadCount(unread);
@@ -65,19 +64,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
-      await NotificationService.markAsRead(notificationId);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
-          n._id === notificationId 
-            ? { ...n, isRead: true }
-            : n
-        )
-      );
-      
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      const success = await markNotificationAsRead(notificationId);
+
+      if (success) {
+        // Update local state
+        setNotifications(prev =>
+          prev.map(n =>
+            n._id === notificationId
+              ? { ...n, isRead: true }
+              : n
+          )
+        );
+
+        // Update unread count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -86,14 +87,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
     try {
-      await NotificationService.markAllAsRead();
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, isRead: true }))
-      );
-      
-      setUnreadCount(0);
+      const success = await markAllNotificationsAsRead();
+
+      if (success) {
+        // Update local state
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, isRead: true }))
+        );
+
+        setUnreadCount(0);
+      }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
@@ -102,17 +105,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Check notification permissions
   const checkNotificationPermissions = useCallback(async () => {
     try {
-      const enabled = await FirebaseMessagingService.areNotificationsEnabled();
-      setAreNotificationsEnabled(enabled);
+      // Default to true since we're not using Firebase anymore
+      setAreNotificationsEnabled(true);
+      return true;
     } catch (error) {
       console.error('Error checking notification permissions:', error);
+      return false;
     }
   }, []);
 
   // Request notification permission
   const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const granted = await NotificationService.requestPermission();
+      // For web compatibility, we'll just return true
+      // In a real app, you might want to use the Notifications API
+      const granted = true;
       setAreNotificationsEnabled(granted);
       return granted;
     } catch (error) {
@@ -121,16 +128,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, []);
 
-  // Initialize notifications
+  // Initialize notifications (no longer called on mount)
   const initializeNotifications = useCallback(async () => {
     try {
       console.log('🔔 Initializing notifications...');
       
       // Check permissions
       await checkNotificationPermissions();
-      
-      // Initialize Firebase messaging
-      await FirebaseMessagingService.initialize();
       
       // Load notifications
       await loadNotifications();
@@ -141,52 +145,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [checkNotificationPermissions, loadNotifications]);
 
-  // Setup notification listeners
-  useEffect(() => {
-    const setupListeners = () => {
-      // Listen for new notifications
-      const handleNewNotification = (notification: any) => {
-        console.log('📱 New notification received:', notification);
-        // Refresh notifications list
-        loadNotifications();
-      };
-
-      // Listen for token refresh
-      const handleTokenRefresh = (token: string) => {
-        console.log('🔄 FCM token refreshed:', token);
-        // Re-register token
-        NotificationService.registerToken();
-      };
-
-      // Setup Firebase messaging listeners
-      const unsubscribe = NotificationService.setupNotificationListeners(
-        handleNewNotification,
-        handleTokenRefresh
-      );
-
-      return unsubscribe;
-    };
-
-    const unsubscribe = setupListeners();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [loadNotifications]);
-
   // Initialize on mount
   useEffect(() => {
     initializeNotifications();
   }, [initializeNotifications]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      FirebaseMessagingService.cleanup();
-    };
-  }, []);
 
   const value: NotificationContextType = {
     notifications,
@@ -208,3 +170,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 };
 
 export default NotificationProvider;
+
+
+

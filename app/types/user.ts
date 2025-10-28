@@ -81,3 +81,6 @@ export interface AppSettings {
   biometricEnabled: boolean;
   offlineMode: boolean;
 }
+
+
+

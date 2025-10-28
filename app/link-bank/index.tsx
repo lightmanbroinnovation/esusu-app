@@ -28,7 +28,7 @@ export default function LinkBankScreen() {
   const router = useRouter();
   
   // Use back button handler for link-bank page
-  useBackButtonHandler('/link-bank');
+  useBackButtonHandler('/settings');
   
   // const { banks, primaryBankId, isLoading, error, refreshBanks } = useBank();
   const [banks, setBanks] = useState<Bank[]>([]);

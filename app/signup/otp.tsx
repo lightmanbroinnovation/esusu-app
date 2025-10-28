@@ -283,7 +283,7 @@ export default function PasscodeScreen() {
                 fontSize: getResponsiveSize(16),
                 marginBottom: getResponsiveSize(8)
               }}>
-                ⚠️ IMPORTANT: Code Expires in 2 Minutes
+                ⚠️ IMPORTANT: Code Expires in 4 Minutes
               </Text>
               <Text className="text-blue-700 text-center text-sm" style={{
                 color: '#1E40AF',

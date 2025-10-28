@@ -4,7 +4,7 @@
     "slug": "esusu-app-v1",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Esusu-Icon.png",
+    "icon": "./assets/images/icons.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,17 +13,33 @@
       "bundleIdentifier": "com.example.esusuappv1",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app requires access to the camera to take photos.",
-        "NSLocationWhenInUseUsageDescription": "This app requires access to your location to provide better services."
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for contributor verification.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select images for contributor verification."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/Esusu-Icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/icons.png",
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.example.esusuappv1",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK",
+        "VIBRATE",
+        "FOREGROUND_SERVICE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "icon": "./assets/images/icons.png"
     },
     "web": {
       "bundler": "metro",
@@ -35,10 +51,34 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/icons.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#E6F3FF"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icons.png",
+          "color": "#0072CE",
+          "mode": "production",
+          "androidMode": "default",
+          "androidCollapsedTitle": "#{unread_notifications} new updates",
+          "iosDisplayInForeground": true
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos for contributor verification."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you select images for contributor verification."
         }
       ]
     ],
@@ -48,15 +88,7 @@
     "extra": {
       "eas": {
         "projectId": "caae719c-2d0c-441d-a762-6363297448f5"
-      },
-      "FIREBASE_API_KEY": "YOUR_FIREBASE_API_KEY",
-      "FIREBASE_AUTH_DOMAIN": "YOUR_PROJECT.firebaseapp.com",
-      "FIREBASE_PROJECT_ID": "YOUR_PROJECT_ID",
-      "FIREBASE_STORAGE_BUCKET": "YOUR_PROJECT.appspot.com",
-      "FIREBASE_MESSAGING_SENDER_ID": "YOUR_SENDER_ID",
-      "FIREBASE_APP_ID": "YOUR_WEB_APP_ID",
-      "FIREBASE_MEASUREMENT_ID": "YOUR_MEASUREMENT_ID",
-      "FIREBASE_VAPID_KEY": "YOUR_WEB_PUSH_CERTIFICATE_VAPID_KEY"
+      }
     }
   }
 }

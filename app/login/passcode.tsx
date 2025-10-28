@@ -17,7 +17,9 @@ import { getDataInfo } from '../utils/clearAllData';
 import { refreshAllUserData } from '../utils/dataRefresh';
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
 import { useDisableBackHandler } from '../utils/backButtonHandler';
-import { performHardLogout } from '../utils/logoutUtility';
+import { store } from '../store/store';
+import { logout } from '../store/slices/userSlice';
+import { clearNotifications } from '../store/slices/notificationSlice';
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -114,7 +116,7 @@ export default function PasscodeScreen() {
     if (logoutLoading) {
       const forceNav = setTimeout(() => {
         try {
-          router.replace('/login');
+          router.replace('/');
         } catch {}
       }, 1500);
       return () => clearTimeout(forceNav);
@@ -125,6 +127,12 @@ export default function PasscodeScreen() {
     try {
       console.log('🔍 Fetching and logging cached data...');
       
+      // Navigate to amt-deposit.tsx with userDataString param
+      // router.push({
+      //   pathname: '/deposit/subpages/amt-deposit',
+      //   params: { userDataString: JSON.stringify(dataToPass) }
+      // });
+
       // Get data info
       const dataInfo = await getDataInfo();
       console.log('📊 Data Info:', JSON.stringify(dataInfo, null, 2));
@@ -312,8 +320,8 @@ export default function PasscodeScreen() {
             return;
           }
           
-          console.warn("No stored user session or phone param found, redirecting to login");
-          router.replace('/login');
+          console.warn("No stored user session or phone param found, redirecting to index");
+          router.replace('/');
         }
       } catch (error) {
         console.error("Error retrieving user session:", error);
@@ -336,11 +344,11 @@ export default function PasscodeScreen() {
     setPin(pin.slice(0, -1));
   };
 
-  const verifyPin = async (useFingerprint = false) => {
+  const verifyPin = async (useFingerprint = false, biometricPhone?: string) => {
     setLoading(true);
     try {
-      const loginValue = phone || email;
-      const loginType = loginMethod || (phone ? 'phone' : 'email');
+      const loginValue = useFingerprint ? biometricPhone : (phone || email);
+      const loginType = loginMethod || (useFingerprint ? 'phone' : (phone ? 'phone' : 'email'));
       
       console.log("[Passcode] verifyPin called with:", loginType, loginValue, "pin:", pin);
       
@@ -350,13 +358,13 @@ export default function PasscodeScreen() {
         return;
       }
       
-      if (loginType === 'phone' && (!phone || phone.length !== 11)) {
+      if (loginType === 'phone' && (!loginValue || loginValue.length !== 11)) {
         Alert.alert("Error", "Invalid phone number. Please try again.");
         setPin("");
         return;
       }
       
-      if (loginType === 'email' && !email) {
+      if (loginType === 'email' && !loginValue) {
         Alert.alert("Error", "Invalid email address. Please try again.");
         setPin("");
         return;
@@ -441,6 +449,13 @@ export default function PasscodeScreen() {
         console.error('Missing phone for biometric auth:', { currentPhone });
         throw new Error('User session not found');
       }
+      
+      // Set phone in state if not already set
+      if (!phone) {
+        // Assuming setPhone is available, add it if needed
+        // For now, we'll modify verifyPin to handle this case
+      }
+      
       // Check device capability
       const [hasHardware, isEnrolled] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
@@ -460,8 +475,8 @@ export default function PasscodeScreen() {
       });
       if (result.success) {
         console.log('Biometric authentication successful');
-        // Save session and proceed
-        await verifyPin(true); // Pass true to indicate fingerprint
+        // Save session and proceed - pass the currentPhone to verifyPin
+        await verifyPin(true, currentPhone); // Pass true to indicate fingerprint and phone
       } else if (result.error === "user_cancel") {
         console.log('User cancelled biometric auth');
         setLoading(false);
@@ -524,32 +539,65 @@ export default function PasscodeScreen() {
                 setLogoutLoading(true);
                 console.log('🔄 Setting logout flag to prevent session checks...');
                 
-                // Perform hard logout to clear everything
-                await performHardLogout();
-                
-                // If successful, navigate directly to login to avoid index redirect race
-                console.log('✅ Hard logout successful, navigating to login page...');
+                // Perform simplified hard logout to avoid module import issues
                 try {
-                  router.replace('/login');
-                  setTimeout(() => {
-                    try { router.replace('/login'); } catch {}
-                  }, 300);
+                  // Clear critical auth data immediately
+                  await AsyncStorage.multiRemove([
+                    'auth_token',
+                    'userPhone',
+                    'userEmail',
+                    'userId',
+                    'isLoggedIn',
+                    'userData'
+                  ]);
+                  console.log('✓ Critical auth keys cleared');
+                } catch (e) {
+                  console.log('Error clearing auth keys (non-fatal):', e);
+                }
+                
+                // Clear Redux state
+                try {
+                  store.dispatch(logout());
+                  store.dispatch(clearNotifications());
+                  console.log('✓ Redux state cleared');
+                } catch (e) {
+                  console.log('Error clearing Redux state:', e);
+                }
+                
+                // Clear remaining AsyncStorage
+                try {
+                  const remainingKeys = await AsyncStorage.getAllKeys();
+                  if (remainingKeys.length > 0) {
+                    await AsyncStorage.multiRemove(remainingKeys);
+                    console.log('✓ Remaining storage cleared');
+                  }
+                } catch (e) {
+                  console.log('Error clearing remaining storage:', e);
+                }
+                console.log('✅ Hard logout completed successfully');
+                
+                // Navigate to index page (main landing page)
+                console.log('🔄 Navigating to index page...');
+                try {
+                  router.replace('/');
+                  console.log('✅ Navigation to index successful');
                 } catch (navErr) {
-                  console.log('Navigation to /login failed:', navErr);
+                  console.error('Navigation to index failed:', navErr);
+                  // Fallback: try to navigate to login
+                  try {
+                    router.replace('/login');
+                    console.log('✅ Fallback navigation to login successful');
+                  } catch (fallbackErr) {
+                    console.error('Fallback navigation failed:', fallbackErr);
+                    Alert.alert("Error", "Failed to switch account. Please restart the app.");
+                  }
                 }
                 
               } catch (logoutError) {
                 console.error('Hard logout failed:', logoutError);
                 setIsLoggingOut(false);
                 setLogoutLoading(false);
-                // Fallback: try to navigate to login anyway
-                try {
-                  console.log('➡️ Fallback navigate to "/login" after logout error');
-                  router.replace('/login');
-                } catch (navError) {
-                  console.error('Navigation failed:', navError);
-                  Alert.alert("Error", "Failed to switch account. Please restart the app.");
-                }
+                Alert.alert("Error", "Failed to clear data. Please try again.");
               }
             }
           }
@@ -577,7 +625,7 @@ export default function PasscodeScreen() {
                 className="items-center"
                 disabled={loading}
               >
-                <MaterialIcons name="fingerprint" size={80} color="#0072CE" />
+                <Ionicons name="finger-print" size={80} color="#0072CE" />
                 {loading && (
                   <ActivityIndicator size="small" color="#0072CE" className="mt-2" />
                 )}
@@ -701,7 +749,7 @@ export default function PasscodeScreen() {
               className="mt-6 items-center"
               disabled={loading}
             >
-              <MaterialIcons name="fingerprint" size={40} color="#0072CE" />
+              <Ionicons name="finger-print" size={40} color="#0072CE" />
               <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
             </TouchableOpacity>
           )}

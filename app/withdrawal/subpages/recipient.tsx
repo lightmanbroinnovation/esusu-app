@@ -31,6 +31,8 @@ const RecipientScreen = () => {
   });
   const [userDetails, setUserDetails] = useState<any>(null);
   const [amount, setAmount] = useState<string>('0');
+  const [transferFee, setTransferFee] = useState<number>(0);
+  const [feeLoading, setFeeLoading] = useState(false);
 
   useEffect(() => {
     loadUserDetails();
@@ -56,6 +58,52 @@ const RecipientScreen = () => {
       ...prev,
       [field]: value,
     }));
+
+    // Fetch transfer fee when bank name is entered
+    if (field === 'bankName' && value.trim()) {
+      fetchTransferFee(value.trim());
+    }
+  };
+
+  // Helper to get transfer fee for a bank name
+  const getTransferFee = async (bankName: string) => {
+    const token = await AsyncStorage.getItem('auth_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+
+    // First, we need to get the bank code from bank name
+    // For now, we'll use a simple mapping or API call
+    try {
+      const res = await fetch(`https://esusu-server.onrender.com/api/account/fee/bank/${encodeURIComponent(bankName)}`, {
+        method: 'GET',
+        headers
+      });
+      const response = await res.json();
+      console.log('Transfer fee response for bank name', bankName, ':', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching transfer fee:', error);
+      return { status: 'Error', message: 'Failed to fetch fee' };
+    }
+  };
+
+  const fetchTransferFee = async (bankName: string) => {
+    setFeeLoading(true);
+    try {
+      const feeResponse = await getTransferFee(bankName);
+      if (feeResponse.status === 'Success' && feeResponse.data) {
+        setTransferFee(feeResponse.data.transferFee || 0);
+      } else {
+        setTransferFee(0);
+      }
+    } catch (error) {
+      console.error('Error fetching transfer fee:', error);
+      setTransferFee(0);
+    } finally {
+      setFeeLoading(false);
+    }
   };
 
   const validateForm = () => {
@@ -173,6 +221,23 @@ const RecipientScreen = () => {
               placeholder="Enter account name"
             />
           </View>
+
+          {/* Fee Display */}
+          <View className="items-center mb-4">
+            {feeLoading ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="#0074FF" />
+                <Text className="text-gray-600 ml-2">Calculating fee...</Text>
+              </View>
+            ) : transferFee > 0 ? (
+              <View className="bg-blue-50 rounded-lg px-4 py-2">
+                <Text className="text-blue-800 text-sm">
+                  Transfer Fee: ₦{transferFee.toLocaleString()}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
           {/* Bank Name */}
           <View className="mb-6">
             <Text className="text-sm font-medium mb-2">Bank Name</Text>

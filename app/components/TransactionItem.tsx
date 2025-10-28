@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Transaction } from './types';
 
 interface TransactionItemProps {
@@ -8,12 +9,13 @@ interface TransactionItemProps {
 }
 
 const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress }) => {
+  const router = useRouter();
   const { name, type, amount, time } = transaction;
-  
+
   // Format the amount with the Nigerian Naira symbol (₦)
   const formattedAmount = () => {
     const nairaSymbol = '₦';
-    
+
     // For withdrawals, add a minus sign
     if (type === 'withdrawal') {
       return `-${nairaSymbol}${Math.abs(amount).toLocaleString()}`;
@@ -23,14 +25,14 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
       return `${nairaSymbol}${amount.toLocaleString()}`;
     }
   };
-  
+
   const getTransactionTitle = () => {
     if (type === 'account_creation') {
       return "New Account Created";
     }
     return name;
   };
-  
+
   const getTransactionSubtitle = () => {
     if (type === 'deposit') {
       return `Deposit at ${time}`;
@@ -42,25 +44,40 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
       return `${type} at ${time}`;
     }
   };
-  
+
   // Determine text color based on transaction type
   const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
-  
+
+  const handlePress = () => {
+    // Navigate to receipt page with transaction data
+    router.push({
+      pathname: '/receipt',
+      params: {
+        transaction: JSON.stringify(transaction),
+      },
+    });
+
+    // Call custom onPress if provided
+    if (onPress) {
+      onPress();
+    }
+  };
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       className="flex-row justify-between items-center py-4 px-4 bg-white border-b border-gray-100"
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       <View className="flex-1 pr-4">
-        <Text 
+        <Text
           className="text-base font-semibold text-gray-800 mb-1"
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {getTransactionTitle()}
         </Text>
-        <Text 
+        <Text
           className="text-sm text-gray-500"
           numberOfLines={1}
         >

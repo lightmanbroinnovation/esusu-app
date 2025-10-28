@@ -2,17 +2,16 @@ import React from "react";
 import { View, TouchableOpacity, Text, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from 'expo-router';
-import { useNotifications } from '../context/NotificationContext';
 
 interface FooterProps {
   disabled?: boolean;
+  disableCommissionButton?: boolean;
 }
 
-const Footer = ({ disabled = false }: FooterProps) => {
+const Footer = ({ disabled = false, disableCommissionButton = false }: FooterProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const { width, height } = Dimensions.get('window');
-  const { unreadCount } = useNotifications();
 
   // Responsive sizing based on screen width
   const getResponsiveSize = (baseSize: number) => {
@@ -31,14 +30,13 @@ const Footer = ({ disabled = false }: FooterProps) => {
     if (pathname.includes('/dashboard')) return 'home';
     if (pathname.includes('/contributors')) return 'contributors';
     if (pathname.includes('/commission')) return 'commission';
-    if (pathname.includes('/notifications')) return 'notifications';
     if (pathname.includes('/settings') || pathname.includes('/profile')) return 'settings';
     return 'home'; // Default fallback
   };
   
   const activePage = getActivePageFromPath();
 
-  const handlePress = (page: 'home' | 'contributors' | 'commission' | 'notifications' | 'settings') => {
+  const handlePress = (page: 'home' | 'contributors' | 'commission' | 'settings') => {
     console.log(`Navigating to ${page}`);
     
     // Use specific paths based on the page parameter
@@ -51,9 +49,6 @@ const Footer = ({ disabled = false }: FooterProps) => {
         break;
       case 'commission':
         router.push('/commission');
-        break;
-      case 'notifications':
-        router.push('/notifications');
         break;
       case 'settings':
         router.push('/settings');
@@ -132,9 +127,9 @@ const Footer = ({ disabled = false }: FooterProps) => {
       <TouchableOpacity
         className="items-center"
         onPress={() => handlePress("commission")}
-        disabled={disabled}
+        disabled={disabled || disableCommissionButton}
         style={{ 
-          opacity: disabled ? 0.5 : 1,
+          opacity: (disabled || disableCommissionButton) ? 0.5 : 1,
           alignItems: 'center',
           flex: 1
         }}
@@ -155,45 +150,6 @@ const Footer = ({ disabled = false }: FooterProps) => {
           marginTop: getResponsiveSize(4)
         }}>
           Commission
-        </Text>
-      </TouchableOpacity>
-
-      {/* Notifications Button */}
-      <TouchableOpacity
-        className="items-center"
-        onPress={() => handlePress("notifications")}
-        disabled={disabled}
-        style={{ 
-          opacity: disabled ? 0.5 : 1,
-          alignItems: 'center',
-          flex: 1
-        }}
-      >
-        <View className={`p-2 ${activePage === "notifications" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`} style={{
-          padding: getResponsiveSize(8),
-          borderRadius: activePage === "notifications" ? getResponsiveSize(16) : 0,
-          paddingHorizontal: activePage === "notifications" ? getResponsiveSize(16) : getResponsiveSize(8)
-        }}>
-          <View className="relative">
-            <Ionicons 
-              name="notifications-outline"
-              size={getResponsiveSize(18)}
-              color={activePage === "notifications" ? "#0052CC" : "#8F92A1"}
-            />
-            {unreadCount > 0 && (
-              <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[16px] h-4 items-center justify-center px-1">
-                <Text className="text-white text-xs font-bold">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-        <Text className={`text-xs mt-1 ${activePage === "notifications" ? "text-[#0052CC] font-medium" : "text-gray-500"}`} style={{
-          fontSize: getResponsiveSize(12),
-          marginTop: getResponsiveSize(4)
-        }}>
-          Notifications
         </Text>
       </TouchableOpacity>
 

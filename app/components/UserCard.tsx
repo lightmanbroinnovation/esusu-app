@@ -4,6 +4,7 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icons fr
 import { useRouter } from 'expo-router';
 import { getBankAccount } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNotifications } from '../context/NotificationContext';
 
 interface User {
   firstname: string;
@@ -27,6 +28,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, accountData, disabled = false
   const router = useRouter();
   const [showAccountDetailsModal, setShowAccountDetailsModal] = useState(false);
   const { width, height } = Dimensions.get('window');
+  const { unreadCount } = useNotifications();
 
   // Responsive sizing based on screen width
   const getResponsiveSize = (baseSize: number) => {
@@ -45,6 +47,10 @@ const UserCard: React.FC<UserCardProps> = ({ user, accountData, disabled = false
 
   const handleWithdraw = () => {
     router.push('../../withdrawal');
+  };
+
+  const handleNotificationPress = () => {
+    router.push('/notifications');
   };
 
   const handleShowAccountDetails = () => {
@@ -142,17 +148,26 @@ const UserCard: React.FC<UserCardProps> = ({ user, accountData, disabled = false
               </View>
             </View>
             
-            <Ionicons
-              style={{
-                borderWidth: 1,
-                borderRadius: getResponsiveSize(12),
-                padding: getResponsiveSize(4),
-                borderColor: '#fff'
-              }}
-              name="notifications-outline"
-              size={getResponsiveSize(24)}
-              color={"#fff"}
-            />
+            <TouchableOpacity onPress={handleNotificationPress} className="relative">
+              <Ionicons
+                style={{
+                  borderWidth: 1,
+                  borderRadius: getResponsiveSize(12),
+                  padding: getResponsiveSize(4),
+                  borderColor: '#fff'
+                }}
+                name="notifications-outline"
+                size={getResponsiveSize(24)}
+                color={"#fff"}
+              />
+              {unreadCount > 0 && (
+                <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[16px] h-4 items-center justify-center px-1">
+                  <Text className="text-white text-xs font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Balance Section */}
@@ -348,18 +363,19 @@ const UserCard: React.FC<UserCardProps> = ({ user, accountData, disabled = false
                     <Ionicons name="copy-outline" size={getResponsiveSize(20)} color="#9B9B9B" />
                   </TouchableOpacity>
                 </View>
-
+<View className="mt-4 justify-center items-center">
             <TouchableOpacity
-              className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[30%] w-2/6 text-center"
+              className="bg-blue-600 py-3 rounded-2xl"
               style={{ 
                 paddingVertical: getResponsiveSize(12),
                 width: '40%',
-                left: '30%'
+              
               }}
               onPress={() => setShowAccountDetailsModal(false)}
             >
               <Text className="text-white font-semibold text-center w-full" style={{ fontSize: getResponsiveSize(18) }}>Close</Text>
             </TouchableOpacity>
+          </View>
           </View>
         </View>
       </Modal>

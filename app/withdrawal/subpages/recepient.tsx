@@ -28,6 +28,8 @@ export default function Recepient() {
   const [bankSearch, setBankSearch] = useState('');
   const [bankInputLayout, setBankInputLayout] = useState<{x: number, y: number, width: number, height: number} | null>(null);
   const [sessionId, setSessionId] = useState('');
+  const [transferFee, setTransferFee] = useState<number>(0);
+  const [feeLoading, setFeeLoading] = useState(false);
 
   // Fetch bank list from public endpoint on mount
   useEffect(() => {
@@ -43,13 +45,21 @@ export default function Recepient() {
     fetchBanks();
   }, []);
 
-  // Hide verify result after 3 seconds
-  useEffect(() => {
-    if (verifyResult) {
-      const timer = setTimeout(() => setVerifyResult(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [verifyResult]);
+  // Helper to get transfer fee for a bank code
+  const getTransferFee = async (bankCode: string) => {
+    const token = await AsyncStorage.getItem('auth_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+    const res = await fetch(`https://esusu-server.onrender.com/api/account/fee/${bankCode}`, {
+      method: 'GET',
+      headers
+    });
+    const response = await res.json();
+    console.log('Transfer fee response for bank code', bankCode, ':', response);
+    return response;
+  };
 
     const handlePreviousPage = () => {
     setShowBankDropdown(false);
@@ -98,6 +108,22 @@ export default function Recepient() {
         setAccountName(data.data.accountName);
         setVerifyResult('Bank details verified successfully!');
         if (data.data.sessionId) setSessionId(data.data.sessionId);
+
+        // Fetch transfer fee after successful verification
+        setFeeLoading(true);
+        try {
+          const feeResponse = await getTransferFee(selectedBankCode || bankCode);
+          if (feeResponse.status === 'Success' && feeResponse.data) {
+            setTransferFee(feeResponse.data.transferFee || 0);
+          } else {
+            setTransferFee(0);
+          }
+        } catch (error) {
+          console.error('Error fetching transfer fee:', error);
+          setTransferFee(0);
+        } finally {
+          setFeeLoading(false);
+        }
       } else {
         setVerifyResult(data?.message || 'Failed to verify bank details.');
       }
@@ -274,12 +300,28 @@ export default function Recepient() {
 
           <Text className="text-base font-medium text-[#272636] mb-2">Account Name</Text>
                             <TextInput
-            className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base mb-10"
+            className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base mb-6"
                                 placeholder="Account Name"
                                 value={accountName}
                                 onChangeText={setAccountName}
             editable={false}
                             />
+
+          {/* Fee Display */}
+          <View className="items-center mb-4">
+            {feeLoading ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="#0074FF" />
+                <Text className="text-gray-600 ml-2">Calculating fee...</Text>
+              </View>
+            ) : transferFee > 0 ? (
+              <View className="bg-blue-50 rounded-lg px-4 py-2">
+                <Text className="text-blue-800 text-sm">
+                  Transfer Fee: ₦{transferFee.toLocaleString()}
+                </Text>
+              </View>
+            ) : null}
+          </View>
                 </View>
 
         <TouchableOpacity

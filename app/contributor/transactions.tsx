@@ -74,12 +74,13 @@ const groupTransactionsByDate = (transactions: Transaction[]) => {
 
 // Transaction Item component
 const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
+  const router = useRouter();
   const { name, type, amount, timestamp } = transaction;
-  
+
   // Format the amount with the Nigerian Naira symbol (₦)
   const formattedAmount = () => {
     const nairaSymbol = '₦';
-    
+
     // For withdrawals, add a minus sign
     if (type === 'withdrawal') {
       return `-${nairaSymbol}${Math.abs(amount).toLocaleString()}`;
@@ -93,14 +94,14 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
       return `${nairaSymbol}${amount.toLocaleString()}`;
     }
   };
-  
+
   const getTransactionTitle = () => {
     if (type === 'account_creation') {
       return "New Account Created";
     }
     return name;
   };
-  
+
   const getTransactionSubtitle = () => {
     if (type === 'deposit') {
       return `Deposit at ${timestamp}`;
@@ -110,21 +111,35 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
       return `for ${name} at ${timestamp}`;
     }
   };
-  
+
   // Determine text color based on transaction type
   const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
-  
+
+  const handlePress = () => {
+    // Navigate to receipt page with transaction data
+    router.push({
+      pathname: '/receipt',
+      params: {
+        transaction: JSON.stringify(transaction),
+      },
+    });
+  };
+
   return (
-    <View className="flex-row justify-between items-center py-4 border-b border-gray-200">
+    <TouchableOpacity
+      className="flex-row justify-between items-center py-4 border-b border-gray-200"
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
       <View className="flex-1 pr-4">
-        <Text 
+        <Text
           className="text-base font-semibold text-gray-800"
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {getTransactionTitle()}
         </Text>
-        <Text 
+        <Text
           className="text-gray-500 text-sm"
           numberOfLines={1}
         >
@@ -134,7 +149,7 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
       <Text className={`text-base font-bold ${amountColorClass}`}>
         {formattedAmount()}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 

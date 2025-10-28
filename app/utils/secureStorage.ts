@@ -13,6 +13,7 @@ export const SECURE_KEYS = {
   TRANSACTION_PIN: 'transaction_pin',
   BIOMETRIC_KEY: 'biometric_key',
   ENCRYPTION_KEY: 'encryption_key',
+  NOTIFICATION_TOKEN: 'notification_token',
 } as const;
 
 // Keys for regular AsyncStorage (non-sensitive data)
@@ -219,7 +220,7 @@ export class Storage {
   }> {
     try {
       const secureItems: string[] = [];
-      const regularItems = await AsyncStorage.getAllKeys();
+      const regularItems: readonly string[] = await AsyncStorage.getAllKeys();
       
       // Check which secure items exist
       for (const key of Object.values(SECURE_KEYS)) {
@@ -229,8 +230,8 @@ export class Storage {
       }
       
       return {
-        secureItems,
-        regularItems,
+        secureItems: [...secureItems],
+        regularItems: [...regularItems],
         totalSize: secureItems.length + regularItems.length,
       };
     } catch (error) {

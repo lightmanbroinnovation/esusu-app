@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ImageBackground, Dimensions, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useExitAppBackHandler } from './utils/backButtonHandler';
-
-// Import background message handler
-import '../backgroundMessaging';
 
 export default function Index() {
   const insets = useSafeAreaInsets();
@@ -93,16 +90,12 @@ export default function Index() {
         </View>
         {/* Buttons */}
         <View className="flex-row justify-between px-6 mb-10 gap-4">
-          <Link href="/login" asChild>
-            <TouchableOpacity className="flex-1 border border-white py-3 rounded-2xl items-center">
+          <TouchableOpacity className="flex-1 border border-white py-3 rounded-2xl items-center" onPress={() => router.push('/login')}>
               <Text className="text-white font-semibold">LOG IN</Text>
             </TouchableOpacity>
-          </Link>
-          <Link href="/signup" asChild>
-            <TouchableOpacity className="flex-1 bg-white py-3 rounded-2xl items-center">
+          <TouchableOpacity className="flex-1 bg-white py-3 rounded-2xl items-center" onPress={() => router.push('/signup')}>
               <Text className="text-[#0072CE] font-semibold">SIGN UP</Text>
             </TouchableOpacity>
-          </Link>
         </View>
       </View>
     </ImageBackground>

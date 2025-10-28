@@ -311,32 +311,34 @@ const CommissionScreen = () => {
             <Text className="text-blue-600 text-2xl font-bold mb-4">Commission Rates</Text>
             
             <View className="border-b border-gray-200 pb-4 mb-4">
-              <Text className="text-xl font-semibold">New Customer</Text>
-              <Text className="text-gray-600">₦100 per registration</Text>
+              <Text className="text-xl font-semibold">First contribution deposit
+</Text>
+              <Text className="text-gray-600">% per First contribution</Text>
             </View>
             
-            <View className="border-b border-gray-200 pb-4 mb-4">
+            {/* <View className="border-b border-gray-200 pb-4 mb-4">
               <Text className="text-xl font-semibold">Deposit Commission</Text>
               <Text className="text-gray-600">1% of all deposit amounts</Text>
-            </View>
+            </View> */}
             
             <View className="border-b border-gray-200 pb-4 mb-4">
-              <Text className="text-xl font-semibold">Withdrawal Policy</Text>
-              <Text className="text-gray-600">Free (no commission)</Text>
+              <Text className="text-xl font-semibold"> Contributor withdrawal fee</Text>
+              <Text className="text-gray-600">% (Based on the Recipent back)</Text>
             </View>
             
-            <View className="pb-4">
+            {/* <View className="pb-4">
               <Text className="text-xl font-semibold">Bonus</Text>
               <Text className="text-gray-600">₦500 bonus for every 10 active customers</Text>
-            </View>
-            
+            </View> */}
+            <View className="mt-4 justify-center items-center">
             <TouchableOpacity 
-              className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[30%] "
+              className="bg-blue-600 py-3 rounded-2xl"
               style={{ width: '40%' }} // Adjust width and height as needed
               onPress={() => setShowRatesModal(false)}
             >
               <Text className="text-white font-semibold text-center ">Close</Text>
             </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

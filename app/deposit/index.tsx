@@ -10,14 +10,39 @@ import {
   Keyboard,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { fetchContributorDetailsForDeposit } from "../../services/api";
+import { fetchContributorDetailsForDeposit, fetchGroupedContributorPhotos } from "../../services/api";
 import NetInfo from '@react-native-community/netinfo';
 import EsusuLoader from '../components/EsusuLoader';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
+
+// Define the Contributor type based on the API response
+type Contributor = {
+  _id?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  phone?: string;
+  photo?: string;
+  [key: string]: any; // For any additional properties
+};
+
+// Define the API response structure
+type GroupedContributors = {
+  [key: string]: {
+    contributors: Contributor[];
+    title: string;
+  };
+};
+
+type ApiResponse = GroupedContributors & {
+  status?: string;
+};
 
 export default function DepositScreen() {
   const router = useRouter();
@@ -31,6 +56,9 @@ export default function DepositScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [networkAvailable, setNetworkAvailable] = useState(true);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
+  const [isLoadingContributors, setIsLoadingContributors] = useState(false);
 
   useEffect(() => {
     // Add event listeners for keyboard show and hide
@@ -52,12 +80,117 @@ export default function DepositScreen() {
     const unsubscribe = NetInfo.addEventListener(state => {
       setNetworkAvailable(!!state.isConnected);
     });
-    return () => unsubscribe();
-  }, []);
+    
+    // Fetch all contributors on component mount
+    const fetchAllContributors = async () => {
+      if (!networkAvailable) return;
+      
+      setIsLoadingContributors(true);
+      try {
+        const response = await fetchGroupedContributorPhotos();
+        console.log('API Response:', JSON.stringify(response, null, 2));
+        
+        if (!response) {
+          console.log('No response received from API');
+          throw new Error('No response from server');
+        }
+        
+        // Flatten the grouped data into a single array of contributors
+        const allContributors: Contributor[] = [];
+        
+        // Extract contributors from all groups (daily, weekly, monthly)
+        const groups = ['daily', 'weekly', 'monthly'] as const;
+        
+        groups.forEach(groupKey => {
+          const group = response[groupKey];
+          if (group?.contributors?.length) {
+            group.contributors.forEach((contributor: Contributor) => {
+              if (contributor) {
+                allContributors.push({
+                  ...contributor,
+                  phoneNumber: contributor.phoneNumber || '',
+                  firstName: contributor.firstName || '',
+                  lastName: contributor.lastName || ''
+                });
+              }
+            });
+          }
+        });
+        
+        console.log('Processed contributors:', allContributors);
+        setContributors(allContributors);
+      } catch (error) {
+        console.error("Error fetching contributors:", error);
+        setError("Failed to load contributors. Please try again.");
+        setTimeout(() => setError(''), 4000);
+      } finally {
+        setIsLoadingContributors(false);
+      }
+    };
+    
+    fetchAllContributors();
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [networkAvailable]);
+  
+  // Filter contributors based on phone input
+  useEffect(() => {
+    if (!phone) {
+      setFilteredContributors([]);
+      return;
+    }
+    
+    const searchTerm = phone.toLowerCase().trim();
+    if (searchTerm.length < 2) {
+      setFilteredContributors([]);
+      return;
+    }
+    
+    const filtered = contributors.filter((contributor): contributor is Required<Contributor> => {
+      if (!contributor) return false;
+      
+      const phoneNumber = (contributor.phoneNumber || contributor.phone || '').toLowerCase();
+      const firstName = (contributor.firstName || '').toLowerCase();
+      const lastName = (contributor.lastName || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`.trim();
+      
+      // Match by phone number or name
+      return phoneNumber.includes(searchTerm) || 
+             fullName.includes(searchTerm) ||
+             firstName.includes(searchTerm) ||
+             lastName.includes(searchTerm);
+    });
+    
+    setFilteredContributors(filtered);
+  }, [phone, contributors]);
 
-  const fetchContributorDetails = async () => {
+  const handleContributorSelect = (contributor: Contributor) => {
+    if (!contributor) return;
+    
+    const phoneNumber = contributor.phoneNumber || contributor.phone || '';
+    setPhone(phoneNumber);
+    setFilteredContributors([]);
+    Keyboard.dismiss();
+    
+    // Proceed with the selected contributor
+    if (phoneNumber) {
+      fetchContributorDetails(phoneNumber);
+    }
+  };
+
+  const fetchContributorDetails = async (phoneNumber: string | null = null) => {
+    const phoneToUse = phoneNumber || phone;
+    
+    if (!phoneToUse) {
+      setError("Phone number is required");
+      setTimeout(() => setError(''), 4000);
+      return;
+    }
+    
     // Validate phone number
-    if (!phone || phone.length < 10) {
+    if (!phoneToUse || phoneToUse.length < 10) {
       setError("Please enter a valid phone number");
       setTimeout(() => setError(''), 4000);
       return;
@@ -68,7 +201,7 @@ export default function DepositScreen() {
 
     try {
       // Format phone number with or without country code
-      const formattedPhone = phone.startsWith('+') ? phone : phone;
+      const formattedPhone = phoneToUse.startsWith('+') ? phoneToUse : phoneToUse;
       console.log("Searching for contributor with phone:", formattedPhone);
       
       // Fetch contributor details using the new API endpoint
@@ -112,7 +245,7 @@ export default function DepositScreen() {
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingContributors) {
     return <EsusuLoader />;
   }
 
@@ -189,6 +322,49 @@ export default function DepositScreen() {
           {error ? (
             <Text className="text-red-500 mt-2">{error}</Text>
           ) : null}
+          
+          {/* Contributors list */}
+          {filteredContributors.length > 0 && (
+            <View className="mt-2 border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+              {filteredContributors.map((contributor: Contributor, index: number) => {
+                // Skip if contributor is missing required fields
+                if (!contributor) return null;
+                
+                const name = `${contributor.firstName || ''} ${contributor.lastName || ''}`.trim();
+                const phoneNumber = contributor.phoneNumber || '';
+                
+                return (
+                  <TouchableOpacity
+                    key={contributor._id || `contributor-${index}`}
+                    className="flex-row items-center p-3 border-b border-gray-100 bg-white"
+                    onPress={() => handleContributorSelect(contributor)}
+                  >
+                    {contributor.photo ? (
+                      <Image
+                        source={{ uri: contributor.photo }}
+                        className="w-10 h-10 rounded-full mr-3"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-10 h-10 rounded-full bg-gray-200 mr-3 items-center justify-center">
+                        <Text className="text-gray-500 text-lg font-medium">
+                          {name[0]?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <View className="flex-1">
+                      <Text className="text-base font-medium" numberOfLines={1}>
+                        {name || 'Unnamed Contributor'}
+                      </Text>
+                      {phoneNumber ? (
+                        <Text className="text-sm text-gray-500">{phoneNumber}</Text>
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Spacer to push button down */}
@@ -197,15 +373,13 @@ export default function DepositScreen() {
           {!isKeyboardVisible && ( // Hide button when keyboard is visible
             <TouchableOpacity
               className={`flex-row justify-center items-center ${loading || !phone ? 'bg-[#0072CE]/50' : 'bg-[#0072CE]'} py-4 rounded-lg`}
-              onPress={fetchContributorDetails}
+              onPress={() => fetchContributorDetails()}
               disabled={loading || !phone}
             >
               {loading ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <>
-                  <Text className="text-white text-lg mr-2 font-semibold">Next</Text>
-                </>
+                <Text className="text-white text-lg mr-2 font-semibold">Next</Text>
               )}
             </TouchableOpacity>
           )}

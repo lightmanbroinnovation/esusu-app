@@ -238,12 +238,25 @@ const CommissionTransactions: React.FC = () => {
             Object.entries(groupedCommissions).map(([date, transactions]) => (
               <View key={date} className="mb-4">
                 <Text className="text-gray-500 mb-2">{date}</Text>
-                {transactions.map(transaction => {
+                {transactions.map((transaction, index) => {
                   const title = (transaction.title ?? '').trim().toLowerCase();
                   const isDebit = title === 'debit';
                   const isCredit = title === 'credit';
                   return (
-                    <View key={transaction.id} className="mb-4">
+                    <TouchableOpacity
+                      key={`${transaction.id}-${index}`}
+                      className="mb-4"
+                      onPress={() => {
+                        // Navigate to receipt page with transaction data
+                        router.push({
+                          pathname: '/receipt',
+                          params: {
+                            transaction: JSON.stringify(transaction),
+                          },
+                        });
+                      }}
+                      activeOpacity={0.7}
+                    >
                       <View className="flex-row justify-between items-center">
                         <Text className="font-medium">{transaction.description ?? transaction.type}</Text>
                         <Text className={`font-semibold ${isDebit ? 'text-red-600' : isCredit ? 'text-green-600' : 'text-gray-600'}`}>
@@ -255,7 +268,7 @@ const CommissionTransactions: React.FC = () => {
                         </Text>
                       </View>
                       <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>

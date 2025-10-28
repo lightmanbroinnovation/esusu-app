@@ -134,7 +134,7 @@ export default function TierScreen() {
   const currentTier = getCurrentTier(userDetails?.accountTier);
 
   return (
-    <View className="flex-1 bg-gray-100">
+    <View className="flex-1 bg-gray-100 pb-8">
       <View
         className="flex-row items-center bg-white px-4 pb-4 pt-6"
         style={{ paddingTop: insets.top }}

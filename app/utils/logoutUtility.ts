@@ -1,11 +1,13 @@
-import { forceClearAllData } from '../../services/api';
-import { clearAllData, clearDataByPatterns } from './dataCaching';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { store } from '../store/store';
-import { logout as logoutUser } from '../store/slices/userSlice';
+import { router } from 'expo-router';
+import { logout } from '../store/slices/userSlice';
 import { clearNotifications } from '../store/slices/notificationSlice';
 import { resetTheme } from '../store/slices/themeSlice';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { forceClearAllData } from '../../services/api';
+import { clearAllData as clearAllDataFromCache } from './dataCaching';
+import { clearAllAppData } from './clearAllData';
+import { sendNotification, NotificationTemplates } from '../services/notificationService';
 
 /**
  * Comprehensive logout utility that clears ALL data and resets app state
@@ -20,11 +22,16 @@ export const performCompleteLogout = async (reloadApp: boolean = false) => {
   try {
     console.log('🚀 Starting complete logout process...');
     
-    // Step 1: Clear all device storage and caches
-    await forceClearAllData();
+    // Step 1: Clear all device storage and caches (skip if fails)
+    try {
+      await forceClearAllData();
+      console.log('✓ Force clear all data completed');
+    } catch (error) {
+      console.log('⚠️ Force clear all data failed (skipping):', error);
+    }
     
     // Step 2: Clear Redux state
-    store.dispatch(logoutUser());
+    store.dispatch(logout());
     store.dispatch(clearNotifications());
     
     // Safely dispatch resetTheme with error handling
@@ -36,7 +43,7 @@ export const performCompleteLogout = async (reloadApp: boolean = false) => {
     
     // Step 3: Use comprehensive data clearing as backup
     try {
-      await clearAllData();
+      await clearAllDataFromCache();
       console.log('✓ Comprehensive data clear completed');
     } catch (e) {
       console.log('Error in comprehensive data clear:', e);
@@ -165,7 +172,7 @@ export const performQuickLogout = async () => {
     await logoutUser();
     
     // Clear Redux state
-    store.dispatch(logoutUser());
+    store.dispatch(logout());
     store.dispatch(clearNotifications());
     
     // Safely dispatch resetTheme with error handling
@@ -186,7 +193,7 @@ export const performQuickLogout = async () => {
     // Fallback
     try {
       await AsyncStorage.clear();
-      store.dispatch(logoutUser());
+      store.dispatch(logout());
       router.replace('/login');
     } catch (fallbackError) {
       console.error('Fallback logout failed:', fallbackError);
@@ -206,7 +213,7 @@ export const performForceLogout = async () => {
     await forceClearAllData();
     
     // Clear Redux state
-    store.dispatch(logoutUser());
+    store.dispatch(logout());
     store.dispatch(clearNotifications());
     
     // Safely dispatch resetTheme with error handling
@@ -227,7 +234,7 @@ export const performForceLogout = async () => {
     // Last resort fallback
     try {
       await AsyncStorage.clear();
-      store.dispatch(logoutUser());
+      store.dispatch(logout());
       router.replace('/login');
     } catch (fallbackError) {
       console.error('Last resort logout failed:', fallbackError);
@@ -274,7 +281,7 @@ export const performSoftLogout = async () => {
     ]);
     
     // Clear Redux state
-    store.dispatch(logoutUser());
+    store.dispatch(logout());
     store.dispatch(clearNotifications());
     
     // Safely dispatch resetTheme with error handling
@@ -294,7 +301,7 @@ export const performSoftLogout = async () => {
     
     // Fallback
     try {
-      store.dispatch(logoutUser());
+      store.dispatch(logout());
       router.replace('/login/passcode');
     } catch (fallbackError) {
       console.error('Fallback soft logout failed:', fallbackError);
@@ -325,11 +332,16 @@ export const performHardLogout = async () => {
       console.log('Error clearing critical auth keys (non-fatal):', e);
     }
     
-    // Step 1: Clear all device storage and caches
-    await forceClearAllData();
+    // Step 1: Clear all device storage and caches (skip if fails)
+    try {
+      await forceClearAllData();
+      console.log('✓ Force clear all data completed');
+    } catch (error) {
+      console.log('⚠️ Force clear all data failed (skipping):', error);
+    }
     
     // Step 2: Clear Redux state
-    store.dispatch(logoutUser());
+    store.dispatch(logout());
     store.dispatch(clearNotifications());
     
     // Safely dispatch resetTheme with error handling
@@ -341,7 +353,7 @@ export const performHardLogout = async () => {
     
     // Step 3: Use comprehensive data clearing
     try {
-      await clearAllData();
+      await clearAllDataFromCache();
       console.log('✓ Comprehensive data clear completed');
     } catch (e) {
       console.log('Error in comprehensive data clear:', e);
@@ -389,7 +401,7 @@ export const performHardLogout = async () => {
     // Fallback: try to clear at least the basics
     try {
       await AsyncStorage.clear();
-      store.dispatch(logoutUser());
+      store.dispatch(logout());
       console.log('Fallback hard logout completed - ready for navigation');
     } catch (fallbackError) {
       console.error('Even fallback hard logout failed:', fallbackError);

@@ -129,7 +129,20 @@ const RecentActivity = ({ onVerifyNow, onViewAllActivity, transactionHistory = [
               const amountPrefix = isDeposit ? '+' : '-';
               
               return (
-                <View key={index} className="flex-row items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <TouchableOpacity
+                  key={index}
+                  className="flex-row items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  onPress={() => {
+                    // Navigate to receipt page with transaction data
+                    router.push({
+                      pathname: '/receipt',
+                      params: {
+                        transaction: JSON.stringify(transaction),
+                      },
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
                   <View className="flex-row items-center flex-1">
                     <View className={`w-10 h-10 ${isDeposit ? 'bg-green-500' : 'bg-red-500'} rounded-full items-center justify-center mr-3`}>
                       <Ionicons 
@@ -153,7 +166,7 @@ const RecentActivity = ({ onVerifyNow, onViewAllActivity, transactionHistory = [
                   <Text className={`font-bold ${amountColor}`}>
                     {amountPrefix}₦{Number(Math.abs(transaction.amount || 0)).toLocaleString()}
                   </Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>

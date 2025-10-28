@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -15,13 +15,32 @@ import { usePerformanceMonitor } from '../utils/performanceOptimizer';
 import moment from 'moment';
 
 export default function Notifications() {
-  // Use back button handler for notifications
-  useBackButtonHandler('/notifications');
+  // Use back button handler with error handling
+  try {
+    useBackButtonHandler('/notifications');
+  } catch (error) {
+    console.warn('Back button handler not available:', error);
+  }
   
-  // Performance monitoring
-  usePerformanceMonitor('NotificationsScreen');
+  // Performance monitoring with error handling
+  try {
+    usePerformanceMonitor('NotificationsScreen');
+  } catch (error) {
+    console.warn('Performance monitor not available:', error);
+  }
 
-  // Use notification context
+  // Use notification context with error handling
+  const notificationContext = useNotifications();
+  
+  // Check if context is available
+  if (!notificationContext) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Text className="text-red-500">Error loading notifications</Text>
+      </View>
+    );
+  }
+
   const {
     notifications,
     unreadCount,
@@ -29,16 +48,21 @@ export default function Notifications() {
     refreshNotifications,
     markAsRead,
     markAllAsRead
-  } = useNotifications();
+  } = notificationContext; 
 
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
-  // Refresh notifications
+  // Refresh notifications with error handling
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refreshNotifications();
-    setRefreshing(false);
+    try {
+      await refreshNotifications();
+    } catch (error) {
+      console.warn('Error refreshing notifications:', error);
+    } finally {
+      setRefreshing(false);
+    }
   }, [refreshNotifications]);
 
   // Initialize
@@ -47,19 +71,34 @@ export default function Notifications() {
   }, []);
 
   const handlePreviousPage = () => {
-    router.back();
+    try {
+      router.back();
+    } catch (error) {
+      console.warn('Error navigating back:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
-    return moment(dateString).format('MMM DD, YYYY [at] h:mm A');
+    try {
+      return moment(dateString).format('MMM DD, YYYY [at] h:mm A');
+    } catch (error) {
+      console.warn('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
   // Use unreadCount from context
 
-  // Render notification item
+  // Render notification item with error handling
   const renderNotificationItem = ({ item }: { item: any }) => (
     <TouchableOpacity
-      onPress={() => markAsRead(item._id)}
+      onPress={() => {
+        try {
+          markAsRead(item._id);
+        } catch (error) {
+          console.warn('Error marking notification as read:', error);
+        }
+      }}
       className={`p-4 mb-3 rounded-xl border ${
         item.isRead 
           ? 'bg-gray-50 border-gray-200' 
@@ -126,41 +165,59 @@ export default function Notifications() {
 
   return (
     <View className="flex-1 bg-white">
-            {/* Header */}
+      {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
-            <TouchableOpacity 
-              onPress={handlePreviousPage}
+        <TouchableOpacity 
+          onPress={handlePreviousPage}
           className="p-2 rounded-full"
-            >
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-        <View className="flex-row items-center">
-          <Text className="text-lg font-semibold">Notifications</Text>
-          {unreadCount > 0 && (
-            <View className="ml-2 bg-red-500 rounded-full px-2 py-1">
-              <Text className="text-white text-xs font-bold">
-                {unreadCount}
-              </Text>
-            </View>
-          )}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        
+        {/* Centered Title and Badge */}
+        <View className="flex-1 items-center">
+          <View className="flex-row items-center">
+            <Text className="text-lg font-semibold">Notifications</Text>
+            {/* {unreadCount > 0 && (
+              <View className="ml-2 bg-red-500 rounded-full px-2 py-1">
+                <Text className="text-white text-xs font-bold">
+                  {unreadCount}
+                </Text>
+              </View>
+            )} */}
+          </View>
         </View>
-        {notifications.length > 0 && (
+        
+        {/* Mark All Read Button */}
+        {/* {notifications && notifications.length > 0 && (
           <TouchableOpacity
-            onPress={markAllAsRead}
+            onPress={() => {
+              try {
+                markAllAsRead();
+              } catch (error) {
+                console.warn('Error marking all notifications as read:', error);
+              }
+            }}
             className="p-2"
           >
             <Text className="text-blue-600 text-sm font-medium">Mark All Read</Text>
           </TouchableOpacity>
-        )}
-            </View>
+        )} */}
+      </View>
 
       {/* Notifications List */}
       <View className="flex-1 px-4">
-        {notifications.length > 0 ? (
+        {notifications && notifications.length > 0 ? (
           <FlatList
             data={notifications}
             renderItem={renderNotificationItem}
-            keyExtractor={(item) => item._id}
+            keyExtractor={(item, index) => {
+              try {
+                return item._id || `notification-${index}`;
+              } catch (error) {
+                return `notification-${index}`;
+              }
+            }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -169,8 +226,15 @@ export default function Notifications() {
                 tintColor="#0074FF"
               />
             }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{
+              paddingBottom: 100,
+              flexGrow: 1
+            }}
+            style={{ flex: 1 }}
+            nestedScrollEnabled={true}
+            bounces={true}
+            decelerationRate="normal"
           />
         ) : (
           renderEmptyState()
@@ -178,9 +242,15 @@ export default function Notifications() {
       </View>
 
       {/* Settings Button */}
-      <View className="px-4 pb-6">
+      {/* <View className="px-4 pb-6">
         <TouchableOpacity
-          onPress={() => router.push('/settings')}
+          onPress={() => {
+            try {
+              router.push('/settings');
+            } catch (error) {
+              console.warn('Error navigating to settings:', error);
+            }
+          }}
           className="bg-gray-50 border border-gray-200 rounded-xl p-4"
         >
           <View className="flex-row items-center justify-between">
@@ -193,7 +263,7 @@ export default function Notifications() {
             <Ionicons name="chevron-forward" size={16} color="#6B7280" />
           </View>
         </TouchableOpacity>
-      </View>
+      </View> */}
     </View>
     );
 }

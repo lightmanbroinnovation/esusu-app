@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 import { getCachedData, invalidateCache, clearAllCaches, clearAllData, clearDataByPatterns } from "../app/utils/dataCaching";
 import { trackApiCall } from "../app/utils/performanceMonitor";
@@ -59,7 +60,7 @@ const axiosInstance = axios.create({
 // Add request interceptor to track performance and include token
 axiosInstance.interceptors.request.use(async request => { // Made async to await secure storage
   request.metadata = { startTime: new Date().getTime() };
-  const token = await Storage.getItem(SECURE_KEYS.AUTH_TOKEN, true); // Get token from secure storage
+  const token = await AsyncStorage.getItem('auth_token'); // Get token from AsyncStorage
   
   // Debug logging for authentication issues
   console.log(`🔐 API Request to: ${request.url}`);
@@ -1288,7 +1289,9 @@ export const forceClearAllData = async () => {
     
     // 8. Clear any potential SQLite databases (if using expo-sqlite)
     try {
-      const SQLite = await import('expo-sqlite');
+      // Check if expo-sqlite is available before importing
+      const SQLite = require('expo-sqlite');
+      if (SQLite && SQLite.openDatabase) {
       const db = SQLite.openDatabase('app.db');
       if (db) {
         await new Promise((resolve, reject) => {
@@ -1297,6 +1300,7 @@ export const forceClearAllData = async () => {
           });
         });
         console.log('✓ SQLite database cleared');
+        }
       }
     } catch (e) {
       console.log('SQLite clear skipped (expo-sqlite not available)');
@@ -1304,7 +1308,8 @@ export const forceClearAllData = async () => {
     
     // 9. Clear any potential MMKV storage (if using react-native-mmkv)
     try {
-      const { MMKV } = await import('react-native-mmkv');
+      // Check if react-native-mmkv is available before importing
+      const { MMKV } = require('react-native-mmkv');
       if (MMKV) {
         const storage = new MMKV();
         storage.clearAll();
@@ -1316,7 +1321,9 @@ export const forceClearAllData = async () => {
     
     // 10. Clear any potential SecureStore (if using expo-secure-store)
     try {
-      const SecureStore = await import('expo-secure-store');
+      // Check if expo-secure-store is available before importing
+      const SecureStore = require('expo-secure-store');
+      if (SecureStore && SecureStore.deleteItemAsync) {
       const secureKeys = [
         'auth_token',
         'userId',
@@ -1334,6 +1341,7 @@ export const forceClearAllData = async () => {
         }
       }
       console.log('✓ SecureStore cleared');
+      }
     } catch (e) {
       console.log('SecureStore clear skipped (expo-secure-store not available)');
     }
@@ -1660,12 +1668,85 @@ export const checkAuthStatus = async () => {
   }
 };
 
-// Function to clear token cache
-export const clearTokenCache = async () => {
+// Function to register/update device information
+export const registerDevice = async (deviceData) => {
   try {
-    await AsyncStorage.removeItem('auth_token');
-    console.log('🗑️ Token cache cleared');
+    console.log('📱 Registering device information:', deviceData);
+
+    const response = await axiosInstance.post('https://esusu-server.onrender.com/api/merchant/register-device', deviceData);
+    console.log('✅ Device registered successfully:', response.data);
+    return response.data;
   } catch (error) {
-    console.error('❌ Error clearing token cache:', error);
+    console.error('❌ Error registering device:', error);
+
+    // Don't throw error for device registration failures to avoid breaking app flow
+    if (error.response) {
+      console.error('Device registration failed with status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    } else if (error.request) {
+      console.error('No response received for device registration');
+    } else {
+      console.error('Device registration error:', error.message);
+    }
+
+    // Return a success indicator even if registration fails
+    return { success: false, error: error.message };
+  }
+};
+
+// Fetch merchant notification settings
+export const fetchMerchantNotificationSettings = async () => {
+  try {
+    const token = await AsyncStorage.getItem('auth_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    const response = await fetch('https://esusu-server.onrender.com/api/merchant/notification-settings', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      }
+    });
+
+    const data = await response.json();
+    console.log('Merchant notification settings response:', data);
+
+    if (data && data.status === 'Success') {
+      return data.data;
+    } else {
+      throw new Error(data?.message || 'Failed to fetch notification settings');
+    }
+  } catch (error) {
+    console.error('Error fetching merchant notification settings:', error);
+    throw error;
+  }
+};
+
+// Update merchant notification settings
+export const updateMerchantNotificationSettings = async (settings) => {
+  try {
+    const token = await AsyncStorage.getItem('auth_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    const response = await fetch('https://esusu-server.onrender.com/api/merchant/notification-settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(settings)
+    });
+
+    const data = await response.json();
+    console.log('Update merchant notification settings response:', data);
+
+    if (data && data.status === 'Success') {
+      return data;
+    } else {
+      throw new Error(data?.message || 'Failed to update notification settings');
+    }
+  } catch (error) {
+    console.error('Error updating merchant notification settings:', error);
+    throw error;
   }
 };

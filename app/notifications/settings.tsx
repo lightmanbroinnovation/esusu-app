@@ -1,56 +1,136 @@
-/**
- * Notification Settings Screen
- * Dedicated screen for managing notification preferences
- */
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
   Switch,
-  Alert
+  Alert,
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
-import { Storage, STORAGE_KEYS } from '../utils/secureStorage';
+import { fetchMerchantNotificationSettings, updateMerchantNotificationSettings } from '../../services/api';
 import { useNotifications } from '../context/NotificationContext';
-import { usePerformanceMonitor } from '../utils/performanceOptimizer';
 
 export default function NotificationSettings() {
   // Use back button handler for notification settings
   useBackButtonHandler('/notifications/settings');
-  
+
   // Performance monitoring
-  usePerformanceMonitor('NotificationSettingsScreen');
+  // usePerformanceMonitor('NotificationSettingsScreen');
+
+  const { width, height } = Dimensions.get('window');
+  const router = useRouter();
+
+  // Responsive sizing based on screen width
+  const getResponsiveSize = (baseSize: number) => {
+    if (width < 375) {
+      return baseSize * 0.9; // Small phones
+    } else if (width < 414) {
+      return baseSize; // Medium phones
+    } else {
+      return baseSize * 1.1; // Large phones and tablets
+    }
+  };
 
   const [settings, setSettings] = useState({
-    transactionAlerts: true,
-    securityAlerts: false,
-    generalUpdates: false,
+    notifications: {
+      transactionAlert: true,
+      securityAlert: false,
+      generatUpdates: false,
+    },
+    communicationPreferences: {
+      email: false,
+      sms: false,
+    },
     pushNotifications: true,
-    emailNotifications: false,
-    smsNotifications: false,
   });
 
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Get notification context
   const { areNotificationsEnabled, requestNotificationPermission } = useNotifications();
+
+  // Notification items with icons and descriptions
+  const alertItems = [
+    {
+      key: 'transactionAlert',
+      title: 'Transaction Alerts',
+      description: 'Get notified when contributions are deposited or withdrawn',
+      icon: 'card-outline'
+    },
+    {
+      key: 'securityAlert',
+      title: 'Security Alerts',
+      description: 'Receive alerts for suspicious activities or login attempts',
+      icon: 'shield-checkmark-outline'
+    },
+    {
+      key: 'generatUpdates',
+      title: 'General Updates',
+      description: 'Stay informed about app updates, new features, and announcements',
+      icon: 'information-circle-outline'
+    },
+  ];
+
+  const communicationItems = [
+    {
+      key: 'email',
+      title: 'Email Notifications',
+      description: 'Receive notifications via email',
+      icon: 'mail-outline'
+    },
+    {
+      key: 'sms',
+      title: 'SMS Notifications',
+      description: 'Receive notifications via SMS',
+      icon: 'chatbubble-outline'
+    },
+  ];
 
   // Load notification settings
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
-      const savedSettings = await Storage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS, false);
-      if (savedSettings) {
-        setSettings(prev => ({ ...prev, ...savedSettings }));
-      }
+      const apiSettings = await fetchMerchantNotificationSettings();
+
+      // Map API response to component state
+      const mappedSettings = {
+        notifications: {
+          transactionAlert: apiSettings.notifications?.transactionAlert ?? true,
+          securityAlert: apiSettings.notifications?.securityAlert ?? false,
+          generatUpdates: apiSettings.notifications?.generatUpdates ?? false,
+        },
+        communicationPreferences: {
+          email: apiSettings.communicationPreferences?.email ?? false,
+          sms: apiSettings.communicationPreferences?.sms ?? false,
+        },
+        pushNotifications: true, // Push notifications are handled separately
+      };
+
+      setSettings(prev => ({ ...prev, ...mappedSettings }));
+      setHasChanges(false);
     } catch (error) {
       console.error('Error loading notification settings:', error);
+      // Fallback to default settings if API fails
+      const defaultSettings = {
+        notifications: {
+          transactionAlert: true,
+          securityAlert: false,
+          generatUpdates: false,
+        },
+        communicationPreferences: {
+          email: false,
+          sms: false,
+        },
+        pushNotifications: true,
+      };
+      setSettings(prev => ({ ...prev, ...defaultSettings }));
     } finally {
       setLoading(false);
     }
@@ -59,8 +139,22 @@ export default function NotificationSettings() {
   // Save notification settings
   const saveSettings = useCallback(async (newSettings: typeof settings) => {
     try {
-      await Storage.setItem(STORAGE_KEYS.NOTIFICATION_SETTINGS, newSettings, false);
+      // Map component state to API format
+      const apiPayload = {
+        notifications: {
+          transactionAlert: newSettings.notifications.transactionAlert,
+          securityAlert: newSettings.notifications.securityAlert,
+          generatUpdates: newSettings.notifications.generatUpdates,
+        },
+        communicationPreferences: {
+          email: newSettings.communicationPreferences.email,
+          sms: newSettings.communicationPreferences.sms,
+        }
+      };
+
+      await updateMerchantNotificationSettings(apiPayload);
       setSettings(newSettings);
+      setHasChanges(false);
     } catch (error) {
       console.error('Error saving notification settings:', error);
       Alert.alert('Error', 'Failed to save settings. Please try again.');
@@ -68,9 +162,36 @@ export default function NotificationSettings() {
   }, []);
 
   // Toggle notification settings
-  const toggleSwitch = useCallback((key: keyof typeof settings) => {
-    const newSettings = { ...settings, [key]: !settings[key] };
+  const toggleSwitch = useCallback((key: string) => {
+    let newSettings;
+
+    if (key === 'pushNotifications') {
+      // Handle push notifications separately
+      newSettings = { ...settings, [key]: !settings[key] };
+    } else if (key in settings.notifications) {
+      // Handle notification settings
+      newSettings = {
+        ...settings,
+        notifications: {
+          ...settings.notifications,
+          [key]: !settings.notifications[key as keyof typeof settings.notifications]
+        }
+      };
+    } else if (key in settings.communicationPreferences) {
+      // Handle communication preferences
+      newSettings = {
+        ...settings,
+        communicationPreferences: {
+          ...settings.communicationPreferences,
+          [key]: !settings.communicationPreferences[key as keyof typeof settings.communicationPreferences]
+        }
+      };
+    } else {
+      return; // Unknown key
+    }
+
     setSettings(newSettings);
+    setHasChanges(true);
     saveSettings(newSettings);
   }, [settings, saveSettings]);
 
@@ -85,7 +206,6 @@ export default function NotificationSettings() {
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Open Settings', onPress: () => {
-              // You can implement opening device settings here
               console.log('Open device settings');
             }}
           ]
@@ -93,7 +213,7 @@ export default function NotificationSettings() {
         return;
       }
     }
-    
+
     toggleSwitch('pushNotifications');
   }, [areNotificationsEnabled, requestNotificationPermission, toggleSwitch]);
 
@@ -106,12 +226,25 @@ export default function NotificationSettings() {
     router.back();
   };
 
-  const handleSaveAll = () => {
-    Alert.alert(
-      'Settings Saved',
-      'Your notification preferences have been updated.',
-      [{ text: 'OK' }]
-    );
+  const handleSaveAll = async () => {
+    if (isSaving) return; // Prevent multiple clicks
+
+    try {
+      setIsSaving(true);
+      // Actual save operation - now handled automatically in toggleSwitch
+      await saveSettings(settings);
+
+      Alert.alert(
+        'Settings Saved',
+        'Your notification preferences have been updated.',
+        [{ text: 'OK' }]
+      );
+      setHasChanges(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleResetToDefault = () => {
@@ -120,20 +253,25 @@ export default function NotificationSettings() {
       'Are you sure you want to reset all notification settings to default?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Reset', 
+        {
+          text: 'Reset',
           style: 'destructive',
           onPress: () => {
             const defaultSettings = {
-              transactionAlerts: true,
-              securityAlerts: false,
-              generalUpdates: false,
+              notifications: {
+                transactionAlert: true,
+                securityAlert: false,
+                generatUpdates: false,
+              },
+              communicationPreferences: {
+                email: false,
+                sms: false,
+              },
               pushNotifications: true,
-              emailNotifications: false,
-              smsNotifications: false,
             };
             setSettings(defaultSettings);
             saveSettings(defaultSettings);
+            setHasChanges(true);
           }
         }
       ]
@@ -142,16 +280,19 @@ export default function NotificationSettings() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
-          <TouchableOpacity 
-            onPress={handlePreviousPage}
-            className="p-2 rounded-full"
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold">Notification Settings</Text>
-          <View className="w-10" />
+      <View className="flex-1 bg-gray-50">
+        {/* <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" /> */}
+        <View className="bg-white pt-6 pb-6 px-6 shadow-sm mt-10">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity
+              onPress={handlePreviousPage}
+              className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            >
+              <Ionicons name="arrow-back" size={20} color="#374151" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-gray-900">Notification Settings</Text>
+            <View className="w-10 h-10" />
+          </View>
         </View>
         <View className="flex-1 items-center justify-center">
           <Text className="text-gray-500">Loading settings...</Text>
@@ -161,187 +302,436 @@ export default function NotificationSettings() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-gray-50">
+      {/* <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" /> */}
+
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
-        <TouchableOpacity 
-          onPress={handlePreviousPage}
-          className="p-2 rounded-full"
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold">Notification Settings</Text>
-        <TouchableOpacity onPress={handleSaveAll} className="p-2">
-          <Text className="text-blue-600 text-sm font-medium">Save</Text>
-        </TouchableOpacity>
+      <View className="bg-white pt-6 pb-6 px-6 shadow-sm mt-10">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={handlePreviousPage}
+            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={20} color="#374151" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-gray-900">Notification Settings</Text>
+          <View className="w-10 h-10" />
+        </View>
       </View>
 
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-        {/* Push Notifications Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            Push Notifications
-          </Text>
-          <View className="bg-gray-50 rounded-xl p-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  Push Notifications
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Receive notifications on your device
-                </Text>
-              </View>
-              <Switch
-                value={settings.pushNotifications}
-                onValueChange={handlePushNotificationToggle}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
+      {/* Content */}
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <View style={{ paddingHorizontal: getResponsiveSize(16), paddingTop: getResponsiveSize(24) }}>
+
+          {/* Alert Types Section */}
+          <View style={{ marginBottom: getResponsiveSize(32) }}>
+            <Text style={{
+              fontSize: getResponsiveSize(12),
+              fontWeight: '600',
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              marginBottom: getResponsiveSize(16)
+            }}>
+              Alert Types
+            </Text>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: getResponsiveSize(16),
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              overflow: 'hidden'
+            }}>
+              {alertItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingHorizontal: getResponsiveSize(18),
+                    paddingVertical: getResponsiveSize(20),
+                    borderBottomWidth: index !== alertItems.length - 1 ? 1 : 0,
+                    borderBottomColor: '#F3F4F6'
+                  }}
+                  onPress={() => toggleSwitch(item.key as keyof typeof settings)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                      width: getResponsiveSize(48),
+                      height: getResponsiveSize(48),
+                      borderRadius: getResponsiveSize(12),
+                      backgroundColor: '#EFF6FF',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: getResponsiveSize(16)
+                    }}>
+                      <Ionicons name={item.icon as any} size={22} color="#3B82F6" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        fontSize: getResponsiveSize(16),
+                        fontWeight: '600',
+                        color: '#111827',
+                        marginBottom: getResponsiveSize(2)
+                      }}>
+                        {item.title}
+                      </Text>
+                      <Text style={{
+                        fontSize: getResponsiveSize(14),
+                        color: '#6B7280',
+                        lineHeight: getResponsiveSize(18)
+                      }}>
+                        {item.description}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={settings.notifications[item.key as keyof typeof settings.notifications]}
+                    onValueChange={() => toggleSwitch(item.key)}
+                    trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
+                    thumbColor="#fff"
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                  />
+                </TouchableOpacity>
+              ))}
             </View>
-            
-            {!areNotificationsEnabled && (
-              <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <View className="flex-row items-center">
-                  <Ionicons name="warning" size={16} color="#F59E0B" />
-                  <Text className="text-xs text-yellow-800 ml-2 flex-1">
-                    Notifications are disabled in your device settings. 
-                    Enable them to receive push notifications.
+          </View>
+
+          {/* Communication Preferences Section */}
+          <View style={{ marginBottom: getResponsiveSize(32) }}>
+            <Text style={{
+              fontSize: getResponsiveSize(12),
+              fontWeight: '600',
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              marginBottom: getResponsiveSize(16)
+            }}>
+              Communication Preferences
+            </Text>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: getResponsiveSize(16),
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              overflow: 'hidden'
+            }}>
+              {communicationItems.map((item, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingHorizontal: getResponsiveSize(24),
+                    paddingVertical: getResponsiveSize(20),
+                    borderBottomWidth: index !== communicationItems.length - 1 ? 1 : 0,
+                    borderBottomColor: '#F3F4F6'
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                      width: getResponsiveSize(48),
+                      height: getResponsiveSize(48),
+                      borderRadius: getResponsiveSize(12),
+                      backgroundColor: '#F3F4F6',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: getResponsiveSize(16)
+                    }}>
+                      <Ionicons name={item.icon as any} size={22} color="#6B7280" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{
+                        fontSize: getResponsiveSize(16),
+                        fontWeight: '600',
+                        color: '#111827',
+                        marginBottom: getResponsiveSize(2)
+                      }}>
+                        {item.title}
+                      </Text>
+                      <Text style={{
+                        fontSize: getResponsiveSize(14),
+                        color: '#6B7280',
+                        lineHeight: getResponsiveSize(18)
+                      }}>
+                        {item.description}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={settings.communicationPreferences[item.key as keyof typeof settings.communicationPreferences]}
+                    onValueChange={() => toggleSwitch(item.key)}
+                    trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
+                    thumbColor="#fff"
+                    style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                  />
+                </View>
+              ))}
+
+              {/* Push Notification Warning */}
+              {settings.pushNotifications && !areNotificationsEnabled && (
+                <View style={{
+                  marginHorizontal: getResponsiveSize(24),
+                  marginVertical: getResponsiveSize(16),
+                  backgroundColor: '#FEF3C7',
+                  borderWidth: 1,
+                  borderColor: '#F59E0B',
+                  borderRadius: getResponsiveSize(8),
+                  padding: getResponsiveSize(12)
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <Ionicons name="warning" size={16} color="#F59E0B" style={{ marginTop: 1 }} />
+                    <Text style={{
+                      fontSize: getResponsiveSize(12),
+                      color: '#92400E',
+                      marginLeft: getResponsiveSize(8),
+                      flex: 1,
+                      lineHeight: getResponsiveSize(16)
+                    }}>
+                      Notifications are disabled in your device settings. Enable them to receive push notifications.
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Push Notifications Section */}
+          <View style={{ marginBottom: getResponsiveSize(32) }}>
+            <Text style={{
+              fontSize: getResponsiveSize(12),
+              fontWeight: '600',
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              marginBottom: getResponsiveSize(16)
+            }}>
+              Device Notifications
+            </Text>
+            <View style={{
+              backgroundColor: 'white',
+              borderRadius: getResponsiveSize(16),
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              overflow: 'hidden'
+            }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingHorizontal: getResponsiveSize(24),
+                  paddingVertical: getResponsiveSize(20),
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <View style={{
+                    width: getResponsiveSize(48),
+                    height: getResponsiveSize(48),
+                    borderRadius: getResponsiveSize(12),
+                    backgroundColor: '#EFF6FF',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: getResponsiveSize(16)
+                  }}>
+                    <Ionicons name="phone-portrait-outline" size={22} color="#3B82F6" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{
+                      fontSize: getResponsiveSize(16),
+                      fontWeight: '600',
+                      color: '#111827',
+                      marginBottom: getResponsiveSize(2)
+                    }}>
+                      Push Notifications
+                    </Text>
+                    <Text style={{
+                      fontSize: getResponsiveSize(14),
+                      color: '#6B7280',
+                      lineHeight: getResponsiveSize(18)
+                    }}>
+                      Receive notifications on your device
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={settings.pushNotifications}
+                  onValueChange={handlePushNotificationToggle}
+                  trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
+                  thumbColor="#fff"
+                  style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Actions Section */}
+          <View style={{ marginBottom: getResponsiveSize(32) }}>
+            <TouchableOpacity
+              onPress={handleResetToDefault}
+              style={{
+                backgroundColor: '#FEF2F2',
+                borderWidth: 1,
+                borderColor: '#FECACA',
+                borderRadius: getResponsiveSize(12),
+                padding: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(16)
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{
+                  width: getResponsiveSize(40),
+                  height: getResponsiveSize(40),
+                  borderRadius: getResponsiveSize(8),
+                  backgroundColor: '#DC2626',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: getResponsiveSize(12)
+                }}>
+                  <Ionicons name="refresh" size={20} color="white" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: getResponsiveSize(16),
+                    fontWeight: '600',
+                    color: '#DC2626'
+                  }}>
+                    Reset to Default Settings
+                  </Text>
+                  <Text style={{
+                    fontSize: getResponsiveSize(14),
+                    color: '#7F1D1D',
+                    marginTop: getResponsiveSize(2)
+                  }}>
+                    This will reset all preferences to default values
                   </Text>
                 </View>
               </View>
-            )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/notifications')}
+              style={{
+                backgroundColor: '#EFF6FF',
+                borderWidth: 1,
+                borderColor: '#BFDBFE',
+                borderRadius: getResponsiveSize(12),
+                padding: getResponsiveSize(16)
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{
+                  width: getResponsiveSize(40),
+                  height: getResponsiveSize(40),
+                  borderRadius: getResponsiveSize(8),
+                  backgroundColor: '#3B82F6',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: getResponsiveSize(12)
+                }}>
+                  <Ionicons name="notifications" size={20} color="white" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: getResponsiveSize(16),
+                    fontWeight: '600',
+                    color: '#1E40AF'
+                  }}>
+                    View Notification History
+                  </Text>
+                  <Text style={{
+                    fontSize: getResponsiveSize(14),
+                    color: '#1E3A8A',
+                    marginTop: getResponsiveSize(2)
+                  }}>
+                    See all your past notifications and activity
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Alert Types Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            Alert Types
-          </Text>
-          <View className="bg-gray-50 rounded-xl p-4 space-y-4">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  Transaction Alerts
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Get notified when contributions are deposited or withdrawn
-                </Text>
-              </View>
-              <Switch
-                value={settings.transactionAlerts}
-                onValueChange={() => toggleSwitch('transactionAlerts')}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  Security Alerts
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Receive alerts for suspicious activities or login attempts
-                </Text>
-              </View>
-              <Switch
-                value={settings.securityAlerts}
-                onValueChange={() => toggleSwitch('securityAlerts')}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  General Updates
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Stay informed about app updates, new features, and announcements
-                </Text>
-              </View>
-              <Switch
-                value={settings.generalUpdates}
-                onValueChange={() => toggleSwitch('generalUpdates')}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Communication Preferences Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
-            Communication Preferences
-          </Text>
-          <View className="bg-gray-50 rounded-xl p-4 space-y-4">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  Email Notifications
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Receive notifications via email
-                </Text>
-              </View>
-              <Switch
-                value={settings.emailNotifications}
-                onValueChange={() => toggleSwitch('emailNotifications')}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-4">
-                <Text className="text-sm font-semibold text-gray-900">
-                  SMS Notifications
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Receive notifications via SMS
-                </Text>
-              </View>
-              <Switch
-                value={settings.smsNotifications}
-                onValueChange={() => toggleSwitch('smsNotifications')}
-                trackColor={{ false: '#E5E7EB', true: '#0074FF' }}
-                thumbColor="#fff"
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Actions Section */}
-        <View className="mb-8">
-          <TouchableOpacity
-            onPress={handleResetToDefault}
-            className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="refresh" size={20} color="#DC2626" />
-              <Text className="text-red-700 font-medium ml-3">
-                Reset to Default Settings
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push('/notifications')}
-            className="bg-blue-50 border border-blue-200 rounded-xl p-4"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="notifications" size={20} color="#2563EB" />
-              <Text className="text-blue-700 font-medium ml-3">
-                View Notification History
-              </Text>
-            </View>
-          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Fixed Save Button at Bottom */}
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'white',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
+        paddingHorizontal: getResponsiveSize(24),
+        paddingVertical: getResponsiveSize(16),
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 10
+      }}>
+        <TouchableOpacity
+          onPress={handleSaveAll}
+          disabled={isSaving}
+          style={{
+            backgroundColor: isSaving ? '#9CA3AF' : '#3B82F6',
+            borderRadius: getResponsiveSize(12),
+            paddingVertical: getResponsiveSize(16),
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row'
+          }}
+          activeOpacity={0.8}
+        >
+          {isSaving ? (
+            <>
+              <ActivityIndicator size="small" color="white" style={{ marginRight: getResponsiveSize(8) }} />
+              <Text style={{
+                fontSize: getResponsiveSize(16),
+                fontWeight: '600',
+                color: 'white'
+              }}>
+                Saving...
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="checkmark" size={18} color="white" />
+              <Text style={{
+                fontSize: getResponsiveSize(16),
+                fontWeight: '600',
+                color: 'white',
+                marginLeft: getResponsiveSize(8)
+              }}>
+                Save Changes
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+

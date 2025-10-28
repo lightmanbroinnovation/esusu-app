@@ -233,3 +233,6 @@ expo logs
 ---
 
 **Note**: Remember to keep your Firebase configuration secure and never commit sensitive keys to version control!
+
+
+

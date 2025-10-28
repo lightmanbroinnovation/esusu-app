@@ -377,7 +377,20 @@ export default function ContributorProfileScreen() {
           <Text style={{ color: '#98A2B3', fontSize: 13 }}>No recent activity.</Text>
         ) : (
           recentContributions.slice(0, 3).map((item: any, idx: number) => (
-            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F5F6FA', borderRadius: 10, padding: 10, marginBottom: 8 }}>
+            <TouchableOpacity
+              key={idx}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F5F6FA', borderRadius: 10, padding: 10, marginBottom: 8 }}
+              onPress={() => {
+                // Navigate to receipt page with transaction data
+                router.push({
+                  pathname: '/receipt',
+                  params: {
+                    transaction: JSON.stringify(item),
+                  },
+                });
+              }}
+              activeOpacity={0.7}
+            >
               <View>
                 <Text style={{ color: item.type === 'deposit' ? '#039855' : '#D92D20', fontWeight: 'bold', fontSize: 15 }}>
                   {item.type === 'deposit' ? 'Deposited' : 'Withdraw'}
@@ -391,7 +404,7 @@ export default function ContributorProfileScreen() {
               <Text style={{ color: item.type === 'deposit' ? '#039855' : '#D92D20', fontWeight: 'bold', fontSize: 15 }}>
                 {item.type === 'deposit' ? `₦${Number(item.amount).toLocaleString()}` : `-₦${Number(item.amount).toLocaleString()}`}
               </Text>
-            </View>
+            </TouchableOpacity>
           ))
         )}
         {contributionsHasMore && (

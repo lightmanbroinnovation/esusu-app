@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { store } from '../store/store';
 import { addNotification, setPermission, setToken } from '../store/slices/notificationSlice';
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -42,13 +43,50 @@ export async function registerForPushNotificationsAsync() {
 
     store.dispatch(setPermission(true));
     
+    // Get project ID using multiple fallback methods
+    let projectId = Constants?.expoConfig?.extra?.eas?.projectId;
+    
+    // Fallback to get project ID from app.json if not found in Constants
+    if (!projectId) {
+      try {
+        const appConfig = require('../../app.json');
+        projectId = appConfig?.expo?.extra?.eas?.projectId;
+      } catch (error) {
+        console.warn('Could not load app.json:', error);
+      }
+    }
+    
+    // Final fallback to get project ID from native app ID
+    if (!projectId) {
+      try {
+        projectId = Application.applicationId;
+      } catch (error) {
+        console.warn('Could not get application ID:', error);
+      }
+    }
+    
     // Get push token
     try {
-      token = (await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId || 'your-project-id',
-      })).data;
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: projectId
+      });
+      token = tokenData.data;
       
       store.dispatch(setToken(token));
+      
+      // Send local notification
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'You have successfully registered for push notifications!',
+            body: 'You will now receive notifications from Esusu.',
+            data: { type: 'success' },
+          },
+          trigger: null, // Show immediately
+        });
+      } catch (error) {
+        console.error('Error scheduling notification:', error);
+      }
     } catch (error) {
       console.error('Error getting push token:', error);
     }
@@ -57,26 +95,63 @@ export async function registerForPushNotificationsAsync() {
   return token;
 }
 
-export async function sendNotification(
-  title: string,
-  body: string,
-  type: 'success' | 'error' | 'info' | 'warning' = 'info'
-) {
-  // Add to Redux store for in-app notifications
-  store.dispatch(addNotification({ title, body, type }));
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getNotifications as fetchNotifications } from './notificationFetchService';
 
-  // Send local notification
+// Export the fetched notifications function
+export const getNotifications = fetchNotifications;
+
+// Mark a specific notification as read
+export async function markAsRead(notificationId: string): Promise<void> {
   try {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: { type },
-      },
-      trigger: null, // Show immediately
-    });
+    const token = await AsyncStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+
+    // For now, we'll just log it since the backend might not support marking as read
+    // In a real implementation, you'd call a PUT/PATCH endpoint
+    console.log(`Marking notification ${notificationId} as read`);
+
+    // If the backend has an endpoint like /api/notifications/:id/read, uncomment and use:
+    // const response = await fetch(`https://esusu-server.onrender.com/api/notifications/${notificationId}/read`, {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Authorization': `Bearer ${token}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    // });
+
   } catch (error) {
-    console.error('Error scheduling notification:', error);
+    console.error('Error marking notification as read:', error);
+    throw error;
+  }
+}
+
+// Mark all notifications as read
+export async function markAllAsRead(): Promise<void> {
+  try {
+    const token = await AsyncStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+
+    // For now, we'll just log it since the backend might not support marking all as read
+    // In a real implementation, you'd call a PUT endpoint
+    console.log('Marking all notifications as read');
+
+    // If the backend has an endpoint like /api/notifications/mark-all-read, uncomment and use:
+    // const response = await fetch('https://esusu-server.onrender.com/api/notifications/mark-all-read', {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Authorization': `Bearer ${token}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    // });
+
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
   }
 }
 
@@ -137,4 +212,27 @@ export const NotificationTemplates = {
       type: 'info' as const,
     },
   },
-}; 
+};
+
+export async function sendNotification(
+  title: string,
+  body: string,
+  type: 'success' | 'error' | 'info' | 'warning' = 'info'
+) {
+  // Add to Redux store for in-app notifications
+  store.dispatch(addNotification({ title, body, type }));
+
+  // Send local notification
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { type },
+      },
+      trigger: null, // Show immediately
+    });
+  } catch (error) {
+    console.error('Error scheduling notification:', error);
+  }
+} 
