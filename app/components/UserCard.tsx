@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Modal, ActivityIndicator, Alert, Clipboard, Dimensions } from 'react-native';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icons from @expo/vector-icons
 import { useRouter } from 'expo-router';
-import { getBankAccount } from '../../services/api';
+// import { getBankAccount } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNotifications } from '../context/NotificationContext';
 
