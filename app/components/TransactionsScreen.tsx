@@ -21,7 +21,7 @@ import StatusBarAdapter from './StatusBarAdapter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { getCachedData, invalidateCache } from '../utils/dataCaching';
-import { fetchTransactions } from '../../services/api';
+// import { fetchTransactions } from '../../services/api';
 import EsusuLoader from './EsusuLoader';
 import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
