@@ -156,7 +156,7 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
             });
             
             const converted = {
-              id: t.id || index.toString(),
+              id: t.id || t._id|| index.toString(),
               name: t.description || t.name || 'Transaction',
               amount: Number(t.amount || 0),
               type: [

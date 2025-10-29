@@ -52,7 +52,7 @@ export default function TransactionReceipt() {
 
     // Otherwise, normalize from RecentActivity format
     return {
-      id: data.reference || `txn_${Date.now()}_${Math.random()}`,
+      id: data.reference || data._id || `txn_${Date.now()}_${Math.random()}`,
       name: data.from?.name || data.name || data.description || 'Transaction',
       description: data.description || 'Transaction',
       accountNumber: data.from?.accountNumber,
@@ -326,10 +326,10 @@ export default function TransactionReceipt() {
                 <div class="label">Time</div>
                 <div class="value">${formatTime(transaction.time)}</div>
               </div>
-              <div class="row">
-                <div class="label">Transaction ID</div>
-                <div class="value transaction-id">${formatTransactionReference(transaction.reference || transaction.id)}</div>
-              </div>
+              // <div class="row">
+              //   <div class="label">Transaction ID</div>
+              //   <div class="value transaction-id">${formatTransactionReference(transaction.reference || transaction.id || transaction._id)}</div>
+              // </div>
               <div class="row">
                 <div class="label">Status</div>
                 <div class="value">
@@ -378,7 +378,7 @@ ${transaction.from?.accountNumber ? `• Account: ${maskAccountNumber(transactio
 • Amount: ${formatAmount(transaction.amount, transaction.type)}
 • Date: ${formatDate(transaction.createdAt)}
 • Time: ${formatTime(transaction.time)}
-• Transaction ID: ${transaction.reference || transaction.id}
+• Transaction ID: ${transaction.reference || transaction.id || transaction._id}
 • Status: ${transaction.status || 'Completed'}
 
 PDF saved to: ${uri}
@@ -419,7 +419,7 @@ ${transaction.from?.accountNumber ? `• Account: ${maskAccountNumber(transactio
 • Amount: ${formatAmount(transaction.amount, transaction.type)}
 • Date: ${formatDate(transaction.createdAt)}
 • Time: ${formatTime(transaction.time)}
-• Transaction ID: ${transaction.reference || transaction.id}
+• Transaction ID: ${transaction.reference || transaction.id || transaction._id}
 • Status: ${transaction.status || 'Completed'}
 
 PDF file saved at: ${uri}
@@ -576,20 +576,20 @@ Shared from Esusu App
               </View>
 
               {/* Transaction ID */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              {/* <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
                 <Text className="text-gray-600 font-medium">Transaction ID</Text>
                 <View className="flex-row items-center">
                   <Text className="text-gray-900 font-semibold font-mono text-sm mr-2">
-                    {formatTransactionReference(transaction.reference || transaction.id)}
+                    {formatTransactionReference(transaction.reference || transaction.id || transaction._id)}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => copyToClipboard(transaction.reference || transaction.id, 'Transaction ID')}
+                    onPress={() => copyToClipboard(transaction.reference || transaction.id || transaction._id, 'Transaction ID')}
                     className="p-1"
                   >
                     <Ionicons name="copy-outline" size={16} color="#0052CC" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </View> */}
 
               {/* Status */}
               <View className="flex-row justify-between items-center py-3">
