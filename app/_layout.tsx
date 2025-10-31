@@ -239,11 +239,11 @@ function RootLayoutWithAuth() {
     registerPushNotifications();
 
     // Set up notification listeners
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification: Notifications.Notification) => {
       setNotification(notification);
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response: Notifications.NotificationResponse) => {
       console.log('Notification response received:', response);
       // Handle notification tap here if needed
     });
@@ -262,7 +262,7 @@ function RootLayoutWithAuth() {
 
   // Check for network connectivity
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribe = NetInfo.addEventListener((state: NetInfo.NetInfoState) => {
       setIsConnected(!!state.isConnected);
       if (!state.isConnected) {
         console.log('No network connection detected.');
@@ -330,16 +330,16 @@ function RootLayoutWithAuth() {
     if (!isConnected && checkedCache && !hasCache) {
       if (user) {
         if (pathname !== '/login/passcode') {
-          router.replace('/login/passcode');
+          router.replace('/login/passcode' as any);
         }
       } else {
         // If no user found in storage and offline with no cache, redirect to login page
         if (pathname !== '/login' && !pathname.startsWith('/login')) {
-          router.replace('/login');
+          router.replace('/login' as any);
         }
       }
     }
-  }, [isConnected, checkedCache, hasCache, user, pathname]);
+  }, [isConnected, checkedCache, hasCache, user, pathname, router]);
 
   // If the app is not ready, return null as the splash screen is still visible
   if (!isReady) {
