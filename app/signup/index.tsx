@@ -15,12 +15,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { checkPhoneNumberAvailability } from '../../services/api'; // Import the API function
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@react-navigation/native";
+import { checkPhoneNumberAvailability } from '../../services/api';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function Signup() {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme.dark;
   
   // Use back button handler for signup page
   useBackButtonHandler('/signup');
@@ -29,11 +32,19 @@ export default function Signup() {
   const { width, height } = Dimensions.get('window');
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false); // State to track keyboard visibility
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'error' | 'info' | null>(null);
   const [messageTimeout, setMessageTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  // Theme-aware colors
+  const backgroundColor = isDark ? '#1a1a1a' : '#FFFFFF';
+  const textColor = isDark ? '#FFFFFF' : '#1A1A1A';
+  const textSecondaryColor = isDark ? '#B0B0B0' : '#4F4F4F';
+  const inputBgColor = isDark ? '#2a2a2a' : '#F4F4F5';
+  const borderColor = isDark ? '#404040' : '#E0E0E0';
+  const iconColor = isDark ? '#FFFFFF' : '#000000';
 
   // Helper function to set message with auto-clear
   const setMessageWithTimeout = (msg: string, type: 'error' | 'info', timeoutMs: number = 4000) => {
@@ -165,29 +176,42 @@ export default function Signup() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
+        style={{ flex: 1, backgroundColor: backgroundColor }}
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="flex-1 px-6"
           style={{
+            flex: 1,
+            backgroundColor: backgroundColor,
             paddingTop: insets.top + getResponsiveSize(16),
             paddingBottom: insets.bottom + getResponsiveSize(16),
             paddingHorizontal: getResponsiveSize(24),
           }}
         >
           {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
+          <View style={{ 
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: getResponsiveSize(24)
+          }}>
             <TouchableOpacity
-              className="flex-row items-center"
+              style={{ 
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: getResponsiveSize(8)
+              }}
               onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
             >
-              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} color={iconColor} />
             </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 1 of 4</Text>
+            <Text style={{ 
+              fontWeight: '600',
+              fontSize: getResponsiveSize(16),
+              color: textColor
+            }}>Step 1 of 4</Text>
           </View>
 
           {message && (
@@ -206,23 +230,41 @@ export default function Signup() {
           )}
 
           <View style={{ marginTop: getResponsiveSize(32) }}>
-            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+            <Text style={{ 
+              fontSize: getResponsiveSize(24),
+              fontWeight: 'bold',
+              color: '#0072CE',
+              marginBottom: getResponsiveSize(8)
+            }}>
               Let's Get Started!
             </Text>
-            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+            <Text style={{ 
+              fontSize: getResponsiveSize(16),
+              color: textSecondaryColor
+            }}>
               We'll send a verification code to your phone number and email to secure your account.
             </Text>
           </View>
 
           {/* Phone Number Input */}
           <View style={{ marginTop: getResponsiveSize(32) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Phone Number *</Text>
-            <View className="flex-row items-center">
+            <Text style={{ 
+              fontSize: getResponsiveSize(14),
+              color: textSecondaryColor,
+              marginBottom: getResponsiveSize(4)
+            }}>Phone Number *</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {/* NG Flag + Code */}
-              <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]" style={{
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginRight: getResponsiveSize(12),
+                borderWidth: 1,
+                borderColor: borderColor,
+                borderRadius: getResponsiveSize(8),
                 paddingHorizontal: getResponsiveSize(12),
                 paddingVertical: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8)
+                backgroundColor: inputBgColor
               }}>
                 <Image
                   source={{ uri: "https://flagcdn.com/w40/ng.png" }}
@@ -233,23 +275,30 @@ export default function Signup() {
                     marginRight: getResponsiveSize(6),
                   }}
                 />
-                <Text className="text-base text-[#BDBDBD]" style={{ fontSize: getResponsiveSize(16) }}>NGN</Text>
+                <Text style={{ 
+                  fontSize: getResponsiveSize(16),
+                  color: textSecondaryColor
+                }}>NGN</Text>
               </View>
 
               {/* Phone input */}
               <TextInput
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
-                maxLength={11} // Allow 11 digits for local Nigerian numbers starting with 0
+                maxLength={11}
                 value={phone}
                 onChangeText={setPhone}
-                className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
-                placeholderTextColor="#BDBDBD"
+                placeholderTextColor={textSecondaryColor}
                 style={{
+                  flex: 1,
+                  fontSize: getResponsiveSize(16),
+                  color: textColor,
+                  borderWidth: 1,
+                  borderColor: borderColor,
+                  borderRadius: getResponsiveSize(8),
                   paddingHorizontal: getResponsiveSize(12),
                   paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8),
-                  fontSize: getResponsiveSize(16)
+                  backgroundColor: inputBgColor
                 }}
               />
             </View>
@@ -257,7 +306,11 @@ export default function Signup() {
 
           {/* Email Input */}
           <View style={{ marginTop: getResponsiveSize(24) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Email Address *</Text>
+            <Text style={{ 
+              fontSize: getResponsiveSize(14),
+              color: textSecondaryColor,
+              marginBottom: getResponsiveSize(4)
+            }}>Email Address *</Text>
             <TextInput
               placeholder="Enter your email address"
               keyboardType="email-address"
@@ -265,41 +318,63 @@ export default function Signup() {
               autoCorrect={false}
               value={email}
               onChangeText={setEmail}
-              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
-              placeholderTextColor="#BDBDBD"
+              placeholderTextColor={textSecondaryColor}
               style={{
+                fontSize: getResponsiveSize(16),
+                color: textColor,
+                borderWidth: 1,
+                borderColor: borderColor,
+                borderRadius: getResponsiveSize(8),
                 paddingHorizontal: getResponsiveSize(12),
                 paddingVertical: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8),
-                fontSize: getResponsiveSize(16)
+                backgroundColor: inputBgColor
               }}
             />
           </View>
 
           {/* Sign up text */}
-          <Text className="text-[#4F4F4F] my-2" style={{ fontSize: getResponsiveSize(14) }}>
+          <Text style={{ 
+            color: textSecondaryColor,
+            marginVertical: getResponsiveSize(8),
+            fontSize: getResponsiveSize(14)
+          }}>
             Already have an account?{" "}
-            <Text className="text-[#0072CE] font-semibold"
+            <Text style={{ 
+              color: '#0072CE',
+              fontWeight: '600'
+            }}
                  onPress={() => router.push("/login")}>Login</Text>
           </Text>
 
           {/* Spacer to push button down */}
-          <View className="flex-1 justify-end" style={{ paddingBottom: getResponsiveSize(16) }}>
+          <View style={{ 
+            flex: 1,
+            justifyContent: 'flex-end',
+            paddingBottom: getResponsiveSize(16)
+          }}>
             {/* Continue Button */}
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={handleSignup}
-              disabled={loading} // Disable button when loading
               style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#0072CE',
                 paddingVertical: getResponsiveSize(16),
                 borderRadius: getResponsiveSize(8),
                 opacity: loading ? 0.7 : 1
               }}
+              onPress={handleSignup}
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
+                <Text style={{ 
+                  color: 'white',
+                  fontSize: getResponsiveSize(18),
+                  marginRight: getResponsiveSize(8),
+                  fontWeight: '600'
+                }}>Continue</Text>
               )}
               {!loading && <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />}
             </TouchableOpacity>

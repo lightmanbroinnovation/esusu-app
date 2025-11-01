@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from 'expo-status-bar';
@@ -99,6 +99,9 @@ function ConnectionIssueScreen() {
 }
 
 export default function RootLayout() {
+  // Log that RootLayout is rendering - helps debug if this is being called
+  console.log('🔵 RootLayout rendering - this means entry point is working');
+  
   return (
     <Provider store={store}>
       <AuthProvider>
@@ -197,7 +200,9 @@ async function registerForPushNotificationsAsync() {
 function RootLayoutWithAuth() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
   const colorScheme = useColorScheme();
-  const [isReady, setIsReady] = useState(false);
+  // CRITICAL: Start with isReady=true so Stack can mount immediately
+  // This ensures Expo Router initializes and routes are discovered on first render
+  const [isReady, setIsReady] = useState(true);
   const [isConnected, setIsConnected] = useState(true);
   const [isTryingToReconnect, setIsTryingToReconnect] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -206,9 +211,14 @@ function RootLayoutWithAuth() {
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
 
+  // CRITICAL: Router hooks MUST be called unconditionally (React rules)
+  // These will be available once Stack mounts and creates the router context
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
+
+  // Safely get user from auth context - handle null case
+  const authContext = useAuth();
+  const user = authContext?.user ?? null;
   const [checkedCache, setCheckedCache] = useState(false);
   const [hasCache, setHasCache] = useState(true);
 
@@ -286,27 +296,55 @@ function RootLayoutWithAuth() {
     loadAssets();
   }, []);
 
-  // Hide splash screen when everything is ready
+  // CRITICAL: isReady starts as true (set in useState above)
+  // This ensures Stack mounts on first render, allowing Expo Router to discover routes
+  // Log that we're ready for debugging
   useEffect(() => {
+    console.log('🚀 Expo Router initialized - Stack should be mounted, routes discovered');
+  }, []);
+
+  // Separate effect to handle splash screen hiding based on fonts/assets
+  useEffect(() => {
+    // Hide splash screen after a brief delay to show native splash
+    const hideSplash = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 500);
+    
+    // Aggressive timeout as backup
+    const loadTimeout = setTimeout(() => {
+      console.log('⚠️ Load timeout reached - ensuring splash hidden');
+      SplashScreen.hideAsync().catch(() => {});
+    }, 3000);
+
+    // Fonts and assets can load in background - don't block route rendering
+    // Hide splash when fonts/assets are ready, but routes should already be working
     if (fontsLoaded && assetsLoaded) {
-      console.log('Fonts and assets loaded, preparing to hide splash screen');
-      
-      // Add a small delay to ensure everything is rendered properly
-      setTimeout(async () => {
-        try {
-          await SplashScreen.hideAsync();
-          setIsReady(true);
-          console.log('Splash screen hidden successfully');
-        } catch (error) {
-          console.error('Error hiding splash screen:', error);
-          setIsReady(true); // Still set ready even if there's an error
-        }
-      }, 100);
+      console.log('✅ Fonts and assets loaded');
+      clearTimeout(loadTimeout);
+      clearTimeout(hideSplash);
+      SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, assetsLoaded]);
+
+    // Handle font errors gracefully
+    if (fontError) {
+      console.warn('⚠️ Font loading error, proceeding anyway:', fontError);
+      clearTimeout(loadTimeout);
+      clearTimeout(hideSplash);
+      SplashScreen.hideAsync().catch(() => {});
+    }
+
+    return () => {
+      clearTimeout(hideSplash);
+      clearTimeout(loadTimeout);
+    };
+  }, [fontsLoaded, assetsLoaded, fontError]);
 
   // Check for cache for the current page if offline
+  // Safely access router/pathname - may not be ready immediately
   useEffect(() => {
+    // Only proceed if router is ready and we have a valid pathname
+    if (!isReady || !pathname || pathname === '') return;
+    
     if (!isConnected) {
       // Use the pathname as the cache key (customize as needed)
       const cacheKey = pathname.replace(/^\//, '').replace(/\//g, '_') || 'index';
@@ -323,42 +361,68 @@ function RootLayoutWithAuth() {
       setCheckedCache(true);
       setHasCache(true);
     }
-  }, [isConnected, pathname]);
+  }, [isConnected, pathname, isReady]);
 
   // Redirect logic if offline and no cache
+  // Only run when router is ready
   useEffect(() => {
+    // Wait for router to be ready before attempting navigation
+    if (!isReady || !pathname || pathname === '') return;
+    
     if (!isConnected && checkedCache && !hasCache) {
-      if (user) {
-        if (pathname !== '/login/passcode') {
-          router.replace('/login/passcode' as any);
+      try {
+        if (user) {
+          if (pathname !== '/login/passcode') {
+            router.replace('/login/passcode' as any);
+          }
+        } else {
+          // If no user found in storage and offline with no cache, redirect to login page
+          if (pathname !== '/login' && !pathname.startsWith('/login')) {
+            router.replace('/login' as any);
+          }
         }
-      } else {
-        // If no user found in storage and offline with no cache, redirect to login page
-        if (pathname !== '/login' && !pathname.startsWith('/login')) {
-          router.replace('/login' as any);
-        }
+      } catch (error) {
+        console.warn('Navigation error (router not ready yet):', error);
+        // Router will retry on next render
       }
     }
-  }, [isConnected, checkedCache, hasCache, user, pathname, router]);
+  }, [isConnected, checkedCache, hasCache, user, pathname, router, isReady]);
 
-  // If the app is not ready, return null as the splash screen is still visible
-  if (!isReady) {
-    return null;
-  }
-
-  // Remove the old no-network screen logic, as we now handle it with redirects
-
+  // CRITICAL: Always render the Stack component IMMEDIATELY
+  // Expo Router requires the Stack to be mounted BEFORE it can discover routes
+  // Don't block Stack rendering with loading states - let it initialize routes first
+  console.log('🔵 RootLayoutWithAuth rendering - isReady:', isReady, 'pathname:', pathname);
+  
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <LoadingProvider>
           <NotificationProvider>
-            <ConnectionStatus />
+            {/* Render Stack IMMEDIATELY - don't wait for anything */}
             <Stack
               screenOptions={{
                 headerShown: false,
               }}
             />
+            {/* Only show loading indicator if Stack is ready but fonts/assets are loading */}
+            {/* This ensures routes are discovered BEFORE we show loading overlay */}
+            {!isReady && (
+              <View style={{ 
+                position: 'absolute', 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                bottom: 0, 
+                backgroundColor: '#E6F3FF', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                zIndex: 9999,
+                pointerEvents: 'box-none' // Allow touches to pass through after routes load
+              }}>
+                <ActivityIndicator size="large" color="#0072CE" />
+              </View>
+            )}
+            <ConnectionStatus />
             <NotificationToast />
             <PerformanceMonitor visible={__DEV__} />
           </NotificationProvider>
@@ -373,10 +437,18 @@ function RootLayoutWithAuth() {
 export function ErrorBoundary(props: { error: Error }) {
   return (
     <SafeAreaProvider>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: '#000' }}>
+          Application Error
+        </Text>
+        <Text style={{ fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' }}>
+          {props.error?.message || 'An unexpected error occurred'}
+        </Text>
+        <Text style={{ fontSize: 12, color: '#999', textAlign: 'center' }}>
+          Please restart the app or contact support if the problem persists.
+        </Text>
+      </View>
       <StatusBar style="dark" />
-      <Stack>
-        <Stack.Screen name="error" options={{ title: 'Error' }} />
-      </Stack>
     </SafeAreaProvider>
   );
 }
