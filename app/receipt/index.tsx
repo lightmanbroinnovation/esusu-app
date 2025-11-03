@@ -20,12 +20,12 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 // Web-only import for html2canvas
-let html2canvas: any = null;
-if (typeof window !== 'undefined') {
-  import('html2canvas').then((module) => {
-    html2canvas = module.default;
-  });
-}
+// let html2canvas: any = null;
+// if (typeof window !== 'undefined') {
+//   import('html2canvas').then((module) => {
+//     html2canvas = module.default;
+//   });
+// }
 
 // Import file system utilities for file validation
 let RNFS: any = null;

@@ -15,13 +15,16 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
-import { checkPhoneNumberAvailability } from '../../services/api'; // Import the API function
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@react-navigation/native";
+import { checkPhoneNumberAvailability } from '../../services/api';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
 import { StyleSheet } from 'react-native';
 
 export default function Signup() {
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme.dark;
   
   // Use back button handler for signup page
   useBackButtonHandler('/signup');
@@ -30,11 +33,19 @@ export default function Signup() {
   const { width, height } = Dimensions.get('window');
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false); // State to track keyboard visibility
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'error' | 'info' | null>(null);
   const [messageTimeout, setMessageTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  // Theme-aware colors
+  const backgroundColor = isDark ? '#1a1a1a' : '#FFFFFF';
+  const textColor = isDark ? '#FFFFFF' : '#1A1A1A';
+  const textSecondaryColor = isDark ? '#B0B0B0' : '#4F4F4F';
+  const inputBgColor = isDark ? '#2a2a2a' : '#F4F4F5';
+  const borderColor = isDark ? '#404040' : '#E0E0E0';
+  const iconColor = isDark ? '#FFFFFF' : '#000000';
 
   // Helper function to set message with auto-clear
   const setMessageWithTimeout = (msg: string, type: 'error' | 'info', timeoutMs: number = 4000) => {
@@ -162,7 +173,7 @@ export default function Signup() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.keyboardAvoidingView}
+      style={[styles.keyboardAvoidingView, { backgroundColor: backgroundColor }]}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
@@ -171,18 +182,23 @@ export default function Signup() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.container, {
-          paddingTop: insets.top + getResponsiveSize(16),
-          paddingBottom: insets.bottom + getResponsiveSize(16),
-          paddingHorizontal: getResponsiveSize(24),
-        }]}>
+        <View
+          style={[
+            styles.container,
+            {
+              paddingTop: insets.top + getResponsiveSize(16),
+              paddingBottom: insets.bottom + getResponsiveSize(16),
+              paddingHorizontal: getResponsiveSize(24),
+            }
+          ]}
+        >
           {/* Header */}
           <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
             <TouchableOpacity
-              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
+              style={styles.backButton}
               onPress={() => router.back()}
             >
-              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} color={iconColor} />
             </TouchableOpacity>
             <Text style={[styles.stepText, { fontSize: getResponsiveSize(16) }]}>Step 1 of 4</Text>
           </View>
@@ -215,18 +231,25 @@ export default function Signup() {
             <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Phone Number *</Text>
             <View style={styles.phoneInputContainer}>
               {/* NG Flag + Code */}
-              <View style={[styles.flagContainer, {
-                paddingHorizontal: getResponsiveSize(12),
-                paddingVertical: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8)
-              }]}>
+              <View style={[
+                styles.flagContainer,
+                {
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  marginRight: 12
+                }
+              ]}>
                 <Image
                   source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                  style={[styles.flagImage, {
-                    width: getResponsiveSize(24),
-                    height: getResponsiveSize(18),
-                    marginRight: getResponsiveSize(6),
-                  }]}
+                  style={[
+                    styles.flagImage,
+                    {
+                      width: getResponsiveSize(24),
+                      height: getResponsiveSize(18),
+                      marginRight: getResponsiveSize(6),
+                    }
+                  ]}
                 />
                 <Text style={[styles.countryCode, { fontSize: getResponsiveSize(16) }]}>NGN</Text>
               </View>
@@ -239,18 +262,21 @@ export default function Signup() {
                 value={phone}
                 onChangeText={setPhone}
                 placeholderTextColor="#BDBDBD"
-                style={[styles.phoneInput, {
-                  paddingHorizontal: getResponsiveSize(12),
-                  paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8),
-                  fontSize: getResponsiveSize(16)
-                }]}
+                style={[
+                  styles.phoneInput,
+                  {
+                    paddingHorizontal: getResponsiveSize(12),
+                    paddingVertical: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(8),
+                    fontSize: getResponsiveSize(16)
+                  }
+                ]}
               />
             </View>
           </View>
 
           {/* Email Input */}
-          <View style={[styles.inputContainer, { marginTop: getResponsiveSize(24) }]}>
+          <View style={[styles.inputGroup, { marginTop: getResponsiveSize(24) }]}>
             <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Email Address *</Text>
             <TextInput
               placeholder="Enter your email address"
@@ -260,39 +286,59 @@ export default function Signup() {
               value={email}
               onChangeText={setEmail}
               placeholderTextColor="#BDBDBD"
-              style={[styles.emailInput, {
-                paddingHorizontal: getResponsiveSize(12),
-                paddingVertical: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8),
-                fontSize: getResponsiveSize(16)
-              }]}
+              style={[
+                styles.emailInput,
+                {
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
+                }
+              ]}
             />
           </View>
 
           {/* Sign up text */}
-          <Text style={[styles.loginText, { fontSize: getResponsiveSize(14) }]}>
+          <Text style={[styles.loginText, { fontSize: getResponsiveSize(14), marginVertical: 8 }]}>
             Already have an account?{" "}
-            <Text style={styles.loginLink} onPress={() => router.push("/login")}>Login</Text>
+            <Text 
+              style={styles.loginLink}
+              onPress={() => router.push("/login")}
+            >
+              Login
+            </Text>
           </Text>
 
           {/* Spacer to push button down */}
           <View style={[styles.buttonContainer, { paddingBottom: getResponsiveSize(16) }]}>
             {/* Continue Button */}
             <TouchableOpacity
-              style={[styles.continueButton, {
-                paddingVertical: getResponsiveSize(16),
-                borderRadius: getResponsiveSize(8),
-                opacity: loading ? 0.7 : 1
-              }]}
+              style={[
+                styles.continueButton,
+                {
+                  paddingVertical: getResponsiveSize(16),
+                  borderRadius: getResponsiveSize(8),
+                  opacity: loading ? 0.7 : 1
+                }
+              ]}
               onPress={handleSignup}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text style={[styles.continueButtonText, { fontSize: getResponsiveSize(18) }]}>Continue</Text>
+                <Text style={[styles.continueButtonText, { fontSize: getResponsiveSize(18) }]}>
+                  Continue
+                </Text>
               )}
-              {!loading && <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />}
+              {!loading && (
+                <MaterialIcons 
+                  name="arrow-forward" 
+                  size={getResponsiveSize(18)} 
+                  color="white" 
+                  style={{ marginLeft: 8 }}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -319,6 +365,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   backButton: {
     flexDirection: 'row',
@@ -326,6 +373,7 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontWeight: '600',
+    color: '#1A1A1A',
   },
   messageContainer: {
     marginBottom: 16,
@@ -337,27 +385,34 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     marginTop: 32,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 24,
     fontWeight: 'bold',
     color: '#0072CE',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
     color: '#4F4F4F',
+    lineHeight: 22,
   },
   inputContainer: {
     marginTop: 24,
+    width: '100%',
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 16,
   },
   inputLabel: {
     color: '#4F4F4F',
-    marginBottom: 4,
+    marginBottom: 8,
+    fontSize: 14,
   },
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
   },
   flagContainer: {
     flexDirection: 'row',
@@ -365,13 +420,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#F4F4F5',
-    marginRight: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   flagImage: {
     borderRadius: 2,
   },
   countryCode: {
     color: '#BDBDBD',
+    fontSize: 16,
+    marginLeft: 6,
   },
   phoneInput: {
     flex: 1,
@@ -379,16 +438,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#F4F4F5',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    marginLeft: 12,
   },
   emailInput: {
+    width: '100%',
     color: '#1A1A1A',
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#F4F4F5',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    fontSize: 16,
   },
   loginText: {
     color: '#4F4F4F',
     marginVertical: 8,
+    fontSize: 14,
   },
   loginLink: {
     color: '#0072CE',
@@ -397,16 +467,20 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flex: 1,
     justifyContent: 'flex-end',
+    width: '100%',
   },
   continueButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+    width: '100%',
   },
   continueButtonText: {
     color: 'white',
-    marginRight: 8,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });

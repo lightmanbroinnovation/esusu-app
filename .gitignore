@@ -54,3 +54,7 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Android local properties (auto-generated, developer-specific)
+android/local.properties
+.expo/

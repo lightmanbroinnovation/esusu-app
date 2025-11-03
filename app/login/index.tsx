@@ -16,18 +16,29 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@react-navigation/native";
 
 
 export default function Login() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const { width, height } = Dimensions.get('window');
+  const isDark = theme.dark;
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Theme-aware colors
+  const backgroundColor = isDark ? '#1a1a1a' : '#FFFFFF';
+  const textColor = isDark ? '#FFFFFF' : '#1A1A1A';
+  const textSecondaryColor = isDark ? '#B0B0B0' : '#4F4F4F';
+  const inputBgColor = isDark ? '#2a2a2a' : '#F4F4F5';
+  const borderColor = isDark ? '#404040' : '#E0E0E0';
+  const iconColor = isDark ? '#FFFFFF' : '#000000';
 
   // Responsive sizing based on screen width
   const getResponsiveSize = (baseSize: number) => {
@@ -236,46 +247,57 @@ export default function Login() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        style={dynamicStyles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
     >
-        <View style={dynamicStyles.container}>
+      <View
+        className="flex-1 bg-white px-6"
+        style={{
+            paddingTop: insets.top + getResponsiveSize(16),
+            paddingBottom: insets.bottom + getResponsiveSize(16),
+            paddingHorizontal: getResponsiveSize(24),
+        }}
+      >
         {/* Header */}
-          <View style={dynamicStyles.header}>
+          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
           <TouchableOpacity
-              style={dynamicStyles.backButton}
+            className="flex-row items-center"
             onPress={() => router.replace('/')}
           >
-              <Ionicons name="arrow-back" size={getResponsiveSize(28)} color="#1A1A1A" />
+              <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
           </TouchableOpacity>
         </View>
         
-          <View style={dynamicStyles.titleContainer}>
-            <Text style={dynamicStyles.title}>
+          <View style={{ marginTop: getResponsiveSize(24) }}>
+            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
             Welcome Back!
           </Text>
-            <Text style={dynamicStyles.subtitle}>
+            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
             Log in to manage savings, track earnings, and grow your business.
           </Text>
         </View>
 
         {/* Input */}
-          <View style={dynamicStyles.inputContainer}>
-            <Text style={dynamicStyles.inputLabel}>
+        <View style={{ marginTop: getResponsiveSize(32) }}>
+          <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>
             {loginMethod === 'phone' ? 'Phone Number' : 'Email Address'}
           </Text>
           
           {loginMethod === 'phone' ? (
-              <View style={dynamicStyles.phoneInputRow}>
+            <View className="flex-row items-center">
               {/* NG Flag + Code */}
-                <View style={dynamicStyles.flagContainer}>
+              <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]" style={{
+                paddingHorizontal: getResponsiveSize(12),
+                paddingVertical: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8)
+              }}>
                 <Image
                   source={{ uri: "https://flagcdn.com/w40/ng.png" }}
                     style={dynamicStyles.flagImage}
                 />
-                  <Text style={dynamicStyles.flagText}>
+                <Text className="text-base text-[#BDBDBD]" style={{ fontSize: getResponsiveSize(16) }}>
                   NGN
                 </Text>
               </View>
@@ -290,8 +312,14 @@ export default function Login() {
                   setError("");
                   console.log("[Login] User entered phone:", text);
                 }}
+                className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                 placeholderTextColor="#BDBDBD"
-                  style={dynamicStyles.textInput}
+                style={{
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
+                }}
               />
             </View>
           ) : (
@@ -307,29 +335,35 @@ export default function Login() {
                 setError("");
                 console.log("[Login] User entered email:", text);
               }}
+              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholderTextColor="#BDBDBD"
-                style={dynamicStyles.emailInput}
+              style={{
+                paddingHorizontal: getResponsiveSize(12),
+                paddingVertical: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8),
+                fontSize: getResponsiveSize(16)
+              }}
             />
           )}
           
           {/* Error message */}
           {error ? (
-              <Text style={dynamicStyles.errorText}>{error}</Text>
+            <Text className="text-red-500 mt-2" style={{ fontSize: getResponsiveSize(14) }}>{error}</Text>
           ) : null}
         </View>
         
         {/* Dynamic sign in method text */}
         <TouchableOpacity onPress={toggleLoginMethod}>
-            <Text style={dynamicStyles.toggleMethodText}>
+          <Text className="text-[#0072CE] mt-4 mb-2 text-center font-medium" style={{ fontSize: getResponsiveSize(14) }}>
             {loginMethod === 'phone' ? 'Sign in with email' : 'Sign in with phone number'}
           </Text>
         </TouchableOpacity>
         
         {/* Sign up text */}
-          <Text style={dynamicStyles.signUpContainer}>
+          <Text className="text-[#4F4F4F] my-2" style={{ fontSize: getResponsiveSize(14) }}>
           Don't have an account?{" "}
           <Text 
-              style={dynamicStyles.signUpLink}
+            className="text-[#0072CE] font-semibold"
             onPress={() => router.push("/signup")}
           >
             Sign up
@@ -337,18 +371,23 @@ export default function Login() {
         </Text>
 
         {/* Spacer to push button down */}
-          <View style={dynamicStyles.buttonContainer}>
+          <View className="flex-1 justify-end" style={{ paddingBottom: getResponsiveSize(16) }}>
           {/* Continue Button */}
           <TouchableOpacity
-              style={dynamicStyles.continueButton}
+            className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
             onPress={handleContinue}
             disabled={loading}
+              style={{
+                paddingVertical: getResponsiveSize(16),
+                borderRadius: getResponsiveSize(8),
+                opacity: loading ? 0.7 : 1
+              }}
           >
             {loading ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>
-                  <Text style={dynamicStyles.continueButtonText}>
+                  <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>
                   Continue
                 </Text>
                   <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />

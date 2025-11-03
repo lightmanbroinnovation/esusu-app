@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useExitAppBackHandler } from './utils/backButtonHandler';
 
 export default function Index() {
+  console.log('🟢 Index component rendering - Expo Router found this route!');
+  
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
@@ -56,6 +58,7 @@ export default function Index() {
   return (
     <ImageBackground
       source={require("../assets/images/Onboarding1.png")}
+<<<<<<< HEAD
       style={styles.backgroundImage}
       imageStyle={styles.backgroundImageStyle}
       resizeMode="cover"
@@ -83,17 +86,124 @@ export default function Index() {
             Earn More,{"\n"}Empower Your{"\n"}Community
           </Text>
           <Text style={styles.description}>
+=======
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        width: '100%',
+        height: '100%'
+      }}
+      resizeMode="cover"
+    >
+      {/* Overlay */}
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#0072CE',
+        opacity: 0.8
+      }} />
+      {/* Content */}
+      <View style={{ flex: 1 }}>
+        {/* Logo */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 32
+        }}>
+          <Image
+            source={require("../assets/images/icon.png")}
+            style={{ width: 96, height: 48 }}
+            resizeMode="contain"
+            tintColor="white"
+          />
+          <Text style={{
+            color: 'white',
+            fontSize: 36,
+            fontWeight: '600',
+            marginLeft: -24
+          }}>esusu</Text>
+        </View>
+        {/* Main Content */}
+        <View style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Text style={{
+            color: 'white',
+            fontSize: 30,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            lineHeight: 40
+          }}>
+            Earn More,{"\n"}Empower Your{"\n"}Community
+          </Text>
+          <Text style={{
+            color: 'white',
+            fontSize: 16,
+            textAlign: 'center',
+            marginTop: 16,
+            opacity: 0.8,
+            paddingHorizontal: 24
+          }}>
+>>>>>>> 4decc708f68c1a1f1d1f443942de44eff6edce01
             Turn your POS terminal into more than just transactions. Help customers
             save securely while earning commissions on every deposit.
           </Text>
         </View>
         {/* Buttons */}
+<<<<<<< HEAD
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/login')}>
             <Text style={styles.loginButtonText}>LOG IN</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.signupButton} onPress={() => router.push('/signup')}>
             <Text style={styles.signupButtonText}>SIGN UP</Text>
+=======
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          paddingHorizontal: 24,
+          marginBottom: 40
+        }}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              borderWidth: 1,
+              borderColor: 'white',
+              paddingVertical: 12,
+              borderRadius: 16,
+              alignItems: 'center',
+              marginRight: 8
+            }}
+            onPress={() => router.push('/login')}
+          >
+            <Text style={{
+              color: 'white',
+              fontWeight: '600'
+            }}>LOG IN</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: 'white',
+              paddingVertical: 12,
+              borderRadius: 16,
+              alignItems: 'center',
+              marginLeft: 8
+            }}
+            onPress={() => router.push('/signup')}
+          >
+            <Text style={{
+              color: '#0072CE',
+              fontWeight: '600'
+            }}>SIGN UP</Text>
+>>>>>>> 4decc708f68c1a1f1d1f443942de44eff6edce01
           </TouchableOpacity>
         </View>
       </View>
