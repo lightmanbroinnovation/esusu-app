@@ -9,7 +9,8 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -48,6 +49,258 @@ interface UserDetails {
 const fetchCommissionData = async () => {
   return await fetchAccountCommission();
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    marginTop: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 999,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  helpButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 999,
+  },
+  errorBanner: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 8,
+  },
+  errorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  errorTitle: {
+    color: '#991B1B',
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  commissionCard: {
+    backgroundColor: '#2563EB',
+    padding: 24,
+    minHeight: 200,
+  },
+  cardContent: {
+    position: 'relative',
+  },
+  cardHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 999,
+    backgroundColor: '#60A5FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  iconImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+  },
+  balanceLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  balanceValue: {
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  earningsBadge: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 8,
+  },
+  earningsText: {
+    color: '#FFFFFF',
+  },
+  earningsTextMargin: {
+    color: '#FFFFFF',
+    marginLeft: 4,
+  },
+  withdrawButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  withdrawButtonText: {
+    color: '#2563EB',
+    fontWeight: '600',
+    fontSize: 18,
+  },
+  recentsContainer: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  recentsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  recentsLabel: {
+    color: '#6B7280',
+  },
+  viewAllText: {
+    color: '#2563EB',
+  },
+  emptyState: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 40,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  emptyStateTitle: {
+    color: '#9CA3AF',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  transactionItem: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  transactionDescription: {
+    fontWeight: '500',
+  },
+  transactionAmount: {
+    fontWeight: '600',
+  },
+  transactionAmountDebit: {
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  transactionAmountCredit: {
+    fontWeight: '600',
+    color: '#16A34A',
+  },
+  transactionAmountNeutral: {
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  transactionDate: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '91.666667%',
+  },
+  modalTitle: {
+    color: '#2563EB',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  modalSection: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    paddingBottom: 16,
+    marginBottom: 16,
+  },
+  modalSectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  modalSectionText: {
+    color: '#4B5563',
+  },
+  modalCloseContainer: {
+    marginTop: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 12,
+    borderRadius: 16,
+    width: '40%',
+  },
+  modalCloseButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 const CommissionScreen = () => {
   const router = useRouter();
@@ -147,21 +400,21 @@ const CommissionScreen = () => {
 
   // Always render the main layout, even if error
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 mt-4">
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
           {/* Header */}
-          <View className="flex-row items-center justify-between px-4 mb-4">
+          <View style={styles.header}>
             <TouchableOpacity 
               onPress={navigateBack}
-              className=" p-2 rounded-full"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-lg font-bold">Commission</Text>
+            <Text style={styles.headerTitle}>Commission</Text>
             <TouchableOpacity 
-              className="bg-gray-100 p-2 rounded-full"
+              style={styles.helpButton}
               onPress={() => setShowRatesModal(true)}
             >
               <Ionicons name="help-circle-outline" size={24} color="#000" />
@@ -169,23 +422,23 @@ const CommissionScreen = () => {
           </View>
           {/* Show error as a banner, not as a full screen */}
           {error && (
-            <View className="mx-4 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <View className="flex-row items-center mb-2">
+            <View style={styles.errorBanner}>
+              <View style={styles.errorHeader}>
                 <Ionicons name="alert-circle-outline" size={20} color="#DC2626" />
-                <Text className="text-red-800 font-medium ml-2">Connection Error</Text>
+                <Text style={styles.errorTitle}>Connection Error</Text>
               </View>
-              <Text className="text-red-700 text-sm mb-3">{error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity 
                 onPress={handleRetry}
-                className="bg-red-600 px-4 py-2 rounded-md self-start"
+                style={styles.retryButton}
               >
-                <Text className="text-white font-semibold text-sm">Retry</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
           )}
           <ScrollView 
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            className="flex-1"
+            style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 0 }}
@@ -205,67 +458,50 @@ const CommissionScreen = () => {
               }}
               resizeMode="cover"
             >
-              <View className="bg-blue-600 p-6" style={{ minHeight: 200 }}>
+              <View style={[styles.commissionCard, { minHeight: 200 }]}>
                 {/* Content */}
                 <View style={{ position: 'relative' }}>
                 {/* Profile Image and Balance */}
-                <View className="items-center mb-4">
-                  <View className="w-20 h-20 rounded-full bg-blue-300 items-center justify-center mb-3">
+                <View style={styles.cardHeader}>
+                  <View style={styles.iconContainer}>
                     <Image 
                       source={require('../../assets/images/icon.png')}
-                      className="w-16 h-16 rounded-full"
+                      style={styles.iconImage}
                     />
                   </View>
-                  <Text className="text-white text-sm">Your available balance is</Text>
-                  <Text className="text-white text-3xl font-bold">₦{commission ? commission.toLocaleString() : '--'}</Text>
+                  <Text style={styles.balanceLabel}>Your available balance is</Text>
+                  <Text style={styles.balanceValue}>₦{commission ? commission.toLocaleString() : '--'}</Text>
                   {/* Earned this week tag */}
-                  <View className="flex-row bg-white/20 rounded-full px-3 py-1 mt-2">
-                    <Text className="text-white">+₦{commission ? commission.toLocaleString() : '--'}</Text>
-                    <Text className="text-white ml-1">earned this week!</Text>
+                  <View style={styles.earningsBadge}>
+                    <Text style={styles.earningsText}>+₦{commission ? commission.toLocaleString() : '--'}</Text>
+                    <Text style={styles.earningsTextMargin}>earned this week!</Text>
                   </View>
                 </View>
                 
-                {/* Total deposits and withdrawals */}
-                {/* <View className="flex-row justify-between mb-4">
-                  <View>
-                    <Text className="text-white/80 text-sm">Total deposits done</Text>
-                    <Text className="text-white font-medium">₦{commission.toLocaleString()}</Text>
-                  </View>
-                  <View>
-                    <Text className="text-white/80 text-sm">Total withdraw done</Text>
-                    <Text className="text-white font-medium">₦{commission.toLocaleString()}</Text>
-                  </View>
-                </View> */}
-                
                 {/* Withdraw Button */}
                 <TouchableOpacity 
-                  className="bg-white py-3 rounded-xl items-center mt-2"
+                  style={styles.withdrawButton}
                   onPress={handleWithdraw}
                 >
-                  <Text className="text-blue-600 font-semibold text-lg">Withdraw</Text>
+                  <Text style={styles.withdrawButtonText}>Withdraw</Text>
                 </TouchableOpacity>
-                
-                {/* Commission payout notice */}
-                {/* <Text className="text-white/80 text-sm text-center mt-3">
-                  Your commission will be paid out every Friday
-                </Text> */}
               </View>
             </View>
             </ImageBackground>
             
-            <View className="mx-4 mt-6">
-              <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-gray-500">Recents</Text>
+            <View style={styles.recentsContainer}>
+              <View style={styles.recentsHeader}>
+                <Text style={styles.recentsLabel}>Recents</Text>
                 <TouchableOpacity onPress={viewAllTransactions}>
-                  <Text className="text-blue-600">View all</Text>
+                  <Text style={styles.viewAllText}>View all</Text>
                 </TouchableOpacity>
               </View>
             </View>
             {/* Display latest 3 transactions as recents */}
             {transactions.length === 0 ? (
-              <View className="bg-white py-10 rounded-xl mt-2">
-                <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
-                <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateTitle}>No Commission Transactions</Text>
+                <Text style={styles.emptyStateText}>
                   It looks like you haven't made any commission transactions yet.
                 </Text>
               </View>
@@ -275,11 +511,11 @@ const CommissionScreen = () => {
                 const isDebit = title === 'debit';
                 const isCredit = title === 'credit';
                 return (
-                  <View key={transaction._id || transaction.id} className="mx-4 mt-2 mb-2">
-                    <View className="flex-row justify-between items-center">
-                      <Text className="font-medium">{transaction.description || transaction.type}</Text>
+                  <View key={transaction._id || transaction.id} style={styles.transactionItem}>
+                    <View style={styles.transactionRow}>
+                      <Text style={styles.transactionDescription}>{transaction.description || transaction.type}</Text>
                       <Text
-                        className={`font-semibold ${isDebit ? 'text-red-600' : isCredit ? 'text-green-600' : 'text-gray-600'}`}
+                        style={isDebit ? styles.transactionAmountDebit : isCredit ? styles.transactionAmountCredit : styles.transactionAmountNeutral}
                       >
                         {isDebit
                           ? `-₦${Math.abs(transaction.amount).toLocaleString()}`
@@ -288,7 +524,7 @@ const CommissionScreen = () => {
                           : `₦${transaction.amount.toLocaleString()}`}
                       </Text>
                     </View>
-                    <Text className="text-gray-500 text-sm">{transaction.date || transaction.createdAt} {transaction.time || ''}</Text>
+                    <Text style={styles.transactionDate}>{transaction.date || transaction.createdAt} {transaction.time || ''}</Text>
                   </View>
                 );
               })
@@ -305,39 +541,28 @@ const CommissionScreen = () => {
         visible={showRatesModal}
         onRequestClose={() => setShowRatesModal(false)}
       >
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-white mx-4 rounded-xl p-8 shadow-md w-11/12">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
             {/* Commission Rates Content */}
-            <Text className="text-blue-600 text-2xl font-bold mb-4">Commission Rates</Text>
+            <Text style={styles.modalTitle}>Commission Rates</Text>
             
-            <View className="border-b border-gray-200 pb-4 mb-4">
-              <Text className="text-xl font-semibold">First contribution deposit
-</Text>
-              <Text className="text-gray-600">% per First contribution</Text>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionTitle}>First contribution deposit</Text>
+              <Text style={styles.modalSectionText}>% per First contribution</Text>
             </View>
             
-            {/* <View className="border-b border-gray-200 pb-4 mb-4">
-              <Text className="text-xl font-semibold">Deposit Commission</Text>
-              <Text className="text-gray-600">1% of all deposit amounts</Text>
-            </View> */}
-            
-            <View className="border-b border-gray-200 pb-4 mb-4">
-              <Text className="text-xl font-semibold"> Contributor withdrawal fee</Text>
-              <Text className="text-gray-600">% (Based on the Recipent back)</Text>
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionTitle}> Contributor withdrawal fee</Text>
+              <Text style={styles.modalSectionText}>% (Based on the Recipent back)</Text>
             </View>
             
-            {/* <View className="pb-4">
-              <Text className="text-xl font-semibold">Bonus</Text>
-              <Text className="text-gray-600">₦500 bonus for every 10 active customers</Text>
-            </View> */}
-            <View className="mt-4 justify-center items-center">
-            <TouchableOpacity 
-              className="bg-blue-600 py-3 rounded-2xl"
-              style={{ width: '40%' }} // Adjust width and height as needed
-              onPress={() => setShowRatesModal(false)}
-            >
-              <Text className="text-white font-semibold text-center ">Close</Text>
-            </TouchableOpacity>
+            <View style={styles.modalCloseContainer}>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowRatesModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Close</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>

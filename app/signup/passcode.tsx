@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { completeBasicSignup } from "../../services/api";
 import { useDisableBackHandler } from '../utils/backButtonHandler';
+import { StyleSheet } from 'react-native';
 
 interface PasscodeParams {
   phone?: string;
@@ -114,28 +115,32 @@ export default function PasscodeScreen() {
     const maxLength = 4;
 
     return (
-      <View className="flex-row justify-center space-x-4 mb-8">
+      <View style={styles.pinContainer}>
         {Array.from({ length: maxLength }, (_, index) => (
           <View
             key={index}
-            className={`w-12 h-12 border-2 rounded-lg items-center justify-center ${
-              index < currentPin.length ? "border-[#0072CE] bg-[#0072CE]" : "border-gray-300"
-            }`}
-            style={{
-              width: getResponsiveSize(48),
-              height: getResponsiveSize(48),
-              borderRadius: getResponsiveSize(8),
-              borderWidth: getResponsiveSize(2)
-            }}
+            style={[
+              styles.pinDotContainer,
+              {
+                width: getResponsiveSize(48),
+                height: getResponsiveSize(48),
+                borderRadius: getResponsiveSize(8),
+                borderWidth: getResponsiveSize(2),
+                borderColor: index < currentPin.length ? "#0072CE" : "#E5E7EB",
+                backgroundColor: index < currentPin.length ? "#0072CE" : 'transparent'
+              }
+            ]}
           >
             {index < currentPin.length && (
               <View
-                className="w-3 h-3 rounded-full bg-white"
-                style={{
-                  width: getResponsiveSize(12),
-                  height: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(6)
-                }}
+                style={[
+                  styles.pinDot,
+                  {
+                    width: getResponsiveSize(12),
+                    height: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(6)
+                  }
+                ]}
               />
             )}
           </View>
@@ -153,20 +158,21 @@ export default function PasscodeScreen() {
     ];
 
     return (
-      <View className="px-6">
+      <View style={styles.keypadContainer}>
         {digits.map((row, rowIndex) => (
-          <View key={rowIndex} className="flex-row justify-center space-x-4 mb-4">
+          <View key={rowIndex} style={styles.keypadRow}>
             {row.map((digit, digitIndex) => (
-                <TouchableOpacity
+              <TouchableOpacity
                 key={digitIndex}
-                className={`w-16 h-16 rounded-full items-center justify-center ${
-                  digit === 'backspace' ? 'bg-gray-200' : digit === '' ? 'bg-transparent' : 'bg-gray-100'
-                }`}
-                style={{
-                  width: getResponsiveSize(64),
-                  height: getResponsiveSize(64),
-                  borderRadius: getResponsiveSize(32)
-                }}
+                style={[
+                  styles.keypadButton,
+                  {
+                    width: getResponsiveSize(64),
+                    height: getResponsiveSize(64),
+                    borderRadius: getResponsiveSize(32),
+                    backgroundColor: digit === 'backspace' ? '#E5E7EB' : digit === '' ? 'transparent' : '#F3F4F6'
+                  }
+                ]}
                 onPress={() => {
                   if (digit === 'backspace') {
                     handleBackspace();
@@ -177,16 +183,16 @@ export default function PasscodeScreen() {
                 disabled={digit === ''}
               >
                 {digit === 'backspace' ? (
-                  <Ionicons name="backspace-outline" size={getResponsiveSize(24)} color="#666" />
+                  <Ionicons name="backspace-outline" size={getResponsiveSize(24)} color="#4B5563" />
                 ) : digit !== '' ? (
-                  <Text className="text-2xl font-semibold text-gray-800" style={{ fontSize: getResponsiveSize(24) }}>
+                  <Text style={[styles.keypadDigit, { fontSize: getResponsiveSize(24) }]}>
                     {digit}
                   </Text>
                 ) : null}
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
       </View>
     );
   };
@@ -261,92 +267,184 @@ export default function PasscodeScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-    <ScrollView 
-      className="flex-1 bg-white"
-      contentContainerStyle={{ flexGrow: 1 }}
-      keyboardShouldPersistTaps="handled"
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-    >
-        <View className="flex-1 px-6 justify-between pb-10" style={{
+      >
+        <View style={[styles.container, {
           paddingHorizontal: getResponsiveSize(24),
           paddingBottom: getResponsiveSize(40)
-        }}>
-      {/* Top section */}
-      {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginTop: getResponsiveSize(64), marginBottom: getResponsiveSize(32) }}>
-        <TouchableOpacity
-          className="flex-row items-center"
-          onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
-        >
+        }]}>
+          {/* Header */}
+          <View style={[styles.header, {
+            marginTop: getResponsiveSize(64),
+            marginBottom: getResponsiveSize(32)
+          }]}>
+            <TouchableOpacity
+              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
+              onPress={() => router.back()}
+            >
               <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
-        </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 3 of 4</Text>
-      </View>
-      <View className="items-center">
-            <Text className="text-2xl font-bold text-primaryText" style={{ fontSize: getResponsiveSize(24) }}>
-          {isConfirming ? "Confirm passcode" : "Create passcode"}
-        </Text>
-            <Text className="text-gray-500 mt-2 mb-16" style={{ 
+            </TouchableOpacity>
+            <Text style={[styles.stepText, { fontSize: getResponsiveSize(16) }]}>Step 3 of 4</Text>
+          </View>
+
+          <View style={styles.content}>
+            <Text style={[styles.title, { fontSize: getResponsiveSize(24) }]}>
+              {isConfirming ? "Confirm passcode" : "Create passcode"}
+            </Text>
+            <Text style={[styles.subtitle, { 
               fontSize: getResponsiveSize(16),
               marginTop: getResponsiveSize(8),
-              marginBottom: getResponsiveSize(64),
-              textAlign: 'center'
-            }}>
-          {isConfirming
-            ? "Re-enter your PIN to make sure it's correct."
-            : "Set a 4-digit PIN to protect your account"}
-        </Text>
+              marginBottom: getResponsiveSize(64)
+            }]}>
+              {isConfirming
+                ? "Re-enter your PIN to make sure it's correct."
+                : "Set a 4-digit PIN to protect your account"}
+            </Text>
 
-        {message && (
-              <View style={{ 
-                marginBottom: getResponsiveSize(16), 
-                padding: getResponsiveSize(12), 
-                backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', 
-                borderRadius: getResponsiveSize(8),
-                width: '100%'
-              }}>
-                <Text style={{ 
-                  color: messageType === 'error' ? '#D92D20' : '#0072CE', 
-                  textAlign: 'center',
+            {message && (
+              <View style={[styles.messageContainer, {
+                marginBottom: getResponsiveSize(16),
+                padding: getResponsiveSize(12),
+                backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+                borderRadius: getResponsiveSize(8)
+              }]}>
+                <Text style={[styles.messageText, {
+                  color: messageType === 'error' ? '#D92D20' : '#0072CE',
                   fontSize: getResponsiveSize(14)
-                }}>{message}</Text>
+                }]}>{message}</Text>
+              </View>
+            )}
+
+            {renderPinInputs()}
           </View>
-        )}
 
-        {renderPinInputs()}
-      </View>
+          {/* Keypad */}
+          {renderKeypad()}
 
-      {/* Keypad */}
-      {renderKeypad()}
-
-      {/* Next or Complete Registration Button */}
-          <View className="pb-4" style={{ paddingBottom: getResponsiveSize(16) }}>
-        <TouchableOpacity
-          className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-          onPress={handleSubmit}
-          disabled={loading} // Disable button when loading
-              style={{
+          {/* Next or Complete Registration Button */}
+          <View style={[styles.buttonContainer, { paddingBottom: getResponsiveSize(16) }]}>
+            <TouchableOpacity
+              style={[styles.submitButton, {
                 paddingVertical: getResponsiveSize(16),
                 borderRadius: getResponsiveSize(8),
                 opacity: loading ? 0.7 : 1
-              }}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-                <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>
-              {isConfirming ? "Complete Registration" : "Next"}
-            </Text>
-          )}
+              }]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={[styles.buttonText, { fontSize: getResponsiveSize(18) }]}>
+                  {isConfirming ? "Complete Registration" : "Next"}
+                </Text>
+              )}
               {!loading && <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />}
-        </TouchableOpacity>
-      </View>
-    </View>
-    </ScrollView>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontWeight: '600',
+  },
+  content: {
+    alignItems: 'center',
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  messageContainer: {
+    marginBottom: 16,
+    padding: 12,
+    width: '100%',
+  },
+  messageText: {
+    textAlign: 'center',
+  },
+  pinContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  pinDotContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  pinDot: {
+    backgroundColor: '#fff',
+  },
+  keypadContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  keypadButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  keypadDigit: {
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  buttonContainer: {
+    paddingHorizontal: 24,
+  },
+  submitButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+  },
+  buttonText: {
+    color: 'white',
+    marginRight: 8,
+    fontWeight: '600',
+  },
+});

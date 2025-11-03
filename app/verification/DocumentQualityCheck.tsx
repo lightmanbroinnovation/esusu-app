@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Image, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { uploadVerificationDocument, uploadBusinessLocationPhoto } from '../../services/cloudinary';
@@ -370,35 +370,34 @@ const DocumentQualityCheck = ({
   const guidelines = getDocumentGuidelines();
   
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-6 pb-2">
+    <SafeAreaView style={dqStyles.container}>
+      <View style={dqStyles.headerRow}>
         <TouchableOpacity 
           onPress={onBack}
-          className="bg-gray-100 p-2 rounded-full"
+          style={dqStyles.backBtn}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold flex-1 text-center">{getTitle()}</Text>
+        <Text style={dqStyles.headerTitle}>{getTitle()}</Text>
         <View style={{width: 40}} />
       </View>
       
-      <View className="flex-1 px-4">
-        <Text className="text-gray-700 text-center mb-4">
+      <View style={dqStyles.innerWrap}>
+        <Text style={dqStyles.instructions}>
           {getInstructions()}
         </Text>
         
         {/* Document/Location Image */}
-        <View className="items-center mb-4">
+        <View style={dqStyles.imageWrap}>
           {imageError || !documentImage ? (
-            <View className="w-full aspect-[4/3] bg-gray-200 rounded-xl items-center justify-center">
+            <View style={dqStyles.imagePlaceholder}>
               <Ionicons name="image-outline" size={48} color="#999" />
-              <Text className="text-gray-500 mt-2">Image not available</Text>
+              <Text style={dqStyles.placeholderText}>Image not available</Text>
             </View>
           ) : (
             <Image
               source={{ uri: documentImage }}
-              className="w-full rounded-xl"
-              style={{ aspectRatio }}
+              style={[dqStyles.image, { aspectRatio }]}
               resizeMode="cover"
               onError={handleImageError}
             />
@@ -406,19 +405,19 @@ const DocumentQualityCheck = ({
         </View>
         
         {/* Quality Check Status */}
-        <View className="bg-gray-50 rounded-xl p-4 mb-4">
-          <Text className="text-gray-800 font-semibold mb-3">Image Analysis</Text>
+        <View style={dqStyles.analysisCard}>
+          <Text style={dqStyles.analysisTitle}>Image Analysis</Text>
           
           {/* Content Detection Status */}
           {checking ? (
-            <View className="flex-row items-center mb-2">
+            <View style={dqStyles.rowCenter}>
               <ActivityIndicator size="small" color="#0052CC" style={{ marginRight: 8 }} />
-              <Text className="text-gray-600">
+              <Text style={dqStyles.mutedText}>
                 Analyzing image...
               </Text>
             </View>
           ) : contentStatus ? (
-            <View className="flex-row items-center mb-2">
+            <View style={dqStyles.rowCenter}>
               <Ionicons name={contentStatus.icon as any} size={20} color={contentStatus.color} style={{ marginRight: 8 }} />
               <Text style={{ color: contentStatus.color }}>
                 {contentStatus.message}
@@ -428,7 +427,7 @@ const DocumentQualityCheck = ({
           
           {/* Document Quality Status */}
           {documentQualityStatus && (
-            <View className="flex-row items-center mb-2">
+            <View style={dqStyles.rowCenter}>
               <Ionicons name={documentQualityStatus.icon as any} size={20} color={documentQualityStatus.color} style={{ marginRight: 8 }} />
               <Text style={{ color: documentQualityStatus.color }}>
                 {documentQualityStatus.message}
@@ -438,7 +437,7 @@ const DocumentQualityCheck = ({
           
           {/* Upload Status */}
           {uploadStatusInfo && (
-            <View className="flex-row items-center mb-2">
+            <View style={dqStyles.rowCenter}>
               {uploadStatus === 'uploading' ? (
                 <ActivityIndicator size="small" color="#0052CC" style={{ marginRight: 8 }} />
               ) : (
@@ -452,35 +451,35 @@ const DocumentQualityCheck = ({
         </View>
         
         {/* Guidelines */}
-        <View className="bg-blue-50 rounded-xl p-4 mb-4">
-          <Text className="text-blue-800 font-semibold mb-2">Tips for best results:</Text>
+        <View style={dqStyles.tipsCard}>
+          <Text style={dqStyles.tipsTitle}>Tips for best results:</Text>
           {guidelines.map((guideline, index) => (
-            <View key={index} className="flex-row items-center mb-1">
+            <View key={index} style={dqStyles.tipRow}>
               <MaterialIcons name="check-circle" size={16} color="#0052CC" style={{ marginRight: 6 }} />
-              <Text className="text-gray-700">{guideline}</Text>
+              <Text style={dqStyles.tipText}>{guideline}</Text>
             </View>
           ))}
         </View>
       </View>
       
       {/* Bottom Buttons */}
-      <View className="p-4 flex-row space-x-2 border-t border-gray-200">
+      <View style={dqStyles.bottomBar}>
         <TouchableOpacity 
           onPress={onRetake}
-          className="flex-1 py-3 bg-gray-100 rounded-xl items-center"
+          style={dqStyles.retakeBtn}
         >
-          <Text className="text-gray-700 font-medium">Retake</Text>
+          <Text style={dqStyles.retakeText}>Retake</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           onPress={handleConfirm}
-          className={`flex-1 py-3 rounded-xl items-center ${
-            isValidForSubmission() ? 'bg-[#0052CC]' : 
-            (uploadStatus === 'error' ? 'bg-amber-500' : 'bg-gray-300')
-          }`}
+          style={[dqStyles.primaryBtn, 
+            isValidForSubmission() ? dqStyles.primaryEnabled : 
+            (uploadStatus === 'error' ? dqStyles.warningBtn : dqStyles.disabledBtn)
+          ]}
           disabled={!isValidForSubmission() && uploadStatus !== 'error'}
         >
-          <Text className="text-white font-medium">
+          <Text style={dqStyles.primaryText}>
             {uploadStatus === 'error' ? 'Retry Upload' : 'Done'}
           </Text>
         </TouchableOpacity>
@@ -490,3 +489,32 @@ const DocumentQualityCheck = ({
 };
 
 export default DocumentQualityCheck; 
+
+const dqStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 },
+  backBtn: { backgroundColor: '#F3F4F6', padding: 8, borderRadius: 999 },
+  headerTitle: { fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
+  innerWrap: { flex: 1, paddingHorizontal: 16 },
+  instructions: { color: '#374151', textAlign: 'center', marginBottom: 16 },
+  imageWrap: { alignItems: 'center', marginBottom: 16 },
+  imagePlaceholder: { width: '100%', aspectRatio: 4/3, backgroundColor: '#E5E7EB', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  placeholderText: { color: '#6B7280', marginTop: 8 },
+  image: { width: '100%', borderRadius: 12 },
+  analysisCard: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, marginBottom: 16 },
+  analysisTitle: { color: '#1F2937', fontWeight: '600', marginBottom: 12 },
+  rowCenter: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  mutedText: { color: '#6B7280' },
+  tipsCard: { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 16, marginBottom: 16 },
+  tipsTitle: { color: '#1E3A8A', fontWeight: '600', marginBottom: 8 },
+  tipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  tipText: { color: '#374151' },
+  bottomBar: { padding: 16, flexDirection: 'row', columnGap: 8, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  retakeBtn: { flex: 1, paddingVertical: 12, backgroundColor: '#F3F4F6', borderRadius: 12, alignItems: 'center' },
+  retakeText: { color: '#374151', fontWeight: '500' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  primaryEnabled: { backgroundColor: '#0052CC' },
+  warningBtn: { backgroundColor: '#F59E0B' },
+  disabledBtn: { backgroundColor: '#D1D5DB' },
+  primaryText: { color: '#FFFFFF', fontWeight: '600' },
+});

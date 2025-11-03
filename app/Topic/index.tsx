@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Image, 
+  ScrollView, 
+  StyleSheet, 
+  ViewStyle, 
+  TextStyle, 
+  ImageStyle, 
+  ScrollViewProps 
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import EsusuLoader from '../components/EsusuLoader';
@@ -21,6 +32,112 @@ interface TopicData {
     description: string;
     content: TopicContent;
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+    },
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 40,
+        paddingBottom: 40,
+    },
+    offlineContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    offlineText: {
+        fontSize: 16,
+        color: '#333',
+        textAlign: 'center',
+    },
+    notFoundContainer: {
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingTop: 40,
+        backgroundColor: '#FFFFFF',
+    },
+    notFoundText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+        marginBottom: 24,
+    },
+    backButton: {
+        padding: 8,
+        marginRight: 8,
+    },
+    headerTitle: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginRight: 32,
+    },
+    contentContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 80,
+    },
+    topicTitle: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#007BFF',
+        marginBottom: 16,
+    },
+    mainDescription: {
+        color: '#6B7280',
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    section: {
+        marginBottom: 24,
+        width: '100%',
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#007BFF',
+        fontStyle: 'italic',
+        marginBottom: 8,
+    },
+    sectionContent: {
+        color: '#6B7280',
+        fontSize: 13,
+        lineHeight: 20,
+    },
+    feedbackContainer: {
+        marginTop: 32,
+        width: '100%',
+    },
+    feedbackTitle: {
+        color: '#007BFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 16,
+    },
+    feedbackButtons: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    feedbackButton: {
+        backgroundColor: '#E5F1FF',
+        paddingHorizontal: 32,
+        paddingVertical: 12,
+        borderRadius: 20,
+    },
+    feedbackButtonText: {
+        color: '#007BFF',
+        fontWeight: '600',
+    },
+});
 
 export default function Topic() {
     const router = useRouter();
@@ -53,70 +170,70 @@ export default function Topic() {
 
     if (!networkAvailable && !topicData) {
         return (
-            <View className="flex-1 justify-center items-center">
-                <Text>No network. Please connect to the internet to load topics.</Text>
+            <View style={styles.offlineContainer}>
+                <Text style={styles.offlineText}>No network. Please connect to the internet to load topics.</Text>
             </View>
         );
     }
 
     if (!topicData) {
         return (
-            <View className="flex-1 px-4 pt-10 bg-white">
-                <Text>Topic not found</Text>
+            <View style={styles.notFoundContainer}>
+                <Text style={styles.notFoundText}>Topic not found</Text>
             </View>
         );
     }
 
     return (
-        <ScrollView className="flex-1 px-4 pt-10 bg-white">
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
             {/* Header */}
-            <View className="flex-row items-center justify-between mt-[2rem]">
-            <TouchableOpacity
-            className="flex-row items-center"
-            onPress={handlePreviousPage}
-          >
-            <Ionicons name="arrow-back" size={28} />
-          </TouchableOpacity>
-                <Text className="text-lg font-semibold flex-1 text-center mr-8">
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={handlePreviousPage}
+                >
+                    <Ionicons name="arrow-back" size={28} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>
                     Help Center
                 </Text>
             </View>
 
-            <View className="flex flex-col px-4 items-start gap-2 mt-8 pb-20">
+            <View style={styles.contentContainer}>
                 {/* Title */}
-                <Text className="text-[24px] font-semibold text-[#007BFF] mb-4">
+                <Text style={styles.topicTitle}>
                     {topicData.title}
                 </Text>
 
                 {/* Main Description */}
-                <Text className="text-[#6B7280] text-[16px] mb-4 text-sm">
+                <Text style={styles.mainDescription}>
                     {topicData.content.mainDescription}
                 </Text>
 
                 {/* Sections */}
                 {topicData.content.sections.map((section, index) => (
-                    <View key={index} className="mb-6 w-full">
-                        <Text className=" text-[18px] font-semibold mb-2 text-[#007BFF] italic">
+                    <View key={index} style={styles.section}>
+                        <Text style={styles.sectionTitle}>
                             {section.title}
                         </Text>
-                        <Text className="text-[#6B7280] text-[13px]">
+                        <Text style={styles.sectionContent}>
                             {section.content}
                         </Text>
                     </View>
                 ))}
 
                 {/* Feedback section */}
-                <View className="mt-8 w-full">
-                    <Text className="text-[#007BFF] text-[16px] font-semibold mb-4">
+                <View style={styles.feedbackContainer}>
+                    <Text style={styles.feedbackTitle}>
                         Did that help solve your question?
                     </Text>
 
-                    <View className="flex-row gap-4">
-                        <TouchableOpacity className="bg-[#E5F1FF] px-8 py-3 rounded-full">
-                            <Text className="text-[#007BFF] font-semibold">Yes</Text>
+                    <View style={styles.feedbackButtons}>
+                        <TouchableOpacity style={styles.feedbackButton}>
+                            <Text style={styles.feedbackButtonText}>Yes</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity className="bg-[#E5F1FF] px-8 py-3 rounded-full">
-                            <Text className="text-[#007BFF] font-semibold">No</Text>
+                        <TouchableOpacity style={styles.feedbackButton}>
+                            <Text style={styles.feedbackButtonText}>No</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -8,11 +8,165 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // TODO: Replace with Moti Skeleton
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 10,
+    paddingTop: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  
+  // Amount Display
+  amountContainer: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+  },
+  amountLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  amountText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  balanceText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  
+  // Form
+  formContainer: {
+    paddingHorizontal: 16,
+    marginTop: 32,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+  },
+  inputFocused: {
+    borderColor: '#3B82F6',
+  },
+  formGroup: {
+    marginBottom: 24,
+  },
+  
+  // Fee Display
+  feeContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  feeText: {
+    color: '#1E40AF',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  feeLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feeLoadingText: {
+    color: '#4B5563',
+    marginLeft: 8,
+  },
+  
+  // Button
+  buttonContainer: {
+    paddingHorizontal: 16,
+    marginTop: 32,
+  },
+  button: {
+    paddingVertical: 16,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonEnabled: {
+    backgroundColor: '#2563EB',
+  },
+  buttonDisabled: {
+    backgroundColor: '#BFDBFE',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  
+  // Skeleton
+  skeletonContainer: {
+    padding: 24,
+  },
+  skeletonItem: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    marginBottom: 24,
+  },
+  skeletonButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    marginTop: 32,
+  },
+});
 
 interface BankDetails {
   accountNumber: string;
@@ -156,82 +310,86 @@ const RecipientScreen = () => {
 
   if (loading) {
     return (
-      <ScrollView className="flex-1 bg-white">
-        {/* TODO: Replace with Moti Skeleton */}
-        <View style={{ padding: 24 }}>
+      <ScrollView style={styles.container}>
+        <View style={styles.skeletonContainer}>
           {/* Amount Display Skeleton */}
-          <View style={{ width: '100%', height: 48, borderRadius: 12, marginBottom: 24 }} />
+          <View style={[styles.skeletonItem, {height: 120}]} />
           {/* Form Fields Skeleton */}
           {[1,2,3].map((_,i) => (
-            <View key={i} style={{ width: '100%', height: 48, borderRadius: 12, marginBottom: 24 }} />
+            <View key={i} style={styles.skeletonItem} />
           ))}
           {/* Continue Button Skeleton */}
-          <View style={{ width: '100%', height: 48, borderRadius: 24, marginTop: 32 }} />
+          <View style={styles.skeletonButton} />
         </View>
       </ScrollView>
     );
   }
   return (
-    <ScrollView className="flex-1 bg-white">
-      <SafeAreaView className="flex-1">
+    <ScrollView style={styles.container}>
+      <SafeAreaView style={{flex: 1}}>
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 mt-10 pt-4">
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#000" />
+            <Ionicons name="chevron-back" size={24} color="#000000" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold">Bank Details</Text>
-          <View className="w-10" />
+          <Text style={styles.headerTitle}>Bank Details</Text>
+          <View style={styles.headerSpacer} />
         </View>
+        
         {/* Amount Display */}
-        <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl">
-          <Text className="text-sm text-gray-500">Withdrawal Amount</Text>
-          <Text className="text-2xl font-semibold">
-6{parseInt(amount).toLocaleString()}</Text>
+        <View style={styles.amountContainer}>
+          <Text style={styles.amountLabel}>Withdrawal Amount</Text>
+          <Text style={styles.amountText}>
+            ₦{parseInt(amount).toLocaleString()}
+          </Text>
           {userDetails && (
-            <Text className="text-xs text-gray-500 mt-1">
-              Available balance: 
-6{userDetails.balance.toLocaleString()}
+            <Text style={styles.balanceText}>
+              Available balance: ₦{userDetails.balance.toLocaleString()}
             </Text>
           )}
         </View>
+        
         {/* Form */}
-        <View className="px-4 mt-8">
+        <View style={styles.formContainer}>
           {/* Account Number */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium mb-2">Account Number</Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.inputLabel}>Account Number</Text>
             <TextInput
               value={bankDetails.accountNumber}
               onChangeText={(value) => handleInputChange('accountNumber', value)}
               keyboardType="numeric"
               maxLength={10}
-              className="border border-gray-300 rounded-xl px-4 py-3"
+              style={styles.input}
               placeholder="Enter account number"
+              placeholderTextColor="#9CA3AF"
             />
           </View>
+          
           {/* Account Name */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium mb-2">Account Name</Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.inputLabel}>Account Name</Text>
             <TextInput
               value={bankDetails.accountName}
               onChangeText={(value) => handleInputChange('accountName', value)}
-              className="border border-gray-300 rounded-xl px-4 py-3"
+              style={styles.input}
               placeholder="Enter account name"
+              placeholderTextColor="#9CA3AF"
             />
           </View>
 
           {/* Fee Display */}
-          <View className="items-center mb-4">
+          <View style={styles.feeContainer}>
             {feeLoading ? (
-              <View className="flex-row items-center">
-                <ActivityIndicator size="small" color="#0074FF" />
-                <Text className="text-gray-600 ml-2">Calculating fee...</Text>
+              <View style={styles.feeLoading}>
+                <ActivityIndicator size="small" color="#2563EB" />
+                <Text style={styles.feeLoadingText}>Calculating fee...</Text>
               </View>
             ) : transferFee > 0 ? (
-              <View className="bg-blue-50 rounded-lg px-4 py-2">
-                <Text className="text-blue-800 text-sm">
+              <View style={styles.feeContainer}>
+                <Text style={styles.feeText}>
                   Transfer Fee: ₦{transferFee.toLocaleString()}
                 </Text>
               </View>
@@ -239,29 +397,32 @@ const RecipientScreen = () => {
           </View>
 
           {/* Bank Name */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium mb-2">Bank Name</Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.inputLabel}>Bank Name</Text>
             <TextInput
               value={bankDetails.bankName}
               onChangeText={(value) => handleInputChange('bankName', value)}
-              className="border border-gray-300 rounded-xl px-4 py-3"
+              style={styles.input}
               placeholder="Enter bank name"
+              placeholderTextColor="#9CA3AF"
             />
           </View>
         </View>
+        
         {/* Continue Button */}
-        <View className="px-4 mt-8">
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleContinue}
             disabled={loading}
-            className={`py-4 rounded-full ${
-              loading ? 'bg-blue-300' : 'bg-blue-600'
-            } items-center`}
+            style={[
+              styles.button,
+              loading ? styles.buttonDisabled : styles.buttonEnabled
+            ]}
           >
             {loading ? (
-              <ActivityIndicator color="white" size="small" />
+              <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text className="text-white font-medium text-base">Continue</Text>
+              <Text style={styles.buttonText}>Continue</Text>
             )}
           </TouchableOpacity>
         </View>

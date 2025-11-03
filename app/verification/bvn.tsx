@@ -12,6 +12,7 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +23,106 @@ import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
 // @ts-ignore
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
+
+const styles = StyleSheet.create({
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '91.67%', // 11/12
+    maxWidth: 384, // max-w-sm
+    padding: 24, // p-6
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5
+  },
+  modalTitle: {
+    fontSize: 24, // text-2xl
+    fontWeight: 'bold',
+    color: '#1E40AF', // text-primaryText
+    textAlign: 'center',
+    marginBottom: 16 // mb-4
+  },
+  modalSubtitle: {
+    fontSize: 18, // text-lg
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8 // mb-2
+  },
+  modalText: {
+    color: '#4B5563', // text-gray-600
+    textAlign: 'center',
+    fontSize: 16, // text-base
+    marginBottom: 24 // mb-6
+  },
+  modalButton: {
+    backgroundColor: '#0072CE', // bg-[#0072CE]
+    paddingVertical: 12, // py-3
+    borderRadius: 8, // rounded-lg
+    alignItems: 'center'
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 18, // text-lg
+    fontWeight: '600' // font-semibold
+  },
+  // Form styles
+  formGroup: {
+    marginVertical: 8, // my-2
+  },
+  label: {
+    color: '#4F4F4F',
+    marginBottom: 8, // mb-2
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: 48, // h-12
+    paddingHorizontal: 16, // px-4
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8, // rounded-lg
+    backgroundColor: '#F4F4F5',
+    paddingVertical: 12, // py-3
+  },
+  dropdownButtonText: {
+    fontSize: 16, // text-base
+    color: '#1A1A1A',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    zIndex: 10,
+    width: '100%',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8, // rounded-lg
+    marginTop: 4, // mt-1
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  dropdownItem: {
+    paddingVertical: 12, // py-3
+    paddingHorizontal: 16, // px-4
+  },
+  dropdownItemText: {
+    fontSize: 16, // text-base
+    color: '#1A1A1A',
+  },
+});
 
 export default function BvnScreen() {
   const router = useRouter();
@@ -190,7 +291,7 @@ export default function BvnScreen() {
     
     const days = [];
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+      days.push(<View key={`empty-${i}`} style={bvStyles.dayEmpty} />);
     }
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -205,17 +306,18 @@ export default function BvnScreen() {
       days.push(
         <TouchableOpacity
           key={day}
-          className={`flex-1 items-center justify-center my-1 rounded-full
-            ${isSelected ? 'bg-blue-600' : ''}
-            ${isDisabled ? 'opacity-30' : ''}`}
-          style={{ padding: 8 }}
+          style={[
+            bvStyles.dayBtn,
+            isSelected && bvStyles.dayBtnSelected,
+            isDisabled && bvStyles.dayBtnDisabled,
+          ]}
           disabled={isDisabled}
           onPress={() => {
             const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
             setDob(selectedDate);
           }}
         >
-          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
+          <Text style={[bvStyles.dayText, isSelected && bvStyles.dayTextSelected]}>{day}</Text>
         </TouchableOpacity>
       );
     }
@@ -225,17 +327,17 @@ export default function BvnScreen() {
     for (let i = 0; i < totalDays; i += 7) {
       const weekDays = days.slice(i, i + 7);
       while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} style={bvStyles.dayEmpty} />);
       }
       rows.push(
-        <View key={`row-${i}`} className="flex-row">
+        <View key={`row-${i}`} style={bvStyles.weekRow}>
           {weekDays}
         </View>
       );
     }
 
     return (
-      <View className="flex-1">
+      <View style={bvStyles.calendarContainer}>
         {rows}
       </View>
     );
@@ -254,59 +356,59 @@ export default function BvnScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ flex: 1 }}
+      style={bvStyles.flex}
     >
       <View
-        className="flex-1 bg-white px-6"
-        style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        }}
+        style={[bvStyles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+        <View style={bvStyles.headerRow}>
           <TouchableOpacity
-            className="flex-row items-center"
+            style={bvStyles.headerBack}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="font-semibold">Step 3 of 4</Text>
+          <Text style={bvStyles.stepText}>Step 3 of 4</Text>
         </View>
 
-        <ScrollView className="mt-8" showsVerticalScrollIndicator={false}>
+        <ScrollView style={bvStyles.scroll} showsVerticalScrollIndicator={false}>
           {/* Title */}
           <View>
-            <Text className="text-[24px] font-bold text-primaryText mb-2">
+            <Text style={bvStyles.title}>
               Verify Your Identity
             </Text>
-            <Text className="text-base text-[#4F4F4F]">
+            <Text style={bvStyles.subtitle}>
               Please provide your BVN or NIN to continue.
             </Text>
           </View>
 
           {/* Identity Type Dropdown */}
-          <View className="my-2">
-            <Text className="text-[#4F4F4F] mb-2">Identity Type</Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Identity Type</Text>
             <TouchableOpacity
-              className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+              style={styles.dropdownButton}
               onPress={() => setShowIdentityTypeDropdown(!showIdentityTypeDropdown)}
             >
-              <Text className="text-base text-[#1A1A1A]">{identityType}</Text>
-              <Ionicons name={showIdentityTypeDropdown ? 'chevron-up' : 'chevron-down'} size={24} color="#0072CE" />
+              <Text style={styles.dropdownButtonText}>{identityType}</Text>
+              <Ionicons 
+                name={showIdentityTypeDropdown ? 'chevron-up' : 'chevron-down'} 
+                size={24} 
+                color="#0072CE" 
+              />
             </TouchableOpacity>
             {showIdentityTypeDropdown && (
-              <View className="absolute z-10 w-full bg-white border border-[#E0E0E0] rounded-lg mt-1 shadow-lg">
+              <View style={styles.dropdownMenu}>
                 {['BVN', 'NIN'].map(type => (
                   <TouchableOpacity
                     key={type}
-                    className="py-3 px-4"
+                    style={styles.dropdownItem}
                     onPress={() => {
                       setIdentityType(type);
                       setShowIdentityTypeDropdown(false);
                     }}
                   >
-                    <Text className="text-base text-[#1A1A1A]">{type}</Text>
+                    <Text style={styles.dropdownItemText}>{type}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -314,18 +416,18 @@ export default function BvnScreen() {
           </View>
 
           {/* Input Fields */}
-          <View className="mt-6 space-y-4">
+          <View style={bvStyles.inputsWrap}>
             {/* BVN/NIN Number */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">{identityType} Number</Text>
-              <View className="flex-row items-center w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]">
+            <View style={bvStyles.inputGroup}>
+              <Text style={bvStyles.label}>{identityType} Number</Text>
+              <View style={bvStyles.inputRow}>
                 <TextInput
                   value={bvn}
                   onChangeText={setBvn}
                   placeholder={`Enter ${identityType} number`}
                   keyboardType="number-pad"
                   maxLength={identityType === 'BVN' ? 11 : 11} // Adjust if NIN has different length
-                  className="flex-1 text-base text-[#1A1A1A]"
+                  style={bvStyles.textInput}
                   placeholderTextColor="#BDBDBD"
                 />
                 <TouchableOpacity onPress={() => setShowBvnInfoModal(true)}>
@@ -335,34 +437,34 @@ export default function BvnScreen() {
             </View>
 
             {/* Date of Birth */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Date Of Brith</Text>
+            <View style={bvStyles.inputGroup}>
+              <Text style={bvStyles.label}>Date Of Brith</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={bvStyles.inputRow}
               >
-                <Text className="text-base text-[#BDBDBD]">{moment(dob).format('YYYY-MM-DD') || 'Select your DOB'}</Text>
+                <Text style={bvStyles.placeholderText}>{moment(dob).format('YYYY-MM-DD') || 'Select your DOB'}</Text>
                 <Ionicons name="calendar" size={24} color="#0072CE" />
               </TouchableOpacity>
             </View>
 
             {/* Phone Number */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Phone Number</Text>
+            <View style={bvStyles.inputGroup}>
+              <Text style={bvStyles.label}>Phone Number</Text>
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
                 maxLength={11} // Adjust based on common phone number length
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={bvStyles.fullInput}
                 placeholderTextColor="#BDBDBD"
               />
             </View>
           </View>
 
           {/* Spacer to push button down */}
-          <View className="h-16" />
+          <View style={bvStyles.spacer} />
         </ScrollView>
 
         {/* Calendar Modal */}
@@ -373,40 +475,40 @@ export default function BvnScreen() {
             animationType="slide"
             onRequestClose={() => setShowCalendar(false)}
           >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}>
-                <View className="flex-row justify-between items-center p-2 mb-2">
+            <View style={bvStyles.modalOverlay}>
+              <View style={[bvStyles.modalCard, { height: '55%' }] }>
+                <View style={bvStyles.modalHeaderRow}>
                   <TouchableOpacity 
                     onPress={() => changeMonth('prev')}
-                    className="p-2 rounded-full bg-gray-100"
+                    style={bvStyles.roundBtn}
                   >
                     <Ionicons name="chevron-back" size={20} color="#0072CE" />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => setShowYearSelector(true)}
-                    className="flex-row items-center"
+                    style={bvStyles.inlineRow}
                   >
-                    <Text className="text-xl font-bold text-center">{moment(dob).format('MMMM YYYY')}</Text>
-                    <Ionicons name="chevron-down" size={20} color="#0072CE" className="ml-1" />
+                    <Text style={bvStyles.modalTitleCenter}>{moment(dob).format('MMMM YYYY')}</Text>
+                    <Ionicons name="chevron-down" size={20} color="#0072CE" />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => changeMonth('next')}
-                    className="p-2 rounded-full bg-gray-100"
+                    style={bvStyles.roundBtn}
                   >
                     <Ionicons name="chevron-forward" size={20} color="#0072CE" />
                   </TouchableOpacity>
                 </View>
-                <View className="flex-row p-2 mb-2">
+                <View style={bvStyles.weekHeaderRow}>
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
+                    <Text key={day} style={bvStyles.weekHeaderText}>{day}</Text>
                   ))}
                 </View>
                 {renderCalendar()}
                 <TouchableOpacity 
                   onPress={() => setShowCalendar(false)}
-                  className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                  style={bvStyles.primaryBtn}
                 >
-                  <Text className="text-white font-bold text-lg">Done</Text>
+                  <Text style={bvStyles.primaryText}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -421,18 +523,18 @@ export default function BvnScreen() {
             animationType="slide"
             onRequestClose={() => setShowYearSelector(false)}
           >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '50%' }}>
-                <Text className="text-xl font-bold text-center mb-4">Select Year</Text>
+            <View style={bvStyles.modalOverlay}>
+              <View style={[bvStyles.modalCard, { height: '50%' }]}>
+                <Text style={bvStyles.modalTitleCenter}>Select Year</Text>
                 <FlatList
                   data={availableYears}
                   keyExtractor={(item) => item.toString()}
                   renderItem={({ item }) => (
                     <TouchableOpacity
-                      className={`py-3 px-4 mb-1 rounded-lg ${moment(dob).year() === item ? 'bg-blue-100' : ''}`}
+                      style={[bvStyles.yearItem, moment(dob).year() === item && bvStyles.yearItemActive]}
                       onPress={() => selectYear(item)}
                     >
-                      <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`}>{item}</Text>
+                      <Text style={[bvStyles.yearText, moment(dob).year() === item && bvStyles.yearTextActive]}>{item}</Text>
                     </TouchableOpacity>
                   )}
                   showsVerticalScrollIndicator={true}
@@ -445,9 +547,9 @@ export default function BvnScreen() {
                 />
                 <TouchableOpacity 
                   onPress={() => setShowYearSelector(false)}
-                  className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                  style={bvStyles.primaryBtn}
                 >
-                  <Text className="text-white font-bold text-lg">Cancel</Text>
+                  <Text style={bvStyles.primaryText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -461,22 +563,22 @@ export default function BvnScreen() {
           visible={showBvnInfoModal}
           onRequestClose={() => setShowBvnInfoModal(false)}
         >
-          <View className="flex-1 justify-center items-center bg-black/50">
-            <View className="bg-white rounded-2xl w-11/12 max-w-sm p-6 shadow-lg">
-              <Text className="text-2xl font-bold text-primaryText text-center mb-4">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
                 Don't Know Your BVN?
               </Text>
-              <Text className="text-lg font-bold text-center mb-2">
+              <Text style={styles.modalSubtitle}>
                 Just dial *565*0#
               </Text>
-              <Text className="text-gray-600 text-center text-base mb-6">
+              <Text style={styles.modalText}>
                 This will work only if you are making the request from the same phone number currently linked to your account.
               </Text>
               <TouchableOpacity
-                className="bg-[#0072CE] py-3 rounded-lg items-center"
+                style={styles.modalButton}
                 onPress={() => setShowBvnInfoModal(false)}
               >
-                <Text className="text-white text-lg font-semibold">Okay</Text>
+                <Text style={styles.modalButtonText}>Okay</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -489,12 +591,12 @@ export default function BvnScreen() {
           visible={showOtpModal}
           onRequestClose={() => setShowOtpModal(false)}
         >
-          <View className="flex-1 justify-center items-center bg-black/50">
-            <View className="bg-white rounded-2xl w-11/12 max-w-sm p-6 shadow-lg">
-              <Text className="text-2xl font-bold text-primaryText text-center mb-4">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
                 Enter Verification Code
               </Text>
-              <Text className="text-gray-600 text-center text-base mb-6">
+              <Text style={styles.modalText}>
                 Please enter the 6-digit code sent to your phone number.
               </Text>
               <TextInput
@@ -503,18 +605,18 @@ export default function BvnScreen() {
                 placeholder="Enter 6-digit code"
                 keyboardType="number-pad"
                 maxLength={6}
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5] mb-4"
+                style={bvStyles.fullInput}
                 placeholderTextColor="#BDBDBD"
               />
               <TouchableOpacity
-                className="bg-[#0072CE] py-3 rounded-lg items-center"
+                style={bvStyles.primaryBtn}
                 onPress={handleOtpVerification}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color="white" size="small" />
                 ) : (
-                  <Text className="text-white text-lg font-semibold">Verify</Text>
+                  <Text style={bvStyles.primaryText}>Verify</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -522,17 +624,17 @@ export default function BvnScreen() {
         </Modal>
 
         {/* Verify Button */}
-        <View className="pb-4">
+        <View style={bvStyles.bottomPad}>
           {!isKeyboardVisible && (
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              style={bvStyles.primaryBtn}
               onPress={handleSubmit}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text className="text-white text-lg mr-2 font-semibold">Verify</Text>
+                <Text style={bvStyles.primaryText}>Verify</Text>
               )}
             </TouchableOpacity>
           )}
@@ -541,3 +643,45 @@ export default function BvnScreen() {
     </KeyboardAvoidingView>
   );
 } 
+
+const bvStyles = StyleSheet.create({
+  flex: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 },
+  headerBack: { flexDirection: 'row', alignItems: 'center' },
+  stepText: { fontWeight: '600' },
+  scroll: { marginTop: 32 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#0052CC', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#4F4F4F' },
+  inputsWrap: { marginTop: 24 },
+  inputGroup: { marginVertical: 8 },
+  label: { color: '#4F4F4F', marginBottom: 8 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', width: '100%', height: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#F4F4F5' },
+  textInput: { flex: 1, fontSize: 16, color: '#1A1A1A' },
+  placeholderText: { fontSize: 16, color: '#BDBDBD' },
+  fullInput: { width: '100%', height: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#F4F4F5', paddingVertical: 12, marginBottom: 16 },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' },
+  modalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16 },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, marginBottom: 8 },
+  roundBtn: { padding: 8, borderRadius: 999, backgroundColor: '#F3F4F6' },
+  inlineRow: { flexDirection: 'row', alignItems: 'center' },
+  modalTitleCenter: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', flex: 1 },
+  weekHeaderRow: { flexDirection: 'row', padding: 8, marginBottom: 8 },
+  weekHeaderText: { flex: 1, textAlign: 'center', fontWeight: '500', color: '#6B7280' },
+  primaryBtn: { marginTop: 16, padding: 16, alignItems: 'center', backgroundColor: '#0072CE', borderRadius: 12 },
+  primaryText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 18 },
+  yearItem: { paddingVertical: 12, paddingHorizontal: 16, marginBottom: 4, borderRadius: 8 },
+  yearItemActive: { backgroundColor: '#DBEAFE' },
+  yearText: { textAlign: 'center', fontSize: 18 },
+  yearTextActive: { color: '#2563EB', fontWeight: 'bold' },
+  bottomPad: { paddingBottom: 16 },
+  dayEmpty: { flex: 1, padding: 8, marginVertical: 4 },
+  dayBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', marginVertical: 4, borderRadius: 999, padding: 8 },
+  dayBtnSelected: { backgroundColor: '#2563EB' },
+  dayBtnDisabled: { opacity: 0.3 },
+  dayText: { textAlign: 'center', color: '#000000' },
+  dayTextSelected: { color: '#FFFFFF' },
+  weekRow: { flexDirection: 'row' },
+  calendarContainer: { flex: 1 },
+  spacer: { height: 64 },
+});

@@ -32,7 +32,7 @@ export default function TransactionPinScreen() {
   const renderPinInputs = () => {
     const currentPin = isConfirming ? confirmPin : pin;
     return (
-      <View style={[styles.row, { marginTop: 24, justifyContent: 'center' }]}> 
+      <View style={styles.pinInputsContainer}> 
         {[0, 1, 2, 3].map((i) => (
           <TextInput
             key={i}
@@ -40,11 +40,8 @@ export default function TransactionPinScreen() {
             editable={false}
             style={[
               styles.pinInput,
-              {
-                borderColor: i < currentPin.length ? "#0072CE" : "#ccc",
-                backgroundColor: i < currentPin.length ? "#ffffff" : "#F4F4F5",
-                marginRight: i !== 3 ? 8 : 0
-              }
+              i < currentPin.length ? styles.pinInputFilled : {},
+              { marginRight: i !== 3 ? 8 : 0 }
             ]}
           />
         ))}
@@ -55,11 +52,11 @@ export default function TransactionPinScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
     return (
-      <View style={[{ marginTop: 40, width: '100%' }]}> 
+      <View style={styles.keypadContainer}> 
         {Array(3)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} style={[styles.row, { justifyContent: 'space-between', marginBottom: 32 }]}> 
+            <View key={rowIndex} style={styles.keypadRow}> 
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 <TouchableOpacity
                   key={key}
@@ -71,9 +68,8 @@ export default function TransactionPinScreen() {
               ))}
             </View>
           ))}
-        {/* Last row with "x" and "0" */}
-        <View style={[styles.row, { justifyContent: 'space-between' }]}> 
-          {/* Cancel Button */}
+        {/* Last row with backspace and "0" */}
+        <View style={styles.keypadBottomRow}> 
           <TouchableOpacity
             onPress={handleBackspace}
             style={styles.keypadButton}
@@ -81,7 +77,6 @@ export default function TransactionPinScreen() {
             <Ionicons name="backspace-outline" size={30} color="#0072CE" />
           </TouchableOpacity>
 
-          {/* Zero Button */}
           <TouchableOpacity
             onPress={() => handleKeyPress("0")}
             style={styles.keypadButton}
@@ -89,7 +84,6 @@ export default function TransactionPinScreen() {
             <Text style={styles.keypadButtonText}>0</Text>
           </TouchableOpacity>
 
-          {/* Placeholder for alignment */}
           <View style={styles.keypadButton} />
         </View>
       </View>
@@ -133,23 +127,22 @@ export default function TransactionPinScreen() {
 
   return (
     <ScrollView 
-      style={{ flex: 1, backgroundColor: 'white' }}
-      contentContainerStyle={{ flexGrow: 1 }}
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollViewContent}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[styles.container, { paddingBottom: 40 }]}> 
-        {/* Top section */}
-        {/* Header */}
-        <View style={[styles.row, { justifyContent: 'space-between', marginTop: 24 }]}> 
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
           <TouchableOpacity
-            style={[styles.row, { alignItems: 'center' }]}
+            style={styles.backButton}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
           <Text style={styles.headerText}>Set Transaction Pin</Text>
         </View>
-        <View style={[styles.center, { marginTop: 24 }]}> 
+        
+        <View style={styles.contentContainer}>
           <Text style={styles.titleText}>
             {isConfirming ? "Confirm Transaction Pin" : "Create Transaction Pin"}
           </Text>
@@ -160,11 +153,12 @@ export default function TransactionPinScreen() {
           </Text>
           {renderPinInputs()}
         </View>
+        
         {renderKeypad()}
-        {/* Next or Complete Registration Button */}
-        <View style={{ paddingBottom: 16, marginTop: 24 }}>
+        
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, loading && { backgroundColor: '#aaa' }]}
+            style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
           >
@@ -184,19 +178,39 @@ export default function TransactionPinScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 40,
     backgroundColor: 'white',
     justifyContent: 'flex-start',
   },
-  row: {
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  center: {
+  contentContainer: {
     alignItems: 'center',
     width: '100%',
+    marginTop: 24,
+  },
+  pinInputsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
   },
   pinInput: {
     width: 48,
@@ -206,8 +220,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderWidth: 1.5,
     borderRadius: 8,
+    borderColor: '#ccc',
+    backgroundColor: '#F4F4F5',
     color: '#222',
     marginRight: 0,
+  },
+  pinInputFilled: {
+    borderColor: '#0072CE',
+    backgroundColor: '#ffffff',
+  },
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  keypadBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   keypadButton: {
     width: 80,
@@ -216,7 +250,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 40,
-    marginBottom: 0,
   },
   keypadButtonText: {
     fontSize: 32,
@@ -233,12 +266,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#222',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitleText: {
     color: '#888',
     fontSize: 16,
     marginBottom: 32,
     textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  buttonContainer: {
+    paddingBottom: 16,
+    marginTop: 24,
+    width: '100%',
   },
   button: {
     flexDirection: 'row',
@@ -248,6 +288,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 8,
+    width: '100%',
+  },
+  buttonDisabled: {
+    backgroundColor: '#aaa',
   },
   buttonText: {
     color: 'white',

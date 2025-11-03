@@ -3,13 +3,122 @@ export const options = {
 };
 
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Vibration, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, Vibration, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Correct import
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 import { validateIdentity } from "../../services/api";
 import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    marginLeft: 16,
+    fontWeight: '600',
+  },
+  mainContent: {
+    flex: 1,
+    marginTop: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0052CC',
+  },
+  subtitle: {
+    color: '#6B7280',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  pinContainer: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 24,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: '#F4F4F5',
+  },
+  pinText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0072CE',
+  },
+  resendText: {
+    color: '#4F4F4F',
+    marginTop: 8,
+  },
+  loginText: {
+    color: '#4F4F4F',
+    marginVertical: 8,
+  },
+  loginLink: {
+    color: '#0072CE',
+    fontWeight: '600',
+  },
+  button: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    marginRight: 8,
+    fontWeight: '600',
+  },
+  keypadContainer: {
+    marginTop: 40,
+    gap: 8,
+    width: '100%',
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  keypadButton: {
+    width: 56,
+    height: 56,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  keypadText: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+});
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -73,18 +182,17 @@ export default function PasscodeScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row space-x-4 mt-6">
+      <View style={styles.pinContainer}>
         {[0, 1, 2, 3].map((i) => (
           <TouchableOpacity
             key={i}
-            onPress={() => setShowKeypad(true)} // Show keypad when clicked
-            className="w-12 h-12 text-center mr-2 justify-center items-center border rounded-lg"
-            style={{
-              borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: "#F4F4F5",
-            }}
+            onPress={() => setShowKeypad(true)}
+            style={[
+              styles.pinInput,
+              { borderColor: i < pin.length ? "#0072CE" : "#E0E0E0" }
+            ]}
           >
-            <Text className="text-xl font-bold text-[#0072CE]">{pin[i] || ""}</Text>
+            <Text style={styles.pinText}>{pin[i] || ""}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -94,11 +202,11 @@ export default function PasscodeScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "x", "0", "✓"];
     return (
-      <View className="mt-10 space-y-2 w-full">
+      <View style={styles.keypadContainer}>
         {Array(4)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-between">
+            <View key={rowIndex} style={styles.keypadRow}>
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 <TouchableOpacity
                   key={key}
@@ -107,14 +215,14 @@ export default function PasscodeScreen() {
                     else if (key === "✓") handleVerify();
                     else handleKeyPress(key);
                   }}
-                  className="w-14 h-14 bg-white justify-center items-center"
+                  style={styles.keypadButton}
                 >
                   {key === "x" ? (
-                    <Ionicons name="backspace-outline" size={30} color="#0072CE" /> // Delete icon
+                    <Ionicons name="backspace-outline" size={30} color="#0072CE" />
                   ) : key === "✓" ? (
-                    <MaterialIcons name="check-circle" size={30} color="#0072CE" /> // Enter icon
+                    <MaterialIcons name="check-circle" size={30} color="#0072CE" />
                   ) : (
-                    <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text> // Regular number keys
+                    <Text style={styles.keypadText}>{key}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -127,54 +235,54 @@ export default function PasscodeScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-white"
+      style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View className="flex-1 px-6 pb-10" style={{ paddingBottom: insets.bottom }}>
-        {/* Back Button */}
-        <View className="flex-row items-center justify-between mt-6 mb-4">
+      <View style={[styles.contentContainer, { paddingBottom: insets.bottom }]}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
-            className="flex-row items-center"
+            style={styles.backButton}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="ml-4 font-semibold">Step 1 of 4</Text>
+          <Text style={styles.stepText}>Step 1 of 4</Text>
         </View>
 
         {/* Main Content */}
-        <View className="flex-1 mt-8">
-          <Text className="text-[24px] font-bold text-primaryText">Enter Verification Code</Text>
-          <Text className="text-gray-500 mt-2 mb-6">
+        <View style={styles.mainContent}>
+          <Text style={styles.title}>Enter Verification Code</Text>
+          <Text style={styles.subtitle}>
             Check your messages for a 4-digit code sent to your number
           </Text>
 
           {renderPinInputs()}
 
-          <TouchableOpacity className="mt-2">
-            <Text className="text-[#4F4F4F]">Resend Code</Text>
+          <TouchableOpacity>
+            <Text style={styles.resendText}>Resend Code</Text>
           </TouchableOpacity>
           <TouchableOpacity>
-            <Text className="text-[#4F4F4F] my-2">
+            <Text style={styles.loginText}>
               Already have an account?{" "}
-              <Text className="text-[#0072CE] font-semibold">Login</Text>
+              <Text style={styles.loginLink}>Login</Text>
             </Text>
           </TouchableOpacity>
 
           {/* Spacer to push button down */}
-          <View className="flex-1" />
+          <View style={{ flex: 1 }} />
 
           {/* Continue Button */}
-          <View className="mt-4 mb-4">
+          <View style={{ marginTop: 16, marginBottom: 16 }}>
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              style={styles.button}
               onPress={handleVerify}
-              disabled={loading} // Disable button when loading
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text className="text-white text-lg mr-2 font-semibold">Verify and Continue</Text>
+                <Text style={styles.buttonText}>Verify and Continue</Text>
               )}
               {!loading && <MaterialIcons name="arrow-forward" size={18} color="white" />}
             </TouchableOpacity>
@@ -183,7 +291,7 @@ export default function PasscodeScreen() {
 
         {/* Keypad */}
         {showKeypad && (
-          <View className="mt-auto">
+          <View style={{ marginTop: 'auto' }}>
             {renderKeypad()}
           </View>
         )}

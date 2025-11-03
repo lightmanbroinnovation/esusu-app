@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, Text, Dimensions } from "react-native";
+import { View, TouchableOpacity, Text, Dimensions, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from 'expo-router';
 
@@ -59,131 +59,201 @@ const Footer = ({ disabled = false, disableCommissionButton = false }: FooterPro
   };
 
   return (
-    <View className="flex-row justify-around items-center bg-gray-50 py-2 drop-shadow-md" style={{
-      paddingVertical: getResponsiveSize(8),
-      paddingHorizontal: getResponsiveSize(16)
-    }}>
+    <View style={[
+      styles.container,
+      {
+        paddingVertical: getResponsiveSize(8),
+        paddingHorizontal: getResponsiveSize(16)
+      }
+    ]}>
       {/* Home Button */}
       <TouchableOpacity
-        className="items-center"
+        style={[
+          styles.button,
+          { 
+            opacity: disabled ? 0.5 : 1,
+          }
+        ]}
         onPress={() => handlePress("home")}
         disabled={disabled}
-        style={{ 
-          opacity: disabled ? 0.5 : 1,
-          alignItems: 'center',
-          flex: 1
-        }}
       >
-        <View className={`p-2 ${activePage === "home" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`} style={{
-          padding: getResponsiveSize(8),
-          borderRadius: activePage === "home" ? getResponsiveSize(16) : 0,
-          paddingHorizontal: activePage === "home" ? getResponsiveSize(16) : getResponsiveSize(8)
-        }}>
+        <View style={[
+          styles.iconContainer,
+          activePage === "home" && styles.iconContainerActive,
+          {
+            padding: getResponsiveSize(8),
+            borderRadius: activePage === "home" ? getResponsiveSize(16) : 0,
+            paddingHorizontal: activePage === "home" ? getResponsiveSize(16) : getResponsiveSize(8)
+          }
+        ]}>
           <Ionicons 
             name="home"
             size={getResponsiveSize(18)} 
             color={activePage === "home" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "home" ? "text-[#0052CC] font-medium" : "text-gray-500"}`} style={{
-          fontSize: getResponsiveSize(12),
-          marginTop: getResponsiveSize(4)
-        }}>
+        <Text style={[
+          styles.buttonText,
+          activePage === "home" && styles.buttonTextActive,
+          {
+            fontSize: getResponsiveSize(12),
+            marginTop: getResponsiveSize(4)
+          }
+        ]}>
           Home
         </Text>
       </TouchableOpacity>
 
       {/* Contributor Button */}
       <TouchableOpacity
-        className="items-center"
+        style={[
+          styles.button,
+          { 
+            opacity: disabled ? 0.5 : 1,
+          }
+        ]}
         onPress={() => handlePress("contributors")}
         disabled={disabled}
-        style={{ 
-          opacity: disabled ? 0.5 : 1,
-          alignItems: 'center',
-          flex: 1
-        }}
       >
-        <View className={`p-2 ${activePage === "contributors" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`} style={{
-          padding: getResponsiveSize(8),
-          borderRadius: activePage === "contributors" ? getResponsiveSize(16) : 0,
-          paddingHorizontal: activePage === "contributors" ? getResponsiveSize(16) : getResponsiveSize(8)
-        }}>
+        <View style={[
+          styles.iconContainer,
+          activePage === "contributors" && styles.iconContainerActive,
+          {
+            padding: getResponsiveSize(8),
+            borderRadius: activePage === "contributors" ? getResponsiveSize(16) : 0,
+            paddingHorizontal: activePage === "contributors" ? getResponsiveSize(16) : getResponsiveSize(8)
+          }
+        ]}>
           <Ionicons 
             name="people-outline"
             size={getResponsiveSize(18)}
             color={activePage === "contributors" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "contributors" ? "text-[#0052CC] font-medium" : "text-gray-500"}`} style={{
-          fontSize: getResponsiveSize(12),
-          marginTop: getResponsiveSize(4)
-        }}>
+        <Text style={[
+          styles.buttonText,
+          activePage === "contributors" && styles.buttonTextActive,
+          {
+            fontSize: getResponsiveSize(12),
+            marginTop: getResponsiveSize(4)
+          }
+        ]}>
           Contributor
         </Text>
       </TouchableOpacity>
 
       {/* Commission Button */}
       <TouchableOpacity
-        className="items-center"
+        style={[
+          styles.button,
+          { 
+            opacity: (disabled || disableCommissionButton) ? 0.5 : 1,
+          }
+        ]}
         onPress={() => handlePress("commission")}
         disabled={disabled || disableCommissionButton}
-        style={{ 
-          opacity: (disabled || disableCommissionButton) ? 0.5 : 1,
-          alignItems: 'center',
-          flex: 1
-        }}
       >
-        <View className={`p-2 ${activePage === "commission" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`} style={{
-          padding: getResponsiveSize(8),
-          borderRadius: activePage === "commission" ? getResponsiveSize(16) : 0,
-          paddingHorizontal: activePage === "commission" ? getResponsiveSize(16) : getResponsiveSize(8)
-        }}>
+        <View style={[
+          styles.iconContainer,
+          activePage === "commission" && styles.iconContainerActive,
+          {
+            padding: getResponsiveSize(8),
+            borderRadius: activePage === "commission" ? getResponsiveSize(16) : 0,
+            paddingHorizontal: activePage === "commission" ? getResponsiveSize(16) : getResponsiveSize(8)
+          }
+        ]}>
           <Ionicons 
             name="wallet-outline"
             size={getResponsiveSize(18)}
             color={activePage === "commission" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "commission" ? "text-[#0052CC] font-medium" : "text-gray-500"}`} style={{
-          fontSize: getResponsiveSize(12),
-          marginTop: getResponsiveSize(4)
-        }}>
+        <Text style={[
+          styles.buttonText,
+          activePage === "commission" && styles.buttonTextActive,
+          {
+            fontSize: getResponsiveSize(12),
+            marginTop: getResponsiveSize(4)
+          }
+        ]}>
           Commission
         </Text>
       </TouchableOpacity>
 
       {/* Profile Button */}
       <TouchableOpacity
-        className="items-center"
+        style={[
+          styles.button,
+          { 
+            opacity: disabled ? 0.5 : 1,
+          }
+        ]}
         onPress={() => handlePress("settings")}
         disabled={disabled}
-        style={{ 
-          opacity: disabled ? 0.5 : 1,
-          alignItems: 'center',
-          flex: 1
-        }}
       >
-        <View className={`p-2 ${activePage === "settings" ? "bg-[#E5F1FF] rounded-2xl px-4" : ""}`} style={{
-          padding: getResponsiveSize(8),
-          borderRadius: activePage === "settings" ? getResponsiveSize(16) : 0,
-          paddingHorizontal: activePage === "settings" ? getResponsiveSize(16) : getResponsiveSize(8)
-        }}>
+        <View style={[
+          styles.iconContainer,
+          activePage === "settings" && styles.iconContainerActive,
+          {
+            padding: getResponsiveSize(8),
+            borderRadius: activePage === "settings" ? getResponsiveSize(16) : 0,
+            paddingHorizontal: activePage === "settings" ? getResponsiveSize(16) : getResponsiveSize(8)
+          }
+        ]}>
           <Ionicons 
             name="person-outline"
             size={getResponsiveSize(18)}
             color={activePage === "settings" ? "#0052CC" : "#8F92A1"}
           />
         </View>
-        <Text className={`text-xs mt-1 ${activePage === "settings" ? "text-[#0052CC] font-medium" : "text-gray-500"}`} style={{
-          fontSize: getResponsiveSize(12),
-          marginTop: getResponsiveSize(4)
-        }}>
+        <Text style={[
+          styles.buttonText,
+          activePage === "settings" && styles.buttonTextActive,
+          {
+            fontSize: getResponsiveSize(12),
+            marginTop: getResponsiveSize(4)
+          }
+        ]}>
           Profile
         </Text>
       </TouchableOpacity>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  button: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    padding: 8,
+  },
+  iconContainerActive: {
+    backgroundColor: '#E5F1FF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+  },
+  buttonText: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#6B7280',
+  },
+  buttonTextActive: {
+    color: '#0052CC',
+    fontWeight: '500',
+  },
+});
 
 export default Footer;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface FilterProps {
@@ -16,6 +16,107 @@ export interface FilterOptions {
   endDate?: string;
   transactionType?: 'all' | 'credit' | 'withdrawn' | 'account_creation' ;
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  filterGroup: {
+    marginBottom: 16,
+  },
+  filterLabel: {
+    color: '#374151',
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+  },
+  textInputFlex: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    flex: 1,
+  },
+  amountRow: {
+    flexDirection: 'row',
+  },
+  amountInputSpacer: {
+    marginLeft: 16,
+  },
+  transactionTypeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  typeButton: {
+    marginRight: 8,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  typeButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  typeButtonInactive: {
+    backgroundColor: '#E5E7EB',
+  },
+  typeText: {
+    color: '#1F2937',
+  },
+  typeTextActive: {
+    color: '#FFFFFF',
+  },
+  actionRow: {
+    flexDirection: 'row',
+  },
+  actionButtonSpacer: {
+    marginLeft: 16,
+  },
+  clearButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+  },
+  clearButtonText: {
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  applyButton: {
+    flex: 1,
+    paddingVertical: 12,
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+  },
+  applyButtonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+});
 
 const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFilter }) => {
   // Filter states
@@ -53,20 +154,20 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
       transparent={true}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black bg-opacity-50 justify-end">
-        <View className="bg-white rounded-t-3xl p-6">
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-xl font-bold">Filter Transactions</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Filter Transactions</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color="#000" />
             </TouchableOpacity>
           </View>
 
           {/* Name Filter */}
-          <View className="mb-4">
-            <Text className="text-gray-700 mb-2">Name</Text>
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Name</Text>
             <TextInput
-              className="border border-gray-300 rounded-lg p-3"
+              style={styles.textInput}
               placeholder="Filter by name"
               value={name}
               onChangeText={setName}
@@ -74,18 +175,18 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
           </View>
 
           {/* Amount Range Filter */}
-          <View className="mb-4">
-            <Text className="text-gray-700 mb-2">Amount Range</Text>
-            <View className="flex-row space-x-4">
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Amount Range</Text>
+            <View style={styles.amountRow}>
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 flex-1"
+                style={styles.textInputFlex}
                 placeholder="Min"
                 keyboardType="numeric"
                 value={minAmount}
                 onChangeText={setMinAmount}
               />
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 flex-1"
+                style={[styles.textInputFlex, styles.amountInputSpacer]}
                 placeholder="Max"
                 keyboardType="numeric"
                 value={maxAmount}
@@ -95,9 +196,9 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
           </View>
 
           {/* Transaction Type Filter */}
-          <View className="mb-6">
-            <Text className="text-gray-700 mb-2">Transaction Type</Text>
-            <View className="flex-row flex-wrap">
+          <View style={[styles.filterGroup, { marginBottom: 24 }]}>
+            <Text style={styles.filterLabel}>Transaction Type</Text>
+            <View style={styles.transactionTypeRow}>
               {[
                 { label: 'All', value: 'all' },
                 { label: 'Credit', value: 'credit' },
@@ -106,15 +207,14 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
               ].map(item => (
                 <TouchableOpacity
                   key={item.value}
-                  className={`mr-2 mb-2 px-4 py-2 rounded-full ${
-                    transactionType === item.value ? 'bg-blue-500' : 'bg-gray-200'
-                  }`}
+                  style={[
+                    styles.typeButton,
+                    transactionType === item.value ? styles.typeButtonActive : styles.typeButtonInactive
+                  ]}
                   onPress={() => setTransactionType(item.value as any)}
                 >
                   <Text
-                    className={`${
-                      transactionType === item.value ? 'text-white' : 'text-gray-800'
-                    }`}
+                    style={transactionType === item.value ? styles.typeTextActive : styles.typeText}
                   >
                     {item.label}
                   </Text>
@@ -124,18 +224,18 @@ const TransactionFilter: React.FC<FilterProps> = ({ visible, onClose, onApplyFil
           </View>
 
           {/* Action Buttons */}
-          <View className="flex-row space-x-4">
+          <View style={styles.actionRow}>
             <TouchableOpacity
-              className="flex-1 py-3 border border-gray-300 rounded-lg"
+              style={styles.clearButton}
               onPress={clearFilters}
             >
-              <Text className="text-center font-medium">Clear</Text>
+              <Text style={styles.clearButtonText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 py-3 bg-blue-500 rounded-lg"
+              style={[styles.applyButton, styles.actionButtonSpacer]}
               onPress={applyFilters}
             >
-              <Text className="text-white text-center font-medium">Apply</Text>
+              <Text style={styles.applyButtonText}>Apply</Text>
             </TouchableOpacity>
           </View>
         </View>

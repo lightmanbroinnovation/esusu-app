@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Transaction } from './types';
 
@@ -46,7 +46,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
   };
 
   // Determine text color based on transaction type
-  const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
+  const amountColor = type === 'withdrawal' ? '#EF4444' : '#10B981';
 
   const handlePress = () => {
     // Navigate to receipt page with transaction data
@@ -65,30 +65,61 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
 
   return (
     <TouchableOpacity
-      className="flex-row justify-between items-center py-4 px-4 bg-white border-b border-gray-100"
+      style={styles.container}
       onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View className="flex-1 pr-4">
+      <View style={styles.content}>
         <Text
-          className="text-base font-semibold text-gray-800 mb-1"
+          style={styles.title}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {getTransactionTitle()}
         </Text>
         <Text
-          className="text-sm text-gray-500"
+          style={styles.subtitle}
           numberOfLines={1}
         >
           {getTransactionSubtitle()}
         </Text>
       </View>
-      <Text className={`text-base font-bold ${amountColorClass}`}>
+      <Text style={[styles.amount, { color: amountColor }]}>
         {formattedAmount()}
       </Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  content: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  amount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 export default TransactionItem; 

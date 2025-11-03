@@ -9,7 +9,8 @@ import {
   Modal,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -306,20 +307,314 @@ export default function ContributorProfile() {
   const getTransactionColor = (type: string) => {
     switch(type) {
       case 'deposit':
-        return 'text-green-600';
+        return '#16A34A';
       case 'withdrawal':
-        return 'text-red-600';
+        return '#DC2626';
       default:
-        return 'text-gray-600';
+        return '#4B5563';
     }
   };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 16,
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      marginTop: 40,
+    },
+    backButton: {
+      backgroundColor: '#F3F4F6',
+      padding: 8,
+      borderRadius: 999,
+      marginRight: 16,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      flex: 1,
+      textAlign: 'center',
+    },
+    headerSpacer: {
+      width: 40,
+    },
+    profileCard: {
+      backgroundColor: '#2563EB',
+      borderRadius: 12,
+      padding: 16,
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    profileContent: {
+      zIndex: 1,
+    },
+    profileHeader: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    profileImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 999,
+    },
+    avatarPlaceholder: {
+      width: 80,
+      height: 80,
+      borderRadius: 999,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarText: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    contributionsLabel: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      marginTop: 8,
+    },
+    contributionsValue: {
+      color: '#FFFFFF',
+      fontSize: 30,
+      fontWeight: 'bold',
+    },
+    actionButtonsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    depositButton: {
+      backgroundColor: '#000000',
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      flex: 1,
+      marginRight: 8,
+    },
+    withdrawButton: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      flex: 1,
+      marginLeft: 8,
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      marginLeft: 8,
+    },
+    withdrawButtonText: {
+      color: '#2563EB',
+      marginLeft: 8,
+    },
+    noticeBox: {
+      backgroundColor: '#EFF6FF',
+      marginTop: 16,
+      borderRadius: 8,
+      padding: 16,
+    },
+    noticeTitle: {
+      color: '#3B82F6',
+      fontWeight: '500',
+    },
+    noticeText: {
+      color: '#3B82F6',
+      fontSize: 14,
+    },
+    detailsContainer: {
+      marginHorizontal: 16,
+      marginTop: 16,
+    },
+    detailsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    detailItem: {
+      flex: 1,
+    },
+    detailLabel: {
+      color: '#6B7280',
+      fontSize: 14,
+    },
+    detailValue: {
+      fontWeight: '500',
+    },
+    statusValue: {
+      fontWeight: '500',
+    },
+    statusActive: {
+      fontWeight: '500',
+      color: '#16A34A',
+    },
+    statusPending: {
+      fontWeight: '500',
+      color: '#CA8A04',
+    },
+    statusInactive: {
+      fontWeight: '500',
+      color: '#DC2626',
+    },
+    activityContainer: {
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 16,
+    },
+    activityHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    activityTitle: {
+      fontWeight: '600',
+    },
+    viewAllText: {
+      color: '#2563EB',
+    },
+    activityList: {
+      paddingVertical: 16,
+    },
+    activityEmptyText: {
+      color: '#6B7280',
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
+    activityItem: {
+      marginBottom: 12,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F3F4F6',
+    },
+    activityRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    activityName: {
+      fontWeight: '500',
+    },
+    activityAmount: {
+      fontWeight: '600',
+    },
+    activityDate: {
+      color: '#6B7280',
+      fontSize: 14,
+    },
+    bottomButton: {
+      padding: 16,
+    },
+    reminderButton: {
+      backgroundColor: '#2563EB',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    reminderButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 18,
+      marginLeft: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      width: '83.333333%',
+      padding: 24,
+      position: 'relative',
+    },
+    modalTitle: {
+      color: '#2563EB',
+      fontSize: 24,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+      paddingBottom: 16,
+      marginBottom: 16,
+    },
+    modalText: {
+      textAlign: 'center',
+      color: '#374151',
+      fontSize: 16,
+      marginBottom: 24,
+    },
+    modalBoldText: {
+      fontWeight: '500',
+    },
+    modalCloseButton: {
+      backgroundColor: '#2563EB',
+      paddingVertical: 12,
+      borderRadius: 16,
+      position: 'absolute',
+      bottom: -16,
+      left: '30%',
+      width: '40%',
+    },
+    modalCloseButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 8,
+    },
+    errorContainer: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      marginTop: 8,
+      color: '#EF4444',
+    },
+    goBackButton: {
+      marginTop: 16,
+      backgroundColor: '#2563EB',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    goBackButtonText: {
+      color: '#FFFFFF',
+    },
+  });
 
   // Loading state
   if (loading && !(params.firstName && params.lastName)) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0066FF" />
-        <Text className="mt-2">Loading contributor data...</Text>
+        <Text style={styles.loadingText}>Loading contributor data...</Text>
       </SafeAreaView>
     );
   }
@@ -327,14 +622,14 @@ export default function ContributorProfile() {
   // Error state
   if (error && !(params.firstName && params.lastName)) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+      <SafeAreaView style={styles.errorContainer}>
         <Ionicons name="alert-circle" size={48} color="red" />
-        <Text className="mt-2 text-red-500">{error || "Failed to load contributor"}</Text>
+        <Text style={styles.errorText}>{error || "Failed to load contributor"}</Text>
         <TouchableOpacity 
-          className="mt-4 bg-blue-600 px-4 py-2 rounded-lg"
+          style={styles.goBackButton}
           onPress={navigateBack}
         >
-          <Text className="text-white">Go Back</Text>
+          <Text style={styles.goBackButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -354,22 +649,22 @@ export default function ContributorProfile() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-4 mt-2">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
         {/* Header */}
-        <View className="flex-row items-center mb-4 mt-10">
-          <TouchableOpacity onPress={navigateBack} className="bg-gray-100 p-2 rounded-full mr-4">
+        <View style={styles.header}>
+          <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">
+          <Text style={styles.headerTitle}>
             {displayName}
           </Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView className="flex-1">
+        <ScrollView style={{ flex: 1 }}>
           {/* Profile Card */}
-          <View className="bg-blue-600 rounded-xl p-4 relative overflow-hidden">
+          <View style={styles.profileCard}>
             {/* Background Image */}
             <Image
               source={require('../../assets/images/Onboarding1.png')}
@@ -388,13 +683,13 @@ export default function ContributorProfile() {
             />
             
             {/* Content */}
-            <View style={{ zIndex: 1 }}>
+            <View style={styles.profileContent}>
               {/* Profile Image and Balance */}
-              <View className="items-center mb-4">
+              <View style={styles.profileHeader}>
                 {imageSource ? (
                   <Image
                     source={imageSource}
-                    className="w-20 h-20 rounded-full"
+                    style={styles.profileImage}
                     onError={(e) => {
                       console.error('Error loading image:', e.nativeEvent.error);
                       setImageLoadError(true);
@@ -402,80 +697,80 @@ export default function ContributorProfile() {
                   />
                 ) : (
                   <View 
-                    className="w-20 h-20 rounded-full items-center justify-center"
-                    style={{ backgroundColor: getAvatarColor() }}
+                    style={[styles.avatarPlaceholder, { backgroundColor: getAvatarColor() }]}
                   >
-                    <Text className="text-white text-xl font-bold">{getInitials()}</Text>
+                    <Text style={styles.avatarText}>{getInitials()}</Text>
                   </View>
                 )}
-                <Text className="text-white text-sm mt-2">Total Contributions Made</Text>
-                <Text className="text-white text-3xl font-bold">₦{mergedContributorData.depositAmount}</Text>
+                <Text style={styles.contributionsLabel}>Total Contributions Made</Text>
+                <Text style={styles.contributionsValue}>₦{mergedContributorData.depositAmount}</Text>
               </View>
               
               {/* Action Buttons */}
-              <View className="flex-row justify-between">
-                <TouchableOpacity onPress={handleDeposit} className="bg-black rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 mr-2">
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity onPress={handleDeposit} style={styles.depositButton}>
                   <Ionicons name="add-circle" size={20} color="white" />
-                  <Text className="text-white ml-2">Deposit</Text>
+                  <Text style={styles.buttonText}>Deposit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="bg-white rounded-lg flex-row items-center justify-center px-6 py-3 flex-1 ml-2"
+                  style={styles.withdrawButton}
                   onPress={handleWithdraw}
                 >
                   <Ionicons name="remove-circle-outline" size={20} color="#0066FF" />
-                  <Text className="text-blue-600 ml-2">Withdraw</Text>
+                  <Text style={styles.withdrawButtonText}>Withdraw</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
           
           {/* Agent Notice */}
-          <View className="bg-blue-50 mt-4 rounded-lg p-4">
-            <Text className="text-blue-500 font-medium">Important Notice for Agents</Text>
-            <Text className="text-blue-500 text-sm">
+          <View style={styles.noticeBox}>
+            <Text style={styles.noticeTitle}>Important Notice for Agents</Text>
+            <Text style={styles.noticeText}>
               As an agent, you do not have access to withdraw or control a contributor's funds—only the 
               contributor can initiate payouts securely.
             </Text>
           </View>
 
           {/* Savings Details */}
-          <View className="mx-4 mt-4">
-            <View className="flex-row justify-between mb-4">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Start Date</Text>
-                <Text className="font-medium">{formatDate(mergedContributorData.startDate)}</Text>
+          <View style={styles.detailsContainer}>
+            <View style={styles.detailsRow}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Start Date</Text>
+                <Text style={styles.detailValue}>{formatDate(mergedContributorData.startDate)}</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">End Date</Text>
-                <Text className="font-medium">{formatDate(mergedContributorData.endDate)}</Text>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>End Date</Text>
+                <Text style={styles.detailValue}>{formatDate(mergedContributorData.endDate)}</Text>
               </View>
             </View>
             
-            <View className="flex-row justify-between mb-4">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Frequency</Text>
-                <Text className="font-medium">₦{mergedContributorData.depositAmount} {mergedContributorData.frequency}</Text>
+            <View style={styles.detailsRow}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Frequency</Text>
+                <Text style={styles.detailValue}>₦{mergedContributorData.depositAmount} {mergedContributorData.frequency}</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Days Left</Text>
-                <Text className="font-medium">
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Days Left</Text>
+                <Text style={styles.detailValue}>
                   {calculateDaysLeft(mergedContributorData.startDate, mergedContributorData.endDate)} days
                 </Text>
               </View>
             </View>
             
-            <View className="flex-row justify-between mb-4">
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Language</Text>
-                <Text className="font-medium">{mergedContributorData.language}</Text>
+            <View style={styles.detailsRow}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Language</Text>
+                <Text style={styles.detailValue}>{mergedContributorData.language}</Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-500 text-sm">Status</Text>
-                <Text className={`font-medium ${
-                  mergedContributorData.status === 'Active' ? 'text-green-600' : 
-                  mergedContributorData.status === 'Pending' ? 'text-yellow-600' : 
-                  'text-red-600'
-                }`}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Status</Text>
+                <Text style={[
+                  styles.statusValue,
+                  mergedContributorData.status === 'Active' ? styles.statusActive : 
+                  mergedContributorData.status === 'Pending' ? styles.statusPending : 
+                  styles.statusInactive
+                ]}>
                   {mergedContributorData.status || 'N/A'}
                 </Text>
               </View>
@@ -483,11 +778,11 @@ export default function ContributorProfile() {
           </View>
           
           {/* Recent Activity */}
-          <View className="mx-4 mt-4 mb-4">
-            <View className="flex-row justify-between items-center mb-3">
-              <Text className="font-semibold">Recent Activity</Text>
+          <View style={styles.activityContainer}>
+            <View style={styles.activityHeader}>
+              <Text style={styles.activityTitle}>Recent Activity</Text>
               <TouchableOpacity onPress={navigateToTransactions}>
-                <Text className="text-blue-600">View all</Text>
+                <Text style={styles.viewAllText}>View all</Text>
               </TouchableOpacity>
             </View>
             
@@ -495,19 +790,19 @@ export default function ContributorProfile() {
             {transactionsLoading ? (
               <ActivityIndicator size="small" color="#0066FF" />
             ) : transactions.length === 0 ? (
-              <View className="py-4">
-                <Text className="text-gray-500 text-center italic">No transactions found</Text>
+              <View style={styles.activityList}>
+                <Text style={styles.activityEmptyText}>No transactions found</Text>
               </View>
             ) : (
               transactions.slice(0, 5).map((transaction) => (
-                <View key={transaction.id} className="mb-3 pb-2 border-b border-gray-100">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="font-medium">{transaction.name}</Text>
-                    <Text className={`font-semibold ${getTransactionColor(transaction.type)}`}>
+                <View key={transaction.id} style={styles.activityItem}>
+                  <View style={styles.activityRow}>
+                    <Text style={styles.activityName}>{transaction.name}</Text>
+                    <Text style={[styles.activityAmount, { color: getTransactionColor(transaction.type) }]}>
                       {getTransactionAmount(transaction)}
                     </Text>
                   </View>
-                  <Text className="text-gray-500 text-sm">{transaction.date} • {transaction.timestamp}</Text>
+                  <Text style={styles.activityDate}>{transaction.date} • {transaction.timestamp}</Text>
                 </View>
               ))
             )}
@@ -515,13 +810,13 @@ export default function ContributorProfile() {
         </ScrollView>
         
         {/* Bottom Button */}
-        <View className="p-4">
+        <View style={styles.bottomButton}>
           <TouchableOpacity 
             onPress={handleSendReminder}
-            className="bg-blue-600 p-4 rounded-xl items-center flex-row justify-center"
+            style={styles.reminderButton}
           >
             <Ionicons name="notifications-outline" size={22} color="white" />
-            <Text className="text-white font-semibold text-lg ml-2">Send Reminder</Text>
+            <Text style={styles.reminderButtonText}>Send Reminder</Text>
           </TouchableOpacity>
         </View>
 
@@ -532,20 +827,19 @@ export default function ContributorProfile() {
           visible={reminderModalVisible}
           onRequestClose={closeReminderModal}
         >
-          <View className="flex-1 justify-center items-center bg-black/50">
-            <View className="bg-white rounded-xl w-10/12 p-6 relative">
-              <Text className="text-blue-600 text-2xl font-bold text-center border-b border-gray-200 pb-4 mb-4">Reminder Sent!</Text>
-              <Text className="text-center text-gray-700 text-base mb-6">
-                A reminder has been sent to <Text className="font-medium">{displayName}</Text> via SMS to not forget to contribute today.
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Reminder Sent!</Text>
+              <Text style={styles.modalText}>
+                A reminder has been sent to <Text style={styles.modalBoldText}>{displayName}</Text> via SMS to not forget to contribute today.
               </Text>
               
               {/* Close Button */}
               <TouchableOpacity 
-                className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[30%] "
-                style={{ width: '40%' }} // Adjust width and height as needed
+                style={styles.modalCloseButton}
                 onPress={closeReminderModal}
               >
-                <Text className="text-white font-semibold text-center ">Close</Text>
+                <Text style={styles.modalCloseButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>

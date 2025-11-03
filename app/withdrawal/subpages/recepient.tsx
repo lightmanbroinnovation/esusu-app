@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, FlatList, Modal, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, FlatList, Modal, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchBankList } from '../../../services/api';
@@ -7,6 +7,214 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBackButtonHandler } from '../../utils/backButtonHandler';
 
 const windowWidth = Dimensions.get('window').width;
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 16,
+    paddingTop: 32,
+  },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  
+  // Content
+  content: {
+    marginTop: 40,
+  },
+  subtitle: {
+    textAlign: 'center',
+    color: '#4B5563',
+    marginBottom: 24,
+  },
+  
+  // Form Elements
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#272636',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+    color: '#374151',
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  bankInput: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  bankInputText: {
+    color: '#374151',
+    fontSize: 16,
+  },
+  
+  // Messages
+  errorMessage: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    marginBottom: 16,
+  },
+  successMessage: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#DCFCE7',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+    marginBottom: 16,
+  },
+  messageText: {
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#B91C1C',
+  },
+  successText: {
+    color: '#166534',
+  },
+  
+  // Fee Display
+  feeContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  feeLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feeLoadingText: {
+    color: '#4B5563',
+    marginLeft: 8,
+  },
+  feeBox: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  feeText: {
+    color: '#1E40AF',
+    fontSize: 14,
+  },
+  
+  // Button
+  button: {
+    backgroundColor: '#0074FF',
+    width: '100%',
+    borderRadius: 12,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    marginBottom: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonLoadingText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  
+  // Bank Dropdown
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: windowWidth,
+    height: '100%',
+    zIndex: 1000,
+  },
+  dropdownContainer: {
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    maxHeight: 350,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  searchInput: {
+    backgroundColor: '#F4F4F5',
+    borderRadius: 8,
+    padding: 12,
+    margin: 8,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
+    fontSize: 16,
+  },
+  bankItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  bankItemText: {
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  bankList: {
+    maxHeight: 250,
+  },
+  bankName: {
+    fontSize: 16,
+    color: '#1F2937',
+  },
+});
 
 export default function Recepient() {
   const router = useRouter();
@@ -30,6 +238,7 @@ export default function Recepient() {
   const [sessionId, setSessionId] = useState('');
   const [transferFee, setTransferFee] = useState<number>(0);
   const [feeLoading, setFeeLoading] = useState(false);
+  const [selectedBank, setSelectedBank] = useState<any>(null);
 
   // Fetch bank list from public endpoint on mount
   useEffect(() => {
@@ -186,53 +395,31 @@ export default function Recepient() {
         activeOpacity={1}
         onPress={() => setShowBankDropdown(false)}
       >
-        <View
-          style={{
-            marginHorizontal: 20,
-            backgroundColor: '#fff',
-            borderRadius: 12,
-            maxHeight: 350,
-            marginTop: 0,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5,
-          }}
-        >
-          <View style={{ padding: 8 }}>
-            <TextInput
-              placeholder="Search bank"
-              value={bankSearch}
-              onChangeText={setBankSearch}
-              style={{ backgroundColor: '#F4F4F5', borderRadius: 8, padding: 8, marginBottom: 8 }}
-              autoFocus
-            />
-          </View>
+        <View style={styles.dropdownContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search banks..."
+            value={bankSearch}
+            onChangeText={setBankSearch}
+            autoFocus={true}
+          />
           <FlatList
             data={filteredBanks}
-            keyExtractor={(item, idx) => `${item.code || item.bankCode || item.id || ''}_${idx}`}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item, index }) => (
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
               <TouchableOpacity
-                style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' }}
-                onPress={async () => {
-                  if (accountNumber.length !== 10) {
-                    setError('Please enter a valid 10-digit account number before selecting a bank.');
-                    setShowBankDropdown(false);
-                    return;
-                  }
-                  setBank(item.name || item.bankName || '');
-                  setBankCode(item.code || item.bankCode || '');
-                  setAccountName(''); // Clear account name when a new bank is selected
+                style={styles.bankItem}
+                onPress={() => {
+                  setSelectedBank(item);
+                  setBankSearch(item.name || item.bankName || '');
                   setShowBankDropdown(false);
-                  setBankSearch('');
-                  await verifyBankDetails(item.code || item.bankCode || '');
+                  verifyBankDetails(item.code);
                 }}
               >
-                <Text style={{ fontSize: 16 }}>{item.name || item.bankName}</Text>
+                <Text style={styles.bankName}>{item.name || item.bankName}</Text>
               </TouchableOpacity>
             )}
+            style={styles.bankList}
           />
         </View>
       </TouchableOpacity>
@@ -240,107 +427,121 @@ export default function Recepient() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView className="flex-1 bg-white px-4 pt-8" keyboardShouldPersistTaps="handled">
-            {/* Header */}
-        <View className="flex-row items-center justify-between mt-8 mb-4">
-        <TouchableOpacity
-              onPress={() => router.back()}
-              className="w-10 h-10  items-center justify-center"
-            >
-              <Ionicons name="arrow-back" size={28} />
-            </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">Recipient</Text>
-          <View style={{ width: 40 }} />
-            </View>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView} 
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handlePreviousPage}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={28} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Recipient</Text>
+          <View style={styles.headerSpacer} />
+        </View>
 
-            <Text className="text-center mt-6">Please provide the details you would like to withdraw to below.</Text>
+        <Text style={styles.subtitle}>
+          Please provide the details you would like to withdraw to below.
+        </Text>
 
         {/* Error Message */}
         {error && (
-          <View className="mt-4 p-3 bg-red-100 rounded-lg border border-red-400">
-            <Text className="text-red-700 text-center font-semibold">{error}</Text>
+          <View style={styles.errorMessage}>
+            <Text style={[styles.messageText, styles.errorText]}>{error}</Text>
           </View>
         )}
 
         {/* Verification Result */}
         {verifyResult && (
-          <View className="mt-4 p-3 bg-green-100 rounded-lg border border-green-400">
-            <Text className="text-green-800 text-center font-semibold">{verifyResult}</Text>
+          <View style={styles.successMessage}>
+            <Text style={[styles.messageText, styles.successText]}>{verifyResult}</Text>
           </View>
         )}
 
         {/* Inputs */}
-        <View className='mt-10'>
-          <Text className="text-base font-medium text-[#272636] mb-2">What is the account number?</Text>
-                            <TextInput
-            className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base mb-6"
-                                placeholder='Enter Account Number'
-                                value={accountNumber}
-                                onChangeText={setAccountNumber}
+        <View style={styles.content}>
+          <Text style={styles.inputLabel}>What is the account number?</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Account Number"
+            placeholderTextColor="#9CA3AF"
+            value={accountNumber}
+            onChangeText={setAccountNumber}
             keyboardType="numeric"
             maxLength={10}
             editable={!isVerifying}
           />
 
-          <Text className="text-base font-medium text-[#272636] mb-2">Select Bank</Text>
+          <Text style={styles.inputLabel}>Select Bank</Text>
           <View style={{ position: 'relative' }}>
             <TouchableOpacity
-              className="bg-gray-100 px-4 py-4 rounded-lg mb-6 flex-row items-center justify-between"
+              style={styles.bankInput}
               onPress={() => setShowBankDropdown(true)}
               disabled={isVerifying}
               onLayout={event => setBankInputLayout(event.nativeEvent.layout)}
             >
-              <Text className="text-gray-700 text-base">{bank || 'Select Bank'}</Text>
-              <Ionicons name={showBankDropdown ? 'chevron-up' : 'chevron-down'} size={20} color="#888" />
+              <Text style={[styles.bankInputText, !bank && { color: '#9CA3AF' }]}>
+                {bank || 'Select Bank'}
+              </Text>
+              <Ionicons 
+                name={showBankDropdown ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color="#6B7280" 
+              />
             </TouchableOpacity>
-                    </View>
+          </View>
 
-          {/* Removed Verify button here */}
-
-          <Text className="text-base font-medium text-[#272636] mb-2">Account Name</Text>
-                            <TextInput
-            className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base mb-6"
-                                placeholder="Account Name"
-                                value={accountName}
-                                onChangeText={setAccountName}
+          <Text style={styles.inputLabel}>Account Name</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: '#F3F4F6' }]}
+            placeholder="Account Name"
+            placeholderTextColor="#9CA3AF"
+            value={accountName}
+            onChangeText={setAccountName}
             editable={false}
-                            />
+          />
 
           {/* Fee Display */}
-          <View className="items-center mb-4">
+          <View style={styles.feeContainer}>
             {feeLoading ? (
-              <View className="flex-row items-center">
+              <View style={styles.feeLoading}>
                 <ActivityIndicator size="small" color="#0074FF" />
-                <Text className="text-gray-600 ml-2">Calculating fee...</Text>
+                <Text style={styles.feeLoadingText}>Calculating fee...</Text>
               </View>
             ) : transferFee > 0 ? (
-              <View className="bg-blue-50 rounded-lg px-4 py-2">
-                <Text className="text-blue-800 text-sm">
+              <View style={styles.feeBox}>
+                <Text style={styles.feeText}>
                   Transfer Fee: ₦{transferFee.toLocaleString()}
                 </Text>
               </View>
             ) : null}
           </View>
-                </View>
+        </View>
 
         <TouchableOpacity
-          className={`bg-[#0074FF] w-full rounded-xl justify-center py-4 mb-8 flex-row items-center ${isVerifying ? 'opacity-60' : ''}`}
+          style={[
+            styles.button,
+            isVerifying && styles.buttonDisabled
+          ]}
           onPress={handleNextPage}
           disabled={isVerifying}
         >
           {isVerifying ? (
             <>
               <ActivityIndicator size="small" color="white" />
-              <Text className="text-white text-base font-bold ml-2">Verifying...</Text>
+              <Text style={styles.buttonLoadingText}>Verifying...</Text>
             </>
           ) : (
-                    <Text className='text-white text-base font-bold'>Done</Text>
+            <Text style={styles.buttonText}>Done</Text>
           )}
-                </TouchableOpacity>
+        </TouchableOpacity>
       </ScrollView>
       {renderBankDropdown()}
-            </View>
-    );
+    </View>
+  );
 }
 

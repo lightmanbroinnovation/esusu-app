@@ -1,10 +1,94 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ImageBackground, SafeAreaView, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ImageBackground, SafeAreaView, Alert, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getVerificationStatus, updateUser } from '../../services/api';
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 24,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  successIconContainer: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: 9999,
+    padding: 24,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#1F2937',
+  },
+  subtitle: {
+    color: '#4B5563',
+    textAlign: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  button: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  debugContainer: {
+    marginTop: 32,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  debugButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  debugButtonText: {
+    color: '#374151',
+  },
+  warningButton: {
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  warningButtonText: {
+    color: '#92400E',
+  },
+  debugInfo: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    width: '100%',
+  },
+  debugText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+});
 
 const VerificationSuccess = () => {
   const insets = useSafeAreaInsets();
@@ -83,49 +167,49 @@ const VerificationSuccess = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white px-4 pt-6">
-      <View className="flex-1 items-center justify-center">
-        <View className="bg-green-100 rounded-full p-6 mb-6">
-          <Ionicons name="checkmark" size={48} color="green" />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.successIconContainer}>
+          <Ionicons name="checkmark" size={48} color="#16A34A" />
         </View>
         
-        <Text className="text-3xl font-bold text-center mb-4">
+        <Text style={styles.title}>
           Verification Submitted
         </Text>
         
-        <Text className="text-gray-600 text-center mb-8 px-4">
+        <Text style={styles.subtitle}>
           Your business verification has been submitted successfully. Our team will review your information and update you shortly.
         </Text>
         
         <TouchableOpacity 
-          className="bg-blue-600 py-4 px-6 rounded-xl w-full"
+          style={styles.button}
           onPress={navigateToLogin}
         >
-          <Text className="text-white text-center text-lg font-medium">
+          <Text style={styles.buttonText}>
             Continue to Dashboard
           </Text>
         </TouchableOpacity>
 
         {/* Debug section */}
-        <View className="mt-8 flex-row space-x-2">
+        <View style={styles.debugContainer}>
           <TouchableOpacity 
-            className="bg-gray-200 py-3 px-4 rounded-lg"
+            style={styles.debugButton}
             onPress={checkVerificationStatus}
           >
-            <Text className="text-gray-700">Check Status</Text>
+            <Text style={styles.debugButtonText}>Check Status</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            className="bg-amber-200 py-3 px-4 rounded-lg"
+            style={styles.warningButton}
             onPress={fixVerificationStatus}
           >
-            <Text className="text-amber-700">Fix Status</Text>
+            <Text style={styles.warningButtonText}>Fix Status</Text>
           </TouchableOpacity>
         </View>
 
         {debugInfo ? (
-          <View className="mt-4 p-4 bg-gray-100 rounded-lg w-full">
-            <Text className="text-xs font-mono">{debugInfo}</Text>
+          <View style={styles.debugInfo}>
+            <Text style={styles.debugText}>{debugInfo}</Text>
           </View>
         ) : null}
       </View>

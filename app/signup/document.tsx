@@ -10,7 +10,8 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  StyleSheet
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -175,145 +176,170 @@ export default function UploadDocumentScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="flex-1 px-6"
-          style={{
-            paddingTop: insets.top + getResponsiveSize(16),
-            paddingBottom: insets.bottom + getResponsiveSize(16),
-            paddingHorizontal: getResponsiveSize(24),
-          }}
-    >
-      {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
-        <TouchableOpacity
-          className="flex-row items-center"
-          onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
+          style={[
+            styles.container,
+            {
+              paddingTop: insets.top + getResponsiveSize(16),
+              paddingBottom: insets.bottom + getResponsiveSize(16),
+              paddingHorizontal: getResponsiveSize(24),
+            }
+          ]}
         >
+          {/* Header */}
+          <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
+            <TouchableOpacity
+              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
+              onPress={() => router.back()}
+            >
               <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
-        </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 4 of 4</Text>
+            </TouchableOpacity>
+            <Text style={[styles.stepText, { fontSize: getResponsiveSize(16) }]}>Step 4 of 4</Text>
           </View>
 
-          <View style={{ marginTop: getResponsiveSize(16) }}>
-            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+          <View style={[styles.titleContainer, { marginTop: getResponsiveSize(16) }]}>
+            <Text style={[styles.title, { fontSize: getResponsiveSize(24) }]}>
               Upload Documents
             </Text>
-            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+            <Text style={[styles.subtitle, { fontSize: getResponsiveSize(16) }]}>
               Please provide your BVN and upload your CAC certificate for verification.
             </Text>
-      </View>
+          </View>
 
-      {message && (
-            <View style={{ 
-              marginTop: getResponsiveSize(16), 
-              marginBottom: getResponsiveSize(16), 
-              padding: getResponsiveSize(12), 
-              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', 
-              borderRadius: getResponsiveSize(8) 
-            }}>
-              <Text style={{ 
-                color: messageType === 'error' ? '#D92D20' : '#0072CE', 
-                textAlign: 'center',
-                fontSize: getResponsiveSize(14)
-              }}>{message}</Text>
-        </View>
-      )}
+          {message && (
+            <View style={[
+              styles.messageContainer,
+              { 
+                marginTop: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(16),
+                padding: getResponsiveSize(12),
+                backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.messageText,
+                { 
+                  color: messageType === 'error' ? '#D92D20' : '#0072CE',
+                  fontSize: getResponsiveSize(14)
+                }
+              ]}>
+                {message}
+              </Text>
+            </View>
+          )}
 
-        {/* BVN Input */}
-          <View style={{ marginTop: getResponsiveSize(32) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>BVN (Bank Verification Number)</Text>
-        <TextInput
+          {/* BVN Input */}
+          <View style={[styles.inputContainer, { marginTop: getResponsiveSize(32) }]}>
+            <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>
+              BVN (Bank Verification Number)
+            </Text>
+            <TextInput
               placeholder="Enter your 11-digit BVN"
               value={bvn}
               onChangeText={setBvn}
-          keyboardType="numeric"
+              keyboardType="numeric"
               maxLength={11}
-              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholderTextColor="#BDBDBD"
-          style={{
-                paddingHorizontal: getResponsiveSize(12),
-                paddingVertical: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8),
-                fontSize: getResponsiveSize(16)
-              }}
+              style={[
+                styles.textInput,
+                {
+                  paddingHorizontal: getResponsiveSize(12),
+                  paddingVertical: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8),
+                  fontSize: getResponsiveSize(16)
+                }
+              ]}
             />
           </View>
 
           {/* CAC Upload */}
-          <View style={{ marginTop: getResponsiveSize(24) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>CAC Certificate</Text>
+          <View style={[styles.uploadContainer, { marginTop: getResponsiveSize(24) }]}>
+            <Text style={[styles.uploadLabel, { fontSize: getResponsiveSize(14) }]}>
+              CAC Certificate
+            </Text>
             <TouchableOpacity
               onPress={pickImage}
-              className="border-2 border-dashed border-[#E0E0E0] rounded-lg p-4 items-center justify-center"
-          style={{
-                borderWidth: getResponsiveSize(2),
-                borderRadius: getResponsiveSize(8),
-                padding: getResponsiveSize(16),
-                minHeight: getResponsiveSize(120)
-              }}
+              style={[
+                styles.uploadButton,
+                {
+                  borderWidth: getResponsiveSize(2),
+                  borderRadius: getResponsiveSize(8),
+                  padding: getResponsiveSize(16),
+                  minHeight: getResponsiveSize(120)
+                }
+              ]}
               disabled={uploadingCac}
             >
               {cacImage ? (
-            <View className="items-center">
-              <Image
-                source={{ uri: cacImage }}
-                    className="w-20 h-20 rounded-lg mb-2"
-                    style={{
-                      width: getResponsiveSize(80),
-                      height: getResponsiveSize(80),
-                      borderRadius: getResponsiveSize(8),
-                      marginBottom: getResponsiveSize(8)
-                    }}
+                <View style={styles.uploadContent}>
+                  <Image
+                    source={{ uri: cacImage }}
+                    style={[
+                      styles.uploadedImage,
+                      {
+                        width: getResponsiveSize(80),
+                        height: getResponsiveSize(80),
+                        borderRadius: getResponsiveSize(8),
+                        marginBottom: getResponsiveSize(8)
+                      }
+                    ]}
                   />
-                  <Text className="text-[#0072CE] font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                  <Text style={[styles.uploadText, { fontSize: getResponsiveSize(14) }]}>
                     {uploadingCac ? "Uploading..." : "Image selected"}
                   </Text>
                 </View>
               ) : (
-                <View className="items-center">
+                <View style={styles.uploadContent}>
                   <Ionicons 
-                    name="cloud-upload-outline" 
-                    size={getResponsiveSize(40)} 
-                    color="#0072CE" 
+                    name="cloud-upload-outline"
+                    size={getResponsiveSize(40)}
+                    color="#0072CE"
                     style={{ marginBottom: getResponsiveSize(8) }}
                   />
-                  <Text className="text-[#0072CE] font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                  <Text style={[styles.uploadText, { fontSize: getResponsiveSize(14) }]}>
                     {uploadingCac ? "Uploading..." : "Tap to upload CAC certificate"}
                   </Text>
                 </View>
               )}
               {uploadingCac && (
                 <ActivityIndicator 
-                  size="small" 
-                  color="#0072CE" 
+                  size="small"
+                  color="#0072CE"
                   style={{ marginTop: getResponsiveSize(8) }}
                 />
               )}
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
+          </View>
 
-          {/* Continue Button */}
-          <View className="pb-4" style={{ paddingBottom: getResponsiveSize(16) }}>
+          {/* Submit Button */}
+          <View style={[styles.submitContainer, { 
+            marginTop: getResponsiveSize(32),
+            marginBottom: getResponsiveSize(16)
+          }]}>
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              style={[
+                styles.submitButton,
+                {
+                  paddingVertical: getResponsiveSize(16),
+                  borderRadius: getResponsiveSize(8)
+                }
+              ]}
               onPress={handleSubmit}
-              style={{
-                paddingVertical: getResponsiveSize(16),
-                borderRadius: getResponsiveSize(8)
-              }}
             >
-              <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
-              <Ionicons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
+              <Text style={[styles.submitButtonText, { fontSize: getResponsiveSize(18) }]}>
+                Continue
+              </Text>
+              <Ionicons name="arrow-forward" size={getResponsiveSize(20)} color="white" />
             </TouchableOpacity>
           </View>
         </View>
@@ -321,3 +347,106 @@ export default function UploadDocumentScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontWeight: '600',
+    color: '#4F4F4F',
+  },
+  titleContainer: {
+    marginTop: 16,
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#0072CE',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#4F4F4F',
+  },
+  messageContainer: {
+    marginVertical: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  messageText: {
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginTop: 32,
+  },
+  inputLabel: {
+    color: '#4F4F4F',
+    marginBottom: 4,
+  },
+  textInput: {
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F4F4F5',
+  },
+  uploadContainer: {
+    marginTop: 24,
+  },
+  uploadLabel: {
+    color: '#4F4F4F',
+    marginBottom: 4,
+  },
+  uploadButton: {
+    borderStyle: 'dashed',
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadContent: {
+    alignItems: 'center',
+  },
+  uploadedImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  uploadText: {
+    color: '#0072CE',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  submitContainer: {
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  submitButton: {
+    backgroundColor: '#0072CE',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginRight: 8,
+  },
+});

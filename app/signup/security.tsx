@@ -176,159 +176,292 @@ export default function SecurityScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-6" style={{ paddingHorizontal: getResponsiveSize(24) }}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={[styles.container, { paddingHorizontal: getResponsiveSize(24) }]}>
             {/* Header */}
-            <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
+            <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
               <TouchableOpacity
-                className="flex-row items-center"
+                style={[styles.backButton, { padding: getResponsiveSize(8) }]}
                 onPress={() => router.back()}
-                style={{ padding: getResponsiveSize(8) }}
               >
                 <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
               </TouchableOpacity>
-              <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Security Setup</Text>
+              <Text style={[styles.headerTitle, { fontSize: getResponsiveSize(16) }]}>Security Setup</Text>
             </View>
             
-            <View style={{ marginTop: getResponsiveSize(16) }}>
-              <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+            <View style={[styles.titleContainer, { marginTop: getResponsiveSize(16) }]}>
+              <Text style={[styles.mainTitle, { fontSize: getResponsiveSize(24) }]}>
                 Secure Your Account
               </Text>
-              <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+              <Text style={[styles.subtitle, { fontSize: getResponsiveSize(16) }]}>
                 Set up biometric authentication for quick and secure access to your account.
               </Text>
             </View>
 
             {message && (
-              <View style={{ 
-                marginTop: getResponsiveSize(16), 
-                marginBottom: getResponsiveSize(16), 
-                padding: getResponsiveSize(12), 
-                backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', 
-                borderRadius: getResponsiveSize(8) 
-              }}>
-                <Text style={{ 
-                  color: messageType === 'error' ? '#D92D20' : '#0072CE', 
-                  textAlign: 'center',
-                  fontSize: getResponsiveSize(14)
-                }}>{message}</Text>
+              <View style={[
+                styles.messageContainer, 
+                { 
+                  marginTop: getResponsiveSize(16),
+                  marginBottom: getResponsiveSize(16),
+                  padding: getResponsiveSize(12),
+                  backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+                  borderRadius: getResponsiveSize(8)
+                }
+              ]}>
+                <Text style={[
+                  styles.messageText,
+                  { 
+                    color: messageType === 'error' ? '#D92D20' : '#0072CE',
+                    fontSize: getResponsiveSize(14)
+                  }
+                ]}>
+                  {message}
+                </Text>
               </View>
             )}
 
             {/* Biometric Setup Section */}
-            <View style={{ marginTop: getResponsiveSize(32) }}>
-              <View className="items-center mb-8" style={{ marginBottom: getResponsiveSize(32) }}>
-                <View 
-                  className="w-24 h-24 rounded-full bg-[#0072CE] items-center justify-center mb-4"
-                  style={{
+            <View style={[styles.biometricSection, { marginTop: getResponsiveSize(32) }]}>
+              <View style={[styles.biometricHeader, { marginBottom: getResponsiveSize(32) }]}>
+                <View style={[
+                  styles.fingerprintIconContainer,
+                  {
                     width: getResponsiveSize(96),
                     height: getResponsiveSize(96),
                     borderRadius: getResponsiveSize(48),
                     marginBottom: getResponsiveSize(16)
-                  }}
-                >
+                  }
+                ]}>
                   <MaterialCommunityIcons 
                     name="fingerprint" 
                     size={getResponsiveSize(48)} 
                     color="white" 
                   />
                 </View>
-                <Text className="text-lg font-semibold text-center mb-2" style={{ fontSize: getResponsiveSize(18) }}>
+                <Text style={[styles.biometricTitle, { fontSize: getResponsiveSize(18) }]}>
                   Biometric Authentication
                 </Text>
-                <Text className="text-center text-gray-600 px-4" style={{ fontSize: getResponsiveSize(14) }}>
+                <Text style={[styles.biometricSubtitle, { fontSize: getResponsiveSize(14) }]}>
                   Use your fingerprint or face ID to quickly and securely access your account
                 </Text>
               </View>
 
               {isChecking ? (
-                <View className="items-center py-8" style={{ paddingVertical: getResponsiveSize(32) }}>
+                <View style={[styles.loadingContainer, { paddingVertical: getResponsiveSize(32) }]}>
                   <ActivityIndicator size="large" color="#0072CE" />
-                  <Text className="mt-4 text-gray-600" style={{ 
+                  <Text style={[styles.loadingText, { 
                     marginTop: getResponsiveSize(16),
                     fontSize: getResponsiveSize(14)
-                  }}>
+                  }]}>
                     Checking biometric availability...
                   </Text>
                 </View>
               ) : isBiometricAvailable ? (
-                <View className="space-y-4">
+                <View style={styles.buttonGroup}>
                   <TouchableOpacity
-                    className="bg-[#0072CE] rounded-lg py-4 items-center"
+                    style={[
+                      styles.primaryButton,
+                      {
+                        paddingVertical: getResponsiveSize(16),
+                        borderRadius: getResponsiveSize(8),
+                        opacity: isActivating ? 0.7 : 1
+                      }
+                    ]}
                     onPress={activateBiometric}
                     disabled={isActivating}
-                    style={{
-                      paddingVertical: getResponsiveSize(16),
-                      borderRadius: getResponsiveSize(8),
-                      opacity: isActivating ? 0.7 : 1
-                    }}
                   >
                     {isActivating ? (
-                      <View className="flex-row items-center">
+                      <View style={styles.buttonContent}>
                         <ActivityIndicator size="small" color="white" />
-                        <Text className="text-white font-semibold ml-2" style={{ fontSize: getResponsiveSize(16) }}>
+                        <Text style={[styles.primaryButtonText, { fontSize: getResponsiveSize(16) }]}>
                           Setting up biometric...
                         </Text>
                       </View>
                     ) : (
-                      <Text className="text-white font-semibold" style={{ fontSize: getResponsiveSize(16) }}>
+                      <Text style={[styles.primaryButtonText, { fontSize: getResponsiveSize(16) }]}>
                         Activate Biometric Login
                       </Text>
                     )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    className="border border-[#0072CE] rounded-lg py-4 items-center"
+                    style={[
+                      styles.secondaryButton,
+                      {
+                        paddingVertical: getResponsiveSize(16),
+                        borderRadius: getResponsiveSize(8)
+                      }
+                    ]}
                     onPress={skipBiometric}
-                    style={{
-                      paddingVertical: getResponsiveSize(16),
-                      borderRadius: getResponsiveSize(8)
-                    }}
                   >
-                    <Text className="text-[#0072CE] font-semibold" style={{ fontSize: getResponsiveSize(16) }}>
+                    <Text style={[styles.secondaryButtonText, { fontSize: getResponsiveSize(16) }]}>
                       Skip for Now
                     </Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View className="items-center py-8" style={{ paddingVertical: getResponsiveSize(32) }}>
+                <View style={[styles.unavailableContainer, { paddingVertical: getResponsiveSize(32) }]}>
                   <Ionicons name="warning-outline" size={getResponsiveSize(48)} color="#FF6B35" />
-                  <Text className="text-center text-gray-600 mt-4 px-4" style={{ 
+                  <Text style={[styles.unavailableText, { 
                     marginTop: getResponsiveSize(16),
                     fontSize: getResponsiveSize(14)
-                  }}>
+                  }]}>
                     Biometric authentication is not available on this device. You can still use your PIN to access your account.
                   </Text>
                   
                   <TouchableOpacity 
-                    className="bg-[#0072CE] rounded-lg py-4 px-8 mt-6"
+                    style={[
+                      styles.continueButton,
+                      {
+                        paddingVertical: getResponsiveSize(16),
+                        paddingHorizontal: getResponsiveSize(32),
+                        borderRadius: getResponsiveSize(8),
+                        marginTop: getResponsiveSize(24)
+                      }
+                    ]}
                     onPress={skipBiometric}
-                    style={{
-                      paddingVertical: getResponsiveSize(16),
-                      paddingHorizontal: getResponsiveSize(32),
-                      borderRadius: getResponsiveSize(8),
-                      marginTop: getResponsiveSize(24)
-                    }}
                   >
-                    <Text className="text-white font-semibold" style={{ fontSize: getResponsiveSize(16) }}>
+                    <Text style={[styles.continueButtonText, { fontSize: getResponsiveSize(16) }]}>
                       Continue with PIN
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
-      </View>
-    </SafeAreaView>
+          </View>
+        </SafeAreaView>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontWeight: '600',
+  },
+  titleContainer: {
+    marginBottom: 16,
+  },
+  mainTitle: {
+    fontWeight: 'bold',
+    color: '#0072CE',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#4F4F4F',
+  },
+  messageContainer: {
+    padding: 12,
+    borderRadius: 8,
+    width: '100%',
+  },
+  messageText: {
+    textAlign: 'center',
+  },
+  biometricSection: {
+    flex: 1,
+  },
+  biometricHeader: {
+    alignItems: 'center',
+  },
+  fingerprintIconContainer: {
+    backgroundColor: '#0072CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  biometricTitle: {
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+    color: '#1F2937',
+  },
+  biometricSubtitle: {
+    textAlign: 'center',
+    color: '#4B5563',
+    paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#4B5563',
+  },
+  buttonGroup: {
+    gap: 16,
+  },
+  primaryButton: {
+    backgroundColor: '#0072CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: '#0072CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#0072CE',
+    fontWeight: '600',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  unavailableContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  unavailableText: {
+    textAlign: 'center',
+    color: '#4B5563',
+  },
+  continueButton: {
+    backgroundColor: '#0072CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+});

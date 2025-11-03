@@ -7,11 +7,261 @@ import {
   Image,
   ScrollView,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useBackButtonHandler } from '../../utils/backButtonHandler';
+
+const styles = StyleSheet.create({
+  scrollView:{
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    
+  },
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 20,
+    paddingTop: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  
+  // User Card
+  userCard: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  userDetails: {
+    gap: 2,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  balanceContainer: {
+    alignItems: 'flex-end',
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  balanceAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  
+  // Error Message
+  errorContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorTitle: {
+    fontSize: 14,
+    color: '#DC2626',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  errorText: {
+    color: '#B91C1C',
+  },
+  
+  // Amount Display
+  amountContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  amountLabel: {
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  amountText: {
+    fontSize: 40,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  
+  // Quick Amount Buttons
+  quickButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  quickButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  quickButtonText: {
+    color: '#111827',
+  },
+  
+  // Keypad
+  keypadContainer: {
+    marginTop: 32,
+    paddingHorizontal: 16,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  keypadButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  keypadText: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  
+  // Done Button
+  buttonContainer: {
+    marginBottom: 32,
+    paddingHorizontal: 16,
+  },
+  button: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  buttonEnabled: {
+    backgroundColor: '#2563EB',
+  },
+  buttonDisabled: {
+    backgroundColor: '#BFDBFE',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  
+  // Modal
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    padding: 24,
+    borderRadius: 16,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  optionText: {
+    fontSize: 18,
+    color: '#111827',
+    marginLeft: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+  },
+  cancelButtonText: {
+    textAlign: 'center',
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+});
 
 interface ContributorAccount {
   _id: string;
@@ -120,217 +370,191 @@ const WithdrawalTypeScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View className="flex-row items-center pt-4 justify-between px-4 mt-10">
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 rounded-full items-center justify-center"
+          style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold">Withdraw</Text>
-        <View className="w-10" />
+        <Text style={styles.headerTitle}>Withdraw</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {/* User Card */}
       {userData && (
-        <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
+        <View style={styles.userCard}>
+          <View style={styles.userInfo}>
             {userData.contributor.photo ? (
               <Image
                 source={{ uri: userData.contributor.photo }}
-                className="w-12 h-12 rounded-full"
+                style={styles.avatar}
               />
             ) : (
-              <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
-                <Text className="text-lg font-semibold">
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
                   {userData.contributor.firstName[0]}
                 </Text>
               </View>
             )}
-            <View>
-              <Text className="text-lg font-semibold">{userData.contributor.firstName}</Text>
-              <Text className="text-gray-600">{userData.contributor.lastName}</Text>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{userData.contributor.firstName}</Text>
+              <Text style={styles.userEmail}>{userData.contributor.lastName}</Text>
             </View>
           </View>
-          <View>
-            <Text className="text-sm text-gray-500">Settlement Balance</Text>
-            <Text className="text-lg font-semibold">₦{userData.contributorAccount.settlementBalance?.toLocaleString() || '0'}</Text>
+          <View style={styles.balanceContainer}>
+            <Text style={styles.balanceLabel}>Settlement Balance</Text>
+            <Text style={styles.balanceAmount}>₦{userData.contributorAccount.settlementBalance?.toLocaleString() || '0'}</Text>
           </View>
         </View>
       )}
 
       {/* Error Message */}
       {error && (
-        <View className="mx-4 mt-4 p-4 bg-red-50 rounded-2xl border border-red-200">
-          <Text className="text-sm text-red-600 font-medium mb-1">Unable to Process</Text>
-          <Text className="text-red-700">{error}</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Unable to Process</Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
       {/* Amount Display */}
-      <View className="items-center mt-8">
-        <Text className="text-gray-500 mb-2">Enter Amount</Text>
-        <Text className="text-5xl font-semibold">₦{parseInt(amount).toLocaleString()}</Text>
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountLabel}>Enter Amount</Text>
+        <Text style={styles.amountText}>₦{parseInt(amount).toLocaleString()}</Text>
       </View>
 
       {/* Quick Amount Buttons */}
-      <View className="flex-row justify-between mb-4">
+      <View style={styles.quickButtonsContainer}>
         <TouchableOpacity 
           onPress={() => setAmount('5000')}
-          className="px-6 py-2 rounded-full bg-gray-100"
+          style={styles.quickButton}
         >
-          <Text>₦5,000</Text>
+          <Text style={styles.quickButtonText}>₦5,000</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setAmount('15000')}
-          className="px-6 py-2 rounded-full bg-gray-100"
+          style={styles.quickButton}
         >
-          <Text>₦15,000</Text>
+          <Text style={styles.quickButtonText}>₦15,000</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setAmount('25000')}
-          className="px-6 py-2 rounded-full bg-gray-100"
+          style={styles.quickButton}
         >
-          <Text>₦25,000</Text>
+          <Text style={styles.quickButtonText}>₦25,000</Text>
         </TouchableOpacity>
       </View>
 
-      <View className="flex-1 justify-between px-4 mt-8">
+      <View style={[styles.content, {marginTop: 32}]}>
         {/* Keypad */}
-        <View className="mt-8">
+        <View style={styles.keypadContainer}>
           {/* Row 1 */}
-          <View className="flex-row justify-around mb-4">
-            <TouchableOpacity
-              onPress={() => handleNumberPress('1')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">1</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('2')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">2</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('3')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">3</Text>
-            </TouchableOpacity>
+          <View style={styles.keypadRow}>
+            {['1', '2', '3'].map((num) => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => handleNumberPress(num)}
+                style={styles.keypadButton}
+              >
+                <Text style={styles.keypadText}>{num}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Row 2 */}
-          <View className="flex-row justify-around mb-4">
-            <TouchableOpacity
-              onPress={() => handleNumberPress('4')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">4</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('5')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">5</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('6')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">6</Text>
-            </TouchableOpacity>
+          <View style={styles.keypadRow}>
+            {['4', '5', '6'].map((num) => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => handleNumberPress(num)}
+                style={styles.keypadButton}
+              >
+                <Text style={styles.keypadText}>{num}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Row 3 */}
-          <View className="flex-row justify-around mb-4">
-            <TouchableOpacity
-              onPress={() => handleNumberPress('7')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">7</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('8')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">8</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleNumberPress('9')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
-            >
-              <Text className="text-xl font-medium">9</Text>
-            </TouchableOpacity>
+          <View style={styles.keypadRow}>
+            {['7', '8', '9'].map((num) => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => handleNumberPress(num)}
+                style={styles.keypadButton}
+              >
+                <Text style={styles.keypadText}>{num}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Row 4 */}
-          <View className="flex-row justify-around mb-4">
+          <View style={styles.keypadRow}>
             <TouchableOpacity
               onPress={() => handleNumberPress('00')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">00</Text>
+              <Text style={styles.keypadText}>00</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleNumberPress('0')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">0</Text>
+              <Text style={styles.keypadText}>0</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleBackspace}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Ionicons name="backspace-outline" size={24} />
+              <Ionicons name="backspace-outline" size={24} color="#111827" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Done Button */}
-        <View className="mb-8">
+        <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleDone}
             disabled={!amount || amount === '0'}
-            className={`p-4 rounded-xl ${
-              !amount || amount === '0' ? 'bg-blue-300' : 'bg-blue-600'
-            } items-center`}
+            style={[
+              styles.button,
+              !amount || amount === '0' ? styles.buttonDisabled : styles.buttonEnabled
+            ]}
           >
-            <Text className="text-white font-medium text-base">Done</Text>
+            <Text style={styles.buttonText}>Done</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Withdrawal Options Modal */}
       {showOptions && (
-        <View className="absolute inset-0 bg-black/50 items-center justify-center">
-          <View className="bg-white m-4 p-6 rounded-2xl w-[90%]">
-            <Text className="text-xl font-semibold mb-4">Select Withdrawal Method</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Withdrawal Method</Text>
             
             <TouchableOpacity
               onPress={() => handleOptionSelect('cash')}
-              className="flex-row items-center p-4 border border-gray-200 rounded-xl mb-3"
+              style={styles.optionButton}
             >
-              <Ionicons name="cash-outline" size={24} color="#0066FF" className="mr-3" />
-              <Text className="text-lg">Cash Withdrawal</Text>
+              <Ionicons name="cash-outline" size={24} color="#2563EB" />
+              <Text style={styles.optionText}>Cash Withdrawal</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => handleOptionSelect('transfer')}
-              className="flex-row items-center p-4 border border-gray-200 rounded-xl mb-4"
+              style={styles.optionButton}
             >
-              <Ionicons name="card-outline" size={24} color="#0066FF" className="mr-3" />
-              <Text className="text-lg">Bank Transfer</Text>
+              <Ionicons name="card-outline" size={24} color="#2563EB" />
+              <Text style={styles.optionText}>Bank Transfer</Text>
             </TouchableOpacity>
 
             {/* Cancel Button */}
             <TouchableOpacity
               onPress={() => setShowOptions(false)}
-              className="bg-gray-100 p-4 rounded-xl"
+              style={styles.cancelButton}
             >
-              <Text className="text-center text-gray-600 font-medium">Cancel</Text>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

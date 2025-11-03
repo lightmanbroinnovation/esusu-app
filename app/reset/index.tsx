@@ -18,6 +18,110 @@ import { getOtpByPhone } from "../../services/api";
 import NetInfo from '@react-native-community/netinfo';
 import EsusuLoader from '../components/EsusuLoader';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
+import { StyleSheet } from "react-native";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 24,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0A369D',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4F4F4F',
+    marginBottom: 8,
+  },
+  inputContainer: {
+    marginTop: 32,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#4F4F4F',
+    marginBottom: 8,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    backgroundColor: '#F4F4F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  flag: {
+    width: 24,
+    height: 18,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#BDBDBD',
+  },
+  phoneInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#0A369D',
+    backgroundColor: '#F4F4F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  errorText: {
+    color: '#EF4444',
+    marginTop: 8,
+  },
+  continueButton: {
+    backgroundColor: '#0072CE',
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  continueButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  loginText: {
+    color: '#4F4F4F',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  loginLink: {
+    color: '#0072CE',
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default function ResetPasscode() {
   const router = useRouter();
@@ -108,7 +212,7 @@ export default function ResetPasscode() {
 
   if (!networkAvailable && !phone) {
     return (
-      <View className="flex-1 justify-center items-center">
+      <View style={styles.loadingContainer}>
         <Text>No network. Please connect to the internet to load reset page.</Text>
       </View>
     );
@@ -119,57 +223,37 @@ export default function ResetPasscode() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
-      <View
-        className="flex-1 bg-white px-6"
-        style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        }}
-      >
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-4">
+        <View style={styles.header}>
           <TouchableOpacity
-            className="flex-row items-center"
+            style={{ flexDirection: 'row', alignItems: 'center' }}
             onPress={handlePreviousPage}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="font-semibold text-lg flex-1 text-center"></Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0A369D', marginBottom: 8 }}></Text>
         </View>
 
-        <View className="mt-8">
-          <Text className="text-[24px] font-bold text-primaryText mb-2">
-          Reset Your Passcode
-          </Text>
-          <Text className="text-base text-[#4F4F4F]">
-          Enter your registered phone number to receive a reset code.
+        <View style={{ marginTop: 32 }}>
+          <Text style={styles.title}>Reset Your Passcode</Text>
+          <Text style={styles.subtitle}>
+            Enter your registered phone number to receive a reset code.
           </Text>
         </View>
 
         {/* Input */}
-        <View className="mt-8">
-          <Text className="text-sm text-[#4F4F4F] mb-1">Phone Number</Text>
-          <View className="flex-row items-center">
-            {/* NG Flag + Code */}
-            <View
-              style={{
-                backgroundColor: "#F4F4F5",
-              }}
-              className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3"
-            >
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Phone Number</Text>
+          <View style={styles.phoneInputContainer}>
+            <View style={styles.countryCodeContainer}>
               <Image
                 source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                style={{
-                  width: 24,
-                  height: 18,
-                  borderRadius: 2,
-                  marginRight: 6,
-                }}
+                style={styles.flag}
               />
-              <Text className="text-base text-[#BDBDBD]">NGN</Text>
+              <Text style={styles.countryCodeText}>NGN</Text>
             </View>
 
-            {/* Phone input */}
             <TextInput
               placeholder="Enter phone number"
               keyboardType="phone-pad"
@@ -178,47 +262,32 @@ export default function ResetPasscode() {
                 setPhone(text);
                 setError("");
               }}
-              style={{
-                backgroundColor: "#F4F4F5",
-              }}
-              className="flex-1 text-base text-primaryText border border-[#E0E0E0] rounded-lg px-3 py-3"
+              style={styles.phoneInput}
               placeholderTextColor="#BDBDBD"
             />
           </View>
           
-          {/* Error message */}
           {error ? (
-            <Text className="text-red-500 mt-2">{error}</Text>
+            <Text style={styles.errorText}>{error}</Text>
           ) : null}
         </View>
 
-        {/* Login text */}
-        {/* <Text className="text-[#4F4F4F] my-2">
-          Remember your passcode?{" "}
-          <Text 
-            className="text-[#0072CE] font-semibold"
-            onPress={() => router.push("/login")}
-          >
-            Login
-          </Text>
-        </Text> */}
-
         {/* Spacer to push button down */}
-        <View className="flex-1 justify-end pb-4">
+        <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 40 }}>
           {/* Continue Button */}
           {!isKeyboardVisible && ( // Hide button when keyboard is visible
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              style={[
+                styles.continueButton,
+                (!phone || loading) && styles.disabledButton
+              ]}
               onPress={handleContinue}
-              disabled={loading}
+              disabled={!phone || loading}
             >
               {loading ? (
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color="white" />
               ) : (
-                <>
-                  <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
-                  <MaterialIcons name="arrow-forward" size={18} color="white" />
-                </>
+                <Text style={styles.continueButtonText}>Continue</Text>
               )}
             </TouchableOpacity>
           )}

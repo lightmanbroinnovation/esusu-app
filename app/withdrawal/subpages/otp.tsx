@@ -3,7 +3,7 @@ export const options = {
 };
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,164 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { requestWithdrawalCode, verifyWithdrawalCode } from '../../../services/api';
 import { sendNotification, NotificationTemplates } from '../../services/notificationService';
 import { useBackButtonHandler } from '../../utils/backButtonHandler';
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 64,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  
+  // Content
+  content: {
+    flex: 1,
+    marginTop: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  
+  // Amount Display
+  amountContainer: {
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  amountLabel: {
+    color: '#4B5563',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  amountValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2563EB',
+    textAlign: 'center',
+  },
+  
+  // Pin Input
+  pinContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    gap: 16,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  pinText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0072CE',
+  },
+  
+  // Resend Code
+  resendContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  resendText: {
+    color: '#1F2937',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  
+  // Button Container
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 16,
+  },
+  button: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#0072CE',
+  },
+  buttonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  
+  // Keypad
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+    gap: 16,
+    marginBottom: 16,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  keypadButton: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  keypadText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+});
 
 export default function OTPScreen() {
     const router = useRouter();
@@ -132,18 +290,19 @@ export default function OTPScreen() {
 
     const renderPinInputs = () => {
         return (
-            <View className="flex-row items-center justify-center space-x-4 mt-6">
+            <View style={styles.pinContainer}>
                 {[0, 1, 2, 3].map((i) => (
                     <TouchableOpacity
                         key={i}
-                        onPress={() => setShowKeypad(true)} // Show keypad when clicked
-                        className="w-12 h-12 text-center mr-2 justify-center items-center border rounded-lg"
-                        style={{
-                            borderColor: i < pin.length ? "#0072CE" : "#ccc",
-                            backgroundColor: "#F4F4F5",
-                        }}
+                        onPress={() => setShowKeypad(true)}
+                        style={[
+                            styles.pinInput,
+                            {
+                                borderColor: i < pin.length ? "#0072CE" : "#ccc",
+                            }
+                        ]}
                     >
-                        <Text className="text-xl font-bold text-[#0072CE]">{pin[i] ? "•" : ""}</Text>
+                        <Text style={styles.pinText}>{pin[i] ? "•" : ""}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
@@ -153,11 +312,11 @@ export default function OTPScreen() {
     const renderKeypad = () => {
         const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "x", "0", "✓"];
         return (
-            <View className="mt-10 space-y-4 w-full">
+            <View style={styles.keypadContainer}>
                 {Array(4)
                     .fill(null)
                     .map((_, rowIndex) => (
-                        <View key={rowIndex} className="flex-row justify-between">
+                        <View key={rowIndex} style={styles.keypadRow}>
                             {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                                 <TouchableOpacity
                                     key={key}
@@ -173,15 +332,15 @@ export default function OTPScreen() {
                                             handleKeyPress(key);
                                         }
                                     }}
-                                    className="w-20 h-20 bg-white justify-center items-center"
+                                    style={styles.keypadButton}
                                     disabled={loading}
                                 >
                                     {key === "x" ? (
-                                        <Ionicons name="backspace-outline" size={30} color="#0072CE" /> // Delete icon
+                                        <Ionicons name="backspace-outline" size={30} color="#0072CE" />
                                     ) : key === "✓" ? (
-                                        <MaterialIcons name="check-circle" size={30} color="#0072CE" /> // Enter icon
+                                        <MaterialIcons name="check-circle" size={30} color="#0072CE" />
                                     ) : (
-                                        <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text> // Regular number keys
+                                        <Text style={styles.keypadText}>{key}</Text>
                                     )}
                                 </TouchableOpacity>
                             ))}
@@ -195,49 +354,54 @@ export default function OTPScreen() {
     const formattedAmount = Number(withdrawAmount).toLocaleString();
 
     return (
-        <View className="flex-1 bg-white px-4">
-            {/* Back Button */}
-            <View className="flex-row items-center justify-between px-4 mt-16">
+        <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
                 <TouchableOpacity
                     onPress={navigateBack}
-                    className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+                    style={styles.backButton}
                 >
                     <Ionicons name="chevron-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text className="text-lg font-semibold">Withdraw</Text>
-                <View className="w-10" />
+                <Text style={styles.headerTitle}>Withdraw</Text>
+                <View style={styles.headerSpacer} />
             </View>
 
             {/* Main Content */}
-            <View className="flex-1 mt-8">
-                <Text className="text-[24px] font-bold text-center text-primaryText mb-3">OTP Verification</Text>
-                <Text className="text-gray-500 text-center mt-2 mb-4">
+            <View style={styles.content}>
+                <Text style={styles.title}>OTP Verification</Text>
+                <Text style={styles.subtitle}>
                     Enter the OTP sent to your registered phone number to complete your withdrawal.
                 </Text>
 
                 {/* Amount Display */}
-                <View className="bg-blue-50 py-4 px-6 rounded-xl mb-4">
-                    <Text className="text-center text-gray-600">Withdrawal Amount</Text>
-                    <Text className="text-center text-[20px] font-bold text-blue-600">₦{formattedAmount}</Text>
+                <View style={styles.amountContainer}>
+                    <Text style={styles.amountLabel}>Withdrawal Amount</Text>
+                    <Text style={styles.amountValue}>₦{formattedAmount}</Text>
                 </View>
 
                 {renderPinInputs()}
 
-                <TouchableOpacity className="mt-2 text-center" disabled={loading}>
-                    <Text className="text-primaryText text-xl text-center">Resend Code</Text>
+                <TouchableOpacity 
+                    style={styles.resendContainer} 
+                    disabled={loading}
+                >
+                    <Text style={styles.resendText}>Resend Code</Text>
                 </TouchableOpacity>
 
-                <View className="flex-1 justify-end pb-4">
-                    {/* Continue Button */}
+                <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                        className={`flex-row justify-center items-center py-4 rounded-lg ${loading ? 'bg-gray-400' : 'bg-[#0072CE]'}`}
+                        style={[
+                            styles.button,
+                            (loading || pin.length !== 4) && styles.buttonDisabled
+                        ]}
                         onPress={handleSubmit}
                         disabled={loading || pin.length !== 4}
                     >
-                        {loading ? (
+                        {loading && (
                             <ActivityIndicator color="white" size="small" style={{ marginRight: 8 }} />
-                        ) : null}
-                        <Text className="text-white text-lg mr-2 font-semibold">
+                        )}
+                        <Text style={styles.buttonText}>
                             {loading ? 'Processing...' : 'Complete Withdrawal'}
                         </Text>
                     </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 // import NetInfo from '@react-native-community/netinfo';
@@ -95,21 +95,65 @@ export default function ProfileSetting() {
         router.push(route as any);
     }
 
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: '#F9FAFB',
+      },
+      scrollView: {
+        flex: 1,
+      },
+      header: {
+        backgroundColor: '#FFFFFF',
+        paddingTop: 24,
+        paddingBottom: 24,
+        paddingHorizontal: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
+        marginTop: 40,
+      },
+      headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      },
+      backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 999,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#111827',
+      },
+      headerSpacer: {
+        width: 40,
+        height: 40,
+      },
+    });
+
     return (
-        <View className="flex-1 bg-gray-50">
+        <View style={styles.container}>
             {/* <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" /> */}
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Header */}
-                <View className="bg-white pt-6 pb-6 px-6 shadow-sm mt-10">
-                    <View className="flex-row items-center justify-between">
+                <View style={styles.header}>
+                    <View style={styles.headerRow}>
                         <TouchableOpacity
                             onPress={handlePreviousPage}
-                            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+                            style={styles.backButton}
                         >
                             <Ionicons name="arrow-back" size={20} color="#374151" />
                         </TouchableOpacity>
-                        <Text className="text-xl font-bold text-gray-900">Settings</Text>
-                        <View className="w-10 h-10" /> {/* Spacer for alignment */}
+                        <Text style={styles.headerTitle}>Settings</Text>
+                        <View style={styles.headerSpacer} />
                     </View>
                 </View>
 

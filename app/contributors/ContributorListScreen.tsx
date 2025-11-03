@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, Image, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, Pressable, RefreshControl, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Contributor } from './ContributorsScreen';
@@ -14,6 +14,154 @@ import NetInfo from '@react-native-community/netinfo';
 import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
 // TODO: Replace with Moti Skeleton
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 999,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginLeft: -32,
+  },
+  helpButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 999,
+    marginLeft: 8,
+  },
+  searchBar: {
+    backgroundColor: '#F5F6FA',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 48,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#222',
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#6B7280',
+    fontSize: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 16,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 400,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    color: '#0074FF',
+    fontWeight: 'bold',
+    fontSize: 22,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    width: '100%',
+    marginBottom: 18,
+  },
+  modalStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statusIndicator: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 10,
+  },
+  statusLabel: {
+    fontWeight: 'bold',
+    color: '#222',
+    fontSize: 16,
+    marginRight: 6,
+  },
+  statusDescription: {
+    color: '#6B7280',
+    fontSize: 15,
+  },
+  modalCloseButton: {
+    backgroundColor: '#0074FF',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    marginTop: 18,
+  },
+  modalCloseButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  listEmptyText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    marginTop: 16,
+  },
+});
 
 const fetchContributorListData = async (group: string) => {
   const token = await AsyncStorage.getItem('auth_token');
@@ -177,33 +325,24 @@ const ContributorListScreen = () => {
   // Only show error if there is truly no data to display (e.g., error and no contributors at all)
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       {/* Header */}
-      <View className="flex-row items-center mt-2 mb-4 px-4 justify-between">
-        <TouchableOpacity onPress={navigateBack} className="p-2 rounded-full">
+      <View style={styles.header}>
+        <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#000" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold flex-1 text-center -ml-8">Contributors</Text>
-        <TouchableOpacity onPress={() => setShowStatusModal(true)} className="bg-gray-100 p-2 rounded-full ml-2">
+        <Text style={styles.headerTitle}>Contributors</Text>
+        <TouchableOpacity onPress={() => setShowStatusModal(true)} style={styles.helpButton}>
           <Ionicons name="help-circle-outline" size={22} color="#222" />
         </TouchableOpacity>
       </View>
       {/* Search Bar */}
-      <View style={{
-        backgroundColor: '#F5F6FA',
-        borderRadius: 16,
-        marginHorizontal: 16,
-        marginBottom: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        height: 48,
-      }}>
+      <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#A0AEC0" style={{ marginRight: 8 }} />
         <TextInput
           placeholder="Search by name..."
-          style={{ flex: 1, fontSize: 16, color: '#222', fontWeight: '500' }}
+          style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
           placeholderTextColor="#A0AEC0"
@@ -212,18 +351,18 @@ const ContributorListScreen = () => {
         />
       </View>
       {error ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-red-500 text-center mb-4">{error}</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             onPress={() => fetchData(true)}
-            className="bg-blue-600 px-6 py-2 rounded-md"
+            style={styles.retryButton}
           >
-            <Text className="text-white font-semibold">Retry</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : filteredContributors.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500 text-lg">No contributors found.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No contributors found.</Text>
         </View>
       ) : (
         <FlatList
@@ -298,7 +437,7 @@ const ContributorListScreen = () => {
           }}
           contentContainerStyle={{ padding: 14 }}
           ListEmptyComponent={
-            <Text className="text-center text-gray-500 mt-4">No contributors found.</Text>
+            <Text style={styles.listEmptyText}>No contributors found.</Text>
           }
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -306,34 +445,34 @@ const ContributorListScreen = () => {
       )}
       {/* Status Modal */}
       <Modal visible={showStatusModal} transparent animationType="fade" onRequestClose={() => setShowStatusModal(false)}>
-        <View className="flex-1 justify-center items-center bg-black/30 px-4">
-          <View className="bg-white rounded-2xl w-full max-w-md p-6 shadow-lg items-center">
-            <Text style={{ color: '#0074FF', fontWeight: 'bold', fontSize: 22, marginBottom: 16, textAlign: 'center' }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
               Coded Status Indicators
             </Text>
-            <View style={{ height: 1, backgroundColor: '#E5E7EB', width: '100%', marginBottom: 18 }} />
+            <View style={styles.modalDivider} />
             <View style={{ width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: '#039855', marginRight: 10 }} />
-                <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 16, marginRight: 6 }}>Active</Text>
-                <Text style={{ color: '#6B7280', fontSize: 15 }}>Recently contributed</Text>
+              <View style={styles.modalStatusRow}>
+                <View style={[styles.statusIndicator, { backgroundColor: '#039855' }]} />
+                <Text style={styles.statusLabel}>Active</Text>
+                <Text style={styles.statusDescription}>Recently contributed</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: '#F79009', marginRight: 10 }} />
-                <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 16, marginRight: 6 }}>Pending</Text>
-                <Text style={{ color: '#6B7280', fontSize: 15 }}>Due for contribution</Text>
+              <View style={styles.modalStatusRow}>
+                <View style={[styles.statusIndicator, { backgroundColor: '#F79009' }]} />
+                <Text style={styles.statusLabel}>Pending</Text>
+                <Text style={styles.statusDescription}>Due for contribution</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: '#D92D20', marginRight: 10 }} />
-                <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 16, marginRight: 6 }}>Pending</Text>
-                <Text style={{ color: '#6B7280', fontSize: 15 }}>Missed contributions</Text>
+              <View style={styles.modalStatusRow}>
+                <View style={[styles.statusIndicator, { backgroundColor: '#D92D20' }]} />
+                <Text style={styles.statusLabel}>Pending</Text>
+                <Text style={styles.statusDescription}>Missed contributions</Text>
               </View>
             </View>
             <TouchableOpacity
               onPress={() => setShowStatusModal(false)}
-              style={{ backgroundColor: '#0074FF', borderRadius: 24, paddingVertical: 12, paddingHorizontal: 40, marginTop: 18 }}
+              style={styles.modalCloseButton}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Close</Text>
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>

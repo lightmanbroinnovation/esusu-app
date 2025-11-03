@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 // No API imports needed
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for icons
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -27,6 +27,138 @@ const fetchCommissionTransactionsData = async (params: any) => {
   // Otherwise, just return params as data
   return params;
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    paddingHorizontal: 16,
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 48,
+    marginBottom: 16,
+  },
+  backButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 999,
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 32,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchBox: {
+    backgroundColor: '#F0F8FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flex: 1,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#4B5563',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 40,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  emptyTitle: {
+    color: '#9CA3AF',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  dateGroup: {
+    marginBottom: 16,
+  },
+  dateText: {
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  transactionItem: {
+    marginBottom: 16,
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  transactionDescription: {
+    fontWeight: '500',
+  },
+  transactionAmount: {
+    fontWeight: '600',
+  },
+  transactionAmountDebit: {
+    color: '#DC2626',
+  },
+  transactionAmountCredit: {
+    color: '#16A34A',
+  },
+  transactionAmountDefault: {
+    color: '#4B5563',
+  },
+  transactionDate: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+});
 
 const CommissionTransactions: React.FC = () => {
   const router = useRouter();
@@ -167,7 +299,7 @@ const CommissionTransactions: React.FC = () => {
 
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       {loading ? (
         <View style={{ paddingHorizontal: 16, paddingTop: 48 }}>
           {/* Search Bar Skeleton */}
@@ -184,21 +316,21 @@ const CommissionTransactions: React.FC = () => {
           ))}
         </View>
       ) : (
-        <ScrollView className="px-4 flex-1">
-          <View className="flex-row items-center mt-12 mb-4">
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.header}>
             <TouchableOpacity 
               onPress={navigateBack}
-              className="bg-gray-100 p-2 rounded-full mr-4"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-2xl font-bold flex-1 text-center mr-8">Commissions</Text>
+            <Text style={styles.headerTitle}>Commissions</Text>
           </View>
-          <View className="flex-row items-center mb-4">
-            <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1">
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBox}>
               <Ionicons name="search" size={20} color="#A0A0A0" />
               <TextInput
-                className="flex-1 ml-2"
+                style={styles.searchInput}
                 placeholder="Search by type or amount..."
                 placeholderTextColor="#A0A0A0"
                 value={searchQuery}
@@ -213,39 +345,40 @@ const CommissionTransactions: React.FC = () => {
           </View>
           
           {loading ? (
-            <View className="flex-1 items-center justify-center py-10">
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#0052CC" />
-              <Text className="mt-4 text-gray-600">Loading your commission data...</Text>
+              <Text style={styles.loadingText}>Loading your commission data...</Text>
             </View>
           ) : error ? (
-            <View className="flex-1 items-center justify-center py-10">
-              <Text className="text-red-500 text-center mb-4">{error}</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity 
                 onPress={handleRetry}
-                className="bg-blue-600 px-6 py-2 rounded-md"
+                style={styles.retryButton}
               >
-                <Text className="text-white font-semibold">Retry</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : searchedTransactions.length === 0 ? (
-            <View className="bg-white py-10 rounded-xl mt-2">
-              <Text className="text-gray-400 text-lg font-medium text-center">No Commission Transactions</Text>
-              <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>No Commission Transactions</Text>
+              <Text style={styles.emptySubtitle}>
                 It looks like you haven't made any commission transactions yet.
               </Text>
             </View>
           ) : (
             Object.entries(groupedCommissions).map(([date, transactions]) => (
-              <View key={date} className="mb-4">
-                <Text className="text-gray-500 mb-2">{date}</Text>
+              <View key={date} style={styles.dateGroup}>
+                <Text style={styles.dateText}>{date}</Text>
                 {transactions.map((transaction, index) => {
                   const title = (transaction.title ?? '').trim().toLowerCase();
                   const isDebit = title === 'debit';
                   const isCredit = title === 'credit';
+                  const amountColor = isDebit ? styles.transactionAmountDebit : isCredit ? styles.transactionAmountCredit : styles.transactionAmountDefault;
                   return (
                     <TouchableOpacity
                       key={`${transaction.id}-${index}`}
-                      className="mb-4"
+                      style={styles.transactionItem}
                       onPress={() => {
                         // Navigate to receipt page with transaction data
                         router.push({
@@ -257,9 +390,9 @@ const CommissionTransactions: React.FC = () => {
                       }}
                       activeOpacity={0.7}
                     >
-                      <View className="flex-row justify-between items-center">
-                        <Text className="font-medium">{transaction.description ?? transaction.type}</Text>
-                        <Text className={`font-semibold ${isDebit ? 'text-red-600' : isCredit ? 'text-green-600' : 'text-gray-600'}`}>
+                      <View style={styles.transactionRow}>
+                        <Text style={styles.transactionDescription}>{transaction.description ?? transaction.type}</Text>
+                        <Text style={[styles.transactionAmount, amountColor]}>
                           {isDebit
                             ? `-₦${Math.abs(transaction.amount).toLocaleString()}`
                             : isCredit
@@ -267,7 +400,7 @@ const CommissionTransactions: React.FC = () => {
                             : `₦${transaction.amount.toLocaleString()}`}
                         </Text>
                       </View>
-                      <Text className="text-gray-500 text-sm">{transaction.date} {transaction.time}</Text>
+                      <Text style={styles.transactionDate}>{transaction.date} {transaction.time}</Text>
                     </TouchableOpacity>
                   );
                 })}

@@ -3,7 +3,7 @@ export const options = {
 };
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Vibration, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, Vibration, Alert, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
@@ -12,8 +12,105 @@ import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 32,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F4F4F',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0A369D',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4F4F4F',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  pinContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  pinDot: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    marginHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinDotFilled: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'white',
+  },
+  keypad: {
+    marginTop: 40,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  key: {
+    width: 64,
+    height: 64,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 32,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  keyText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#0A369D',
+  },
+  loadingContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+});
+
 export default function PasscodeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
+  const params = useLocalSearchParams();
   
   // Use back button handler for reset passcode page
   useBackButtonHandler('/reset/passcode');
@@ -22,14 +119,13 @@ export default function PasscodeScreen() {
   const [confirmPin, setConfirmPin] = useState<string>(""); // State for the confirmed PIN
   const [isConfirming, setIsConfirming] = useState<boolean>(false); // State to toggle between "Enter PIN" and "Confirm PIN"
   const [loading, setLoading] = useState<boolean>(false);
-  const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
-  const dispatch = useDispatch();
+  const [error, setError] = useState<string>("");
 
   // Get params from previous screen
   const phone = params.phone as string;
 
   const handleKeyPress = (digit: string) => {
+    setError("");
     if (!isConfirming && pin.length < 4) {
       setPin(pin + digit);
     } else if (isConfirming && confirmPin.length < 4) {
@@ -38,6 +134,7 @@ export default function PasscodeScreen() {
   };
 
   const handleBackspace = () => {
+    setError("");
     if (!isConfirming) {
       setPin(pin.slice(0, -1));
     } else {
@@ -158,18 +255,20 @@ export default function PasscodeScreen() {
   const renderPinInputs = () => {
     const currentPin = isConfirming ? confirmPin : pin;
     return (
-      <View className="flex-row justify-center space-x-8 mt-6">
+      <View style={styles.pinContainer}>
         {[0, 1, 2, 3].map((i) => (
           <View 
             key={i}
-            className="w-12 h-12 items-center justify-center rounded-full border-2" 
-            style={{
-              borderColor: i < currentPin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < currentPin.length ? "#0072CE" : "transparent",
-            }}
+            style={[
+              styles.pinDot,
+              { 
+                borderColor: i < currentPin.length ? "#0072CE" : "#ccc",
+                backgroundColor: i < currentPin.length ? "#0072CE" : "transparent",
+              }
+            ]}
           >
             {i < currentPin.length && (
-              <View className="w-4 h-4 rounded-full bg-white" />
+              <View style={styles.pinDotFilled} />
             )}
           </View>
         ))}
@@ -179,86 +278,83 @@ export default function PasscodeScreen() {
 
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
+    
     return (
-      <View className="mt-10 space-y-8 w-full">
-        {Array(4)
-          .fill(null)
-          .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-around">
-              {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
-                key ? (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => {
-                      if (key === "⌫") {
-                        handleBackspace();
-                      } else {
-                        handleKeyPress(key);
-                      }
-                    }}
-                    className="w-20 h-20 bg-white justify-center items-center rounded-full"
-                    style={{ 
-                      opacity: loading ? 0.6 : 1,
-                    }}
-                    disabled={loading}
-                  >
-                    {key === "⌫" ? (
-                      <Ionicons name="backspace-outline" size={28} color="#0072CE" />
-                    ) : (
-                      <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text>
-                    )}
-                  </TouchableOpacity>
-                ) : (
-                  <View key={`empty-${rowIndex}-${Math.random()}`} className="w-20 h-20" />
-                )
-              ))}
-            </View>
-          ))}
+      <View style={styles.keypad}>
+        {Array(4).fill(null).map((_, rowIndex) => (
+          <View key={rowIndex} style={styles.keypadRow}>
+            {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key, keyIndex) => (
+              key ? (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => {
+                    if (key === "⌫") {
+                      handleBackspace();
+                    } else {
+                      handleKeyPress(key);
+                    }
+                  }}
+                  style={styles.key}
+                  disabled={loading}
+                >
+                  {key === "⌫" ? (
+                    <Ionicons name="backspace-outline" size={28} color="#0072CE" />
+                  ) : (
+                    <Text style={styles.keyText}>{key}</Text>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <View key={`empty-${rowIndex}-${keyIndex}`} style={{ width: 64 }} />
+              )
+            ))}
+          </View>
+        ))}
       </View>
     );
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-between pt-20 pb-10">
+    <View style={styles.container}>
       {/* Header */}
-      <View className="flex-row justify-between items-center">
-        <TouchableOpacity 
-          onPress={() => {
-            if (isConfirming) {
-              setIsConfirming(false);
-              setConfirmPin("");
-            } else {
-              router.back();
-            }
-          }}
-          disabled={loading}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="arrow-back" size={28} color="#0A369D" />
         </TouchableOpacity>
-        <Text className="font-semibold">Step 3 of 3</Text>
+        <Text style={styles.stepText}>Step 3 of 3</Text>
       </View>
 
-      {/* Top section */}
-      <View className="items-center mt-8">
-        <Text className="text-2xl font-bold text-primaryText">
-          {isConfirming ? "Confirm Passcode" : "Create New Passcode"}
+      {/* Main Content */}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.title}>
+          {isConfirming ? "Confirm New Passcode" : "Create New Passcode"}
         </Text>
-        <Text className="text-gray-500 mt-2 mb-16">
-          {isConfirming 
-            ? "Re-enter the passcode to confirm" 
-            : "Enter a 4-digit passcode for your account"
-          }
+        <Text style={styles.subtitle}>
+          {isConfirming
+            ? "Re-enter your new 4-digit passcode to confirm."
+            : "Create a 4-digit passcode to secure your account."}
         </Text>
 
+        {/* PIN Input */}
         {renderPinInputs()}
 
+        {/* Loading Indicator */}
         {loading && (
-          <ActivityIndicator size="large" color="#0072CE" className="mt-6" />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0072CE" />
+          </View>
         )}
-      </View>
 
-      {/* Keypad */}
-      {renderKeypad()}
+        {/* Error Message */}
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
+
+        {/* Keypad */}
+        {!loading && renderKeypad()}
+      </View>
     </View>
   );
 }

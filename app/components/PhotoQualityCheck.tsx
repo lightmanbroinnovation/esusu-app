@@ -9,7 +9,8 @@ import {
   Alert,
   Modal,
   Platform,
-  Dimensions
+  Dimensions,
+  StyleSheet
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -34,6 +35,149 @@ export const PhotoQualityCheck = () => {
   // Get screen dimensions for responsive sizing
   const { width } = Dimensions.get('window');
   const imageSize = useMemo(() => Math.min(width * 0.7, 280), [width]);
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    content: {
+      flex: 1,
+      padding: 24,
+      marginTop: 40,
+    },
+    backButton: {
+      backgroundColor: '#F3F4F6',
+      padding: 8,
+      borderRadius: 999,
+      alignSelf: 'flex-start',
+      marginBottom: 24,
+    },
+    title: {
+      fontSize: 30,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      color: '#0052CC',
+      marginBottom: 8,
+    },
+    subtitle: {
+      color: '#4B5563',
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    photoContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    photoPlaceholder: {
+      backgroundColor: '#F3F4F6',
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    photoPlaceholderText: {
+      color: '#6B7280',
+      textAlign: 'center',
+      paddingHorizontal: 16,
+    },
+    photo: {
+      alignItems: 'center',
+    },
+    photoImage: {
+      borderRadius: 20,
+    },
+    statusIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+      backgroundColor: '#F3F4F6',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    statusText: {
+      fontSize: 12,
+      marginLeft: 4,
+      color: '#4B5563',
+    },
+    spacer: {
+      flex: 1,
+    },
+    actionsContainer: {
+      marginTop: 16,
+    },
+    continueButton: {
+      backgroundColor: '#2563EB',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      width: '100%',
+    },
+    continueButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    newPhotoButton: {
+      padding: 16,
+      alignItems: 'center',
+      width: '100%',
+    },
+    newPhotoButtonText: {
+      color: '#2563EB',
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    cameraModalContainer: {
+      flex: 1,
+      backgroundColor: '#000000',
+    },
+    cameraModalContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    savingIndicator: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      padding: 32,
+      borderRadius: 12,
+    },
+    savingText: {
+      color: '#FFFFFF',
+      marginTop: 16,
+    },
+    cameraInstruction: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      marginBottom: 32,
+    },
+    cameraControls: {
+      marginTop: 'auto',
+      width: '100%',
+      paddingHorizontal: 16,
+      paddingVertical: 40,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cameraControlButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      padding: 16,
+      borderRadius: 999,
+    },
+    cameraCaptureButton: {
+      backgroundColor: '#FFFFFF',
+      padding: 8,
+      borderRadius: 999,
+    },
+    cameraCaptureCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 999,
+      borderWidth: 4,
+      borderColor: '#FFFFFF',
+    },
+  });
 
   // Simplified initialization - no heavy operations
   useEffect(() => {
@@ -308,52 +452,54 @@ export const PhotoQualityCheck = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 p-6 mt-10">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
         {/* Header with back button */}
         <TouchableOpacity
           onPress={handleBack}
-          className="bg-gray-100 p-2 rounded-full self-start mb-6"
+          style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         
         {/* Title */}
-        <Text className="text-3xl font-bold text-center text-[#0052CC] mb-2">Check Quality</Text>
-        <Text className="text-gray-600 text-center mb-8">
+        <Text style={styles.title}>Check Quality</Text>
+        <Text style={styles.subtitle}>
           Make sure your face is not blurred or out of frame before continuing
         </Text>
         
         {/* Simplified Photo Display */}
-        <View className="items-center mb-4">
+        <View style={styles.photoContainer}>
           {isLoading ? (
-            <View className="bg-gray-100 rounded-3xl items-center justify-center" style={{ width: imageSize, height: imageSize }}>
+            <View style={[styles.photoPlaceholder, { width: imageSize, height: imageSize }]}>
               <ActivityIndicator size="large" color="#0052CC" />
             </View>
           ) : imageError || fileSizeError || !photoUri ? (
-            <View className="bg-gray-100 rounded-3xl items-center justify-center" style={{ width: imageSize, height: imageSize }}>
-              <Text className="text-gray-500 text-center px-4">
+            <View style={[styles.photoPlaceholder, { width: imageSize, height: imageSize }]}>
+              <Text style={styles.photoPlaceholderText}>
                 {imageError ? "Image could not be loaded. Please take a new photo." :
                  fileSizeError ? "Image file size is too large (max 5MB). Please take a smaller photo." :
                  "No photo taken yet."}
               </Text>
             </View>
           ) : (
-            <View className="items-center">
+            <View style={styles.photo}>
               <Image
                 source={{ uri: photoUri }}
-                style={{
-                  width: imageSize,
-                  height: imageSize,
-                  borderRadius: 20,
-                }}
+                style={[
+                  styles.photoImage,
+                  {
+                    width: imageSize,
+                    height: imageSize,
+                  }
+                ]}
                 resizeMode="cover"
                 onError={handleImageError}
                 onLoadStart={() => console.log('Image loading started')}
                 onLoadEnd={() => console.log('Image loading completed')}
               />
               {/* Status indicator */}
-              <View className="flex-row items-center mt-2 bg-gray-100 px-3 py-1 rounded-full">
+              <View style={styles.statusIndicator}>
                 {checkingFace ? (
                   <ActivityIndicator size="small" color="#0052CC" />
                 ) : faceDetected ? (
@@ -361,7 +507,7 @@ export const PhotoQualityCheck = () => {
                 ) : (
                   <Ionicons name="warning" size={16} color="#F59E0B" />
                 )}
-                <Text className="text-xs ml-1 text-gray-600">
+                <Text style={styles.statusText}>
                   {checkingFace ? "Analyzing..." : faceDetected ? "Face detected" : "No face detected"}
                 </Text>
               </View>
@@ -369,17 +515,19 @@ export const PhotoQualityCheck = () => {
           )}
         </View>
 
-        <View className="flex-1" />
+        <View style={styles.spacer} />
 
         {/* Action Buttons */}
-        <View className="space-y-4">
+        <View style={styles.actionsContainer}>
           <TouchableOpacity
             onPress={handleDone}
-            className="bg-blue-600 p-4 rounded-xl items-center w-full"
+            style={[
+              styles.continueButton,
+              { opacity: (isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected) ? 0.7 : 1 }
+            ]}
             disabled={isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected}
-            style={{ opacity: (isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected) ? 0.7 : 1 }}
           >
-            <Text className="text-white font-semibold text-lg">
+            <Text style={styles.continueButtonText}>
               {isLoading ? "Loading..." :
                checkingFace ? "Analyzing..." :
                imageError ? "Fix Image Error" :
@@ -391,11 +539,13 @@ export const PhotoQualityCheck = () => {
 
           <TouchableOpacity
             onPress={handleNewPhoto}
-            className="p-4 items-center w-full"
+            style={[
+              styles.newPhotoButton,
+              { opacity: (isLoading || checkingFace) ? 0.7 : 1 }
+            ]}
             disabled={isLoading || checkingFace}
-            style={{ opacity: (isLoading || checkingFace) ? 0.7 : 1 }}
           >
-            <Text className="text-blue-600 font-semibold text-lg">
+            <Text style={styles.newPhotoButtonText}>
               {isLoading ? "Loading..." : checkingFace ? "Analyzing..." : "Take a New Photo"}
             </Text>
           </TouchableOpacity>
@@ -409,36 +559,36 @@ export const PhotoQualityCheck = () => {
         visible={showCamera}
         onRequestClose={() => setShowCamera(false)}
       >
-        <View className="flex-1 bg-black">
-          <SafeAreaView className="flex-1">
-            <View className="flex-1 justify-center items-center">
+        <View style={styles.cameraModalContainer}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.cameraModalContent}>
               {savingImage ? (
-                <View className="bg-white/20 p-8 rounded-xl">
+                <View style={styles.savingIndicator}>
                   <ActivityIndicator size="large" color="#FFFFFF" />
-                  <Text className="text-white mt-4">Saving photo...</Text>
+                  <Text style={styles.savingText}>Saving photo...</Text>
                 </View>
               ) : (
-                <View className="w-full items-center">
-                  <Text className="text-white text-xl mb-8">Position your face in the frame</Text>
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                  <Text style={styles.cameraInstruction}>Position your face in the frame</Text>
                   
                   {/* Camera UI */}
-                  <View className="mt-auto w-full px-4 py-10 flex-row items-center justify-between">
+                  <View style={styles.cameraControls}>
                     <TouchableOpacity 
                       onPress={() => setShowCamera(false)}
-                      className="bg-white/20 p-4 rounded-full"
+                      style={styles.cameraControlButton}
                     >
                       <Ionicons name="close" size={30} color="#FFFFFF" />
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
                       onPress={takePicture}
-                      className="bg-white p-2 rounded-full"
+                      style={styles.cameraCaptureButton}
                     >
-                      <View className="w-16 h-16 rounded-full border-4 border-white" />
+                      <View style={styles.cameraCaptureCircle} />
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
-                      className="bg-white/20 p-4 rounded-full"
+                      style={styles.cameraControlButton}
                       onPress={() => {
                         Alert.alert("Camera Switch", "Switching camera");
                       }}

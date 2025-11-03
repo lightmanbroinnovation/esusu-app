@@ -24,7 +24,20 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    // Return default values instead of throwing error
+    // This allows components to render even if provider is not available yet
+    console.warn('useNotifications called outside NotificationProvider, using default values');
+    return {
+      notifications: [],
+      unreadCount: 0,
+      loading: false,
+      refreshNotifications: async () => {},
+      markAsRead: async () => {},
+      markAllAsRead: async () => {},
+      initializeNotifications: async () => {},
+      areNotificationsEnabled: false,
+      requestNotificationPermission: async () => false,
+    } as NotificationContextType;
   }
   return context;
 };

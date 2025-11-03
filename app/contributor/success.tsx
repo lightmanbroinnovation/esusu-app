@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, ImageBackground, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Image, TouchableOpacity, ImageBackground, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,72 @@ import { useDispatch } from 'react-redux';
 import { addNotification } from '../store/slices/notificationSlice';
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    padding: 0,
+  },
+  imageBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  checkImage: {
+    width: 112,
+    height: 112,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+    color: '#0072CE',
+  },
+  subtitle: {
+    textAlign: 'center',
+    color: '#4B5563',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  loadingButton: {
+    width: '100%',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginLeft: 8,
+  },
+  doneButton: {
+    width: '100%',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  doneButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
 
 export default function Success() {
   const insets = useSafeAreaInsets();
@@ -68,28 +134,23 @@ export default function Success() {
 
   return (
     <View
-      className="flex-1 items-center bg-white px-4"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
-      <View className="flex-1 items-start p-0">
+      <View style={styles.contentContainer}>
         <ImageBackground
           source={require("../assets/images/success.png")}
-          className="flex-1 justify-center items-center w-full"
+          style={[styles.imageBackground, { height: 460 }]}
           resizeMode="contain"
-          style={{ height: 460 }}
         >
           <Image
             source={require("../assets/images/check.png")}
-            className="w-28 h-28 mb-4"
+            style={styles.checkImage}
             resizeMode="contain"
           />
-          <Text
-            className="text-2xl font-bold text-center text-primary mb-2"
-            style={{ color: "#0072CE" }}
-          >
+          <Text style={styles.title}>
             {isContributor ? "Contributor profile created successfully!" : "You're All Set!"}
           </Text>
-          <Text className="text-center text-gray-600 px-4 mb-4">
+          <Text style={styles.subtitle}>
             {isContributor
               ? "The contributor profile has been created. You can now manage their savings plan."
               : "Your Esusu POS Operator account has been successfully created. Please log in to continue."}
@@ -97,19 +158,19 @@ export default function Success() {
         </ImageBackground>
       </View>
       {loading ? (
-        <View className="w-full bg-[#0072CE] py-4 rounded-lg mb-6 flex-row justify-center items-center">
+        <View style={styles.loadingButton}>
           <ActivityIndicator color="white" size="small" />
-          <Text className="text-white font-bold text-center ml-2">
+          <Text style={styles.loadingButtonText}>
             {isContributor ? "Finishing..." : "Preparing Login..."}
           </Text>
         </View>
       ) : (
         <TouchableOpacity
-          className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
+          style={styles.doneButton}
           onPress={handleDone}
           disabled={loading}
         >
-          <Text className="text-white font-bold text-center">
+          <Text style={styles.doneButtonText}>
             {isContributor ? "Done" : "Go to Login"}
           </Text>
         </TouchableOpacity>

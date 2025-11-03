@@ -11,6 +11,8 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
 import { useState, useEffect } from "react";
 import BankCard from "./components/bank-card";
@@ -26,6 +28,7 @@ import { useBackButtonHandler } from '../utils/backButtonHandler';
 
 export default function LinkBankScreen() {
   const router = useRouter();
+  const { width } = Dimensions.get('window');
   
   // Use back button handler for link-bank page
   useBackButtonHandler('/settings');
@@ -118,8 +121,8 @@ export default function LinkBankScreen() {
 
   if (!networkAvailable && banks.length === 0) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <Text>No network. Please connect to the internet to load your bank accounts.</Text>
+      <SafeAreaView style={styles.noNetworkContainer}>
+        <Text style={styles.noNetworkText}>No network. Please connect to the internet to load your bank accounts.</Text>
       </SafeAreaView>
     );
   }
@@ -135,16 +138,16 @@ export default function LinkBankScreen() {
   const renderEmptyState = () => {
     // Only show a simple message and add button, no large image
     return (
-      <View className="flex-1 justify-center items-center mt-10 px-4">
-        <Text className="text-lg font-medium mb-2">No Bank Accounts</Text>
-        <Text className="text-gray-500 text-center mb-6">
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>No Bank Accounts</Text>
+        <Text style={styles.emptyDescription}>
           You haven't added any bank accounts yet. Add an account to receive your commission payouts.
         </Text>
         <TouchableOpacity
           onPress={() => fetchData()}
-          className="bg-blue-600 px-6 py-3 rounded-full"
+          style={styles.refreshButton}
         >
-          <Text className="text-white font-medium">Refresh</Text>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );
@@ -162,31 +165,32 @@ export default function LinkBankScreen() {
   console.log('[LinkBankScreen] Display banks after filtering:', displayBanks);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0074FF]">
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View className="mt-12 pt-4 px-6">
+      <View style={styles.header}>
       <TouchableOpacity
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full  items-center justify-center"
+          style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
 
-        <View className="mt-6 mx-auto items-center">
-          <Text className="text-[28px] font-bold text-white text-center">
-            Link Bank Account
-          </Text>
-          <Text className="text-white text-center mt-2 px-2 text-base font-medium">
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Link Bank Account</Text>
+          <Text style={styles.subtitle}>
             Securely link your bank account to receive your commission payouts.
           </Text>
         </View>
 
         <TouchableOpacity
           onPress={handleAddBank}
-          className={`bg-white rounded-full py-3 px-6 mx-auto mt-6 mb-2 w-[280px] flex-row justify-center items-center ${banks?.length === 2 ? 'opacity-60' : ''}`}
+          style={[
+            styles.addButton,
+            banks?.length === 2 && styles.addButtonDisabled
+          ]}
           disabled={banks?.length === 2}
         >
-          <Text className="text-[#0074ff] font-semibold text-center text-base">
+          <Text style={styles.addButtonText}>
             {banks?.length === 0 ? "+ Add Bank Account" : 
              banks?.length === 2 ? "Accounts below" : 
              "+ Add New Bank"}
@@ -195,7 +199,7 @@ export default function LinkBankScreen() {
       </View>
 
       {/* White Container with Bank Accounts */}
-      <View className="flex-1 bg-white rounded-t-[40px] mt-6 overflow-hidden">
+      <View style={styles.contentContainer}>
         {displayBanks && displayBanks.length > 0 ? (
           <FlatList
             data={displayBanks}
@@ -210,15 +214,11 @@ export default function LinkBankScreen() {
                 />
               );
             }}
-            contentContainerStyle={{
-              paddingTop: 32,
-              paddingHorizontal: 20,
-              paddingBottom: 100,
-            }}
+            contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold text-lg">Your Bank Accounts</Text>
+              <View style={styles.listHeader}>
+                <Text style={styles.listHeaderText}>Your Bank Accounts</Text>
               </View>
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -232,9 +232,9 @@ export default function LinkBankScreen() {
       {displayBanks && displayBanks.length > 0 && displayBanks.length < 2 && (
         <TouchableOpacity
           onPress={handleAddBank}
-          className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+          style={styles.floatingButton}
         >
-          <Text className="text-white text-3xl font-light">+</Text>
+          <Text style={styles.floatingButtonText}>+</Text>
         </TouchableOpacity>
       )}
 
@@ -246,3 +246,144 @@ export default function LinkBankScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0074FF',
+  },
+  noNetworkContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  noNetworkText: {
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  header: {
+    marginTop: 48,
+    paddingTop: 16,
+    paddingHorizontal: 24,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  addButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 8,
+    width: 280,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonDisabled: {
+    opacity: 0.6,
+  },
+  addButtonText: {
+    color: '#0074FF',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    marginTop: 24,
+    overflow: 'hidden',
+  },
+  listContent: {
+    paddingTop: 32,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  listHeaderText: {
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 18,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 40,
+    paddingHorizontal: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  emptyDescription: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  refreshButton: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    backgroundColor: '#2563EB',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  floatingButtonText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '300',
+  },
+});

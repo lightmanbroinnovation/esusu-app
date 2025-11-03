@@ -9,7 +9,12 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
-  ScrollView
+  ScrollView,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+  ImageSourcePropType
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -64,26 +69,311 @@ interface MerchantDashboardData {
   // Add other dashboard fields as needed
 }
 
-const RadioButton = ({ label, value, selected, onSelect }: any) => {
-  const isSelected = selected === value;
+interface RadioButtonProps {
+  label: string;
+  value: string;
+  selected: boolean;
+  onSelect: (value: string | null) => void;
+}
+
+const RadioButton: React.FC<RadioButtonProps> = ({ label, value, selected, onSelect }) => {
+  const isSelected = selected;
+  
+  const containerStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  };
+
+  const radioOuter: ViewStyle = {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: isSelected ? '#3B82F6' : '#9CA3AF',
+    backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  };
+
+  const radioInner: ViewStyle = {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+  };
+
+  const labelStyle: TextStyle = {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  };
 
   return (
     <TouchableOpacity
       onPress={() => onSelect(isSelected ? null : value)}
-      className="flex flex-row items-center mb-2"
+      style={containerStyle}
     >
-      <View
-        className={`w-4 h-4 rounded-full border-2 mr-3 ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
-          } items-center justify-center`}
-      >
-        {isSelected && (
-          <View className="w-3 h-3 rounded-full bg-blue-500" />
-        )}
+      <View style={radioOuter}>
+        {isSelected && <View style={radioInner} />}
       </View>
-      <Text className="text-base font-medium text-gray-700">{label}</Text>
+      <Text style={styles.labelStyle}>{label}</Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  headerPlaceholder: {
+    width: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  userCard: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  userImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  userTextContainer: {
+    gap: 2,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  userLastName: {
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  balanceContainer: {
+    alignItems: 'flex-end',
+  },
+  balanceLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  balanceAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  errorText: {
+    color: '#DC2626',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    padding: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  requiredDepositContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  requiredDepositLabel: {
+    fontSize: 14,
+    color: '#2563EB',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  requiredDepositAmount: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  nextDepositDate: {
+    fontSize: 12,
+    color: '#3B82F6',
+    marginTop: 4,
+  },
+  errorMessageContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorMessageTitle: {
+    fontSize: 14,
+    color: '#DC2626',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  errorMessageText: {
+    color: '#B91C1C',
+  },
+  amountContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  amountLabel: {
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  amountValue: {
+    fontSize: 48,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  keypadContainer: {
+    paddingHorizontal: 16,
+    marginTop: 32,
+  },
+  quickAmountsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  quickAmountButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  quickAmountText: {
+    color: '#4B5563',
+    fontSize: 14,
+  },
+  keypad: {
+    marginTop: 32,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  keypadButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  keypadButtonText: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  backspaceButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+  },
+  continueButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  radioOuter: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#9CA3AF',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  labelStyle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  },
+});
 
 export default function AmtDepositScreen() {
   const router = useRouter();
@@ -379,72 +669,72 @@ export default function AmtDepositScreen() {
 
   if (!networkAvailable && !userDetails) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
+      <SafeAreaView style={styles.container}>
         <Text>No network. Please connect to the internet to load contributor data.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 mt-4">
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={navigateBack}
-          className="w-10 h-10  items-center justify-center"
+          style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold">Deposit</Text>
-        <View className="w-10" />
+        <Text style={styles.headerTitle}>Deposit</Text>
+        <View style={styles.headerPlaceholder} />
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {userDetails ? (
-        <View className="mx-4 mt-6 p-4 bg-[#F8FAFC] rounded-2xl flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
+        <View style={styles.userCard}>
+          <View style={styles.userInfoContainer}>
             {userDetails.imageUrl ? (
               <Image 
                 source={{ uri: userDetails.imageUrl }} 
-                className="w-12 h-12 rounded-full" 
+                style={styles.userImage} 
               />
             ) : (
-              <View className="w-12 h-12 rounded-full bg-gray-200 items-center justify-center">
-                <Text className="text-lg font-semibold">
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
                   {userDetails.firstname?.[0] || ''}
                 </Text>
               </View>
             )}
-            <View>
-              <Text className="text-lg font-semibold">{userDetails.firstname}</Text>
-              <Text className="text-gray-600">{userDetails.lastname}</Text>
+            <View style={styles.userTextContainer}>
+              <Text style={styles.userName}>{userDetails.firstname}</Text>
+              <Text style={styles.userLastName}>{userDetails.lastname}</Text>
             </View>
           </View>
-          <View>
-            <Text className="text-sm text-gray-500">Current Balance</Text>
-            <Text className="text-lg font-semibold">₦{userDetails.balance ? userDetails.balance.toLocaleString() : '0'}</Text>
+          <View style={styles.balanceContainer}>
+            <Text style={styles.balanceLabel}>Current Balance</Text>
+            <Text style={styles.balanceAmount}>₦{userDetails.balance ? userDetails.balance.toLocaleString() : '0'}</Text>
           </View>
         </View>
       ) : error ? (
-        <View className='bg-red-50 border border-red-200 mx-4 p-4 rounded-xl'>
-          <Text className='text-red-500'>{error}</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
-        <View className='flex items-center justify-center mx-4 p-4'>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator color="#0072CE" />
-          <Text className='text-sm text-gray-500 mt-2'>Loading user details...</Text>
+          <Text style={styles.loadingText}>Loading user details...</Text>
         </View>
       )}
 
         {/* Required Deposit Amount */}
         {userDetails?.depositAmount && (
-          <View className="mx-4 mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-            <Text className="text-sm text-blue-600 font-medium mb-1">Required Deposit Amount</Text>
-            <Text className="text-xl font-bold text-blue-800">₦{userDetails.depositAmount.toLocaleString()}</Text>
+          <View style={styles.requiredDepositContainer}>
+            <Text style={styles.requiredDepositLabel}>Required Deposit Amount</Text>
+            <Text style={styles.requiredDepositAmount}>₦{userDetails.depositAmount.toLocaleString()}</Text>
             {userDetails.nextDepositDate && (
-              <Text className="text-xs text-blue-600 mt-1">
+              <Text style={styles.nextDepositDate}>
                 Next deposit due: {new Date(userDetails.nextDepositDate).toLocaleDateString()}
               </Text>
             )}
@@ -453,130 +743,130 @@ export default function AmtDepositScreen() {
 
         {/* Error Messages */}
         {error && (
-          <View className="mx-4 mt-4 p-4 bg-red-50 rounded-2xl border border-red-200">
-            <Text className="text-sm text-red-600 font-medium mb-1">Unable to Process</Text>
-            <Text className="text-red-700">{error}</Text>
+          <View style={styles.errorMessageContainer}>
+            <Text style={styles.errorMessageTitle}>Unable to Process</Text>
+            <Text style={styles.errorMessageText}>{error}</Text>
           </View>
         )}
 
       {/* Amount Display */}
-      <View className="items-center mt-8">
-        <Text className="text-gray-500 mb-2">Enter Amount</Text>
-        <Text className="text-5xl font-semibold">₦{parseInt(amount).toLocaleString()}</Text>
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountLabel}>Enter Amount</Text>
+        <Text style={styles.amountValue}>₦{parseInt(amount).toLocaleString()}</Text>
       </View>
 
-        <View className="px-4 mt-8">
+        <View style={styles.keypadContainer}>
         {/* Quick Amounts */}
-        <View className="flex-row justify-between mb-4">
+        <View style={styles.quickAmountsContainer}>
           <TouchableOpacity
-            className="px-6 py-2 rounded-full bg-gray-100"
+            style={styles.quickAmountButton}
             onPress={() => handleAmountSelection('5000')}
           >
-            <Text>₦5,000</Text>
+            <Text style={styles.quickAmountText}>₦5,000</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="px-6 py-2 rounded-full bg-gray-100"
+            style={styles.quickAmountButton}
             onPress={() => handleAmountSelection('15000')}
           >
-            <Text>₦15,000</Text>
+            <Text style={styles.quickAmountText}>₦15,000</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="px-6 py-2 rounded-full bg-gray-100"
+            style={styles.quickAmountButton}
             onPress={() => handleAmountSelection('30000')}
           >
-            <Text>₦30,000</Text>
+            <Text style={styles.quickAmountText}>₦30,000</Text>
           </TouchableOpacity>
         </View>
 
         {/* Keypad */}
-        <View className="mt-8">
+        <View style={styles.keypad}>
           {/* Row 1 */}
-          <View className="flex-row justify-around mb-4">
+          <View style={styles.keypadRow}>
             <TouchableOpacity
               onPress={() => handleButtonPress('1')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">1</Text>
+              <Text style={styles.keypadButtonText}>1</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('2')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">2</Text>
+              <Text style={styles.keypadButtonText}>2</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('3')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">3</Text>
+              <Text style={styles.keypadButtonText}>3</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
-          <View className="flex-row justify-around mb-4">
+          <View style={styles.keypadRow}>
             <TouchableOpacity
               onPress={() => handleButtonPress('4')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">4</Text>
+              <Text style={styles.keypadButtonText}>4</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('5')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">5</Text>
+              <Text style={styles.keypadButtonText}>5</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('6')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">6</Text>
+              <Text style={styles.keypadButtonText}>6</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 3 */}
-          <View className="flex-row justify-around mb-4">
+          <View style={styles.keypadRow}>
             <TouchableOpacity
               onPress={() => handleButtonPress('7')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">7</Text>
+              <Text style={styles.keypadButtonText}>7</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('8')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">8</Text>
+              <Text style={styles.keypadButtonText}>8</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('9')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">9</Text>
+              <Text style={styles.keypadButtonText}>9</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 4 */}
-          <View className="flex-row justify-around mb-4">
+          <View style={styles.keypadRow}>
             <TouchableOpacity
               onPress={() => handleButtonPress('00')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">00</Text>
+              <Text style={styles.keypadButtonText}>00</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleButtonPress('0')}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.keypadButton}
             >
-              <Text className="text-xl font-medium">0</Text>
+              <Text style={styles.keypadButtonText}>0</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleBackspace}
-              className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center"
+              style={[styles.keypadButton, styles.backspaceButton]}
             >
-              <Ionicons name="backspace-outline" size={24} />
+              <Ionicons name="backspace-outline" size={24} color="#4B5563" />
             </TouchableOpacity>
           </View>
         </View>
@@ -584,19 +874,22 @@ export default function AmtDepositScreen() {
       </ScrollView>
 
       {/* Continue Button - Fixed at bottom */}
-      <View className="px-4 pb-4">
+      <View style={styles.footer}>
           <TouchableOpacity
             onPress={handleContinue}
-            className={`p-4 rounded-xl ${parseInt(amount) > 0 ? 'bg-blue-600' : 'bg-blue-300'} items-center`}
+            style={[
+              styles.continueButton,
+              { backgroundColor: parseInt(amount) > 0 ? '#2563EB' : '#93C5FD' }
+            ]}
             disabled={parseInt(amount) <= 0 || isLoading || loadingData}
           >
             {isLoading ? (
-              <View className="flex-row items-center">
+              <View style={styles.buttonContent}>
                 <ActivityIndicator color="white" size="small" />
-                <Text className="text-white font-medium text-base ml-2">Processing...</Text>
+                <Text style={styles.buttonText}>Processing...</Text>
               </View>
             ) : (
-              <Text className="text-white font-medium text-base">Continue</Text>
+              <Text style={styles.buttonText}>Continue</Text>
             )}
           </TouchableOpacity>
       </View>

@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Modal, Image, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  Modal, 
+  Image, 
+  ActivityIndicator, 
+  Alert, 
+  RefreshControl,
+  StyleSheet,
+  Dimensions 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import VerificationStep from './VerificationStep';
@@ -404,38 +417,38 @@ export default function VerificationScreen() {
 
   if (!networkAvailable && !idCloudinaryUrl && !locationCloudinaryUrl) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>No network. Please connect to the internet to load verification data.</Text>
+      <View style={styles.offlineContainer}>
+        <Text style={styles.offlineText}>No network. Please connect to the internet to load verification data.</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView className=" bg-white">
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
-        className="px-4"
-        style={{ overflow: 'scroll' }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-   <View className=' mt-10 flex-row justify-end'>
+        <View style={styles.headerContainer}>
           <TouchableOpacity 
-            className=" bg-gray-100 p-2 rounded-full"
+            style={styles.closeButton}
             onPress={() => router.push('/dashboard')}
           >
             <Ionicons name="close" size={24} color="#000" />
           </TouchableOpacity>
-   </View>
+        </View>
      
-        <View className=' mt-2'>
-          <Text className="text-[#0052CC] text-3xl font-bold text-center mt-4">
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>
             Verify Business
           </Text>
-          <Text className="text-gray-600 text-base text-center mt-2 px-8">
+          <Text style={styles.subtitle}>
             Complete your KYB verification to start managing contributions securely.
           </Text>
         </View>
 
-        <View className="mt-4 space-y-4">
+        <View style={styles.stepsContainer}>
           <VerificationStep 
             title="Personal Information"
             description="Provide details about your yourself to ensure a smooth verification process."
@@ -444,8 +457,6 @@ export default function VerificationScreen() {
             disabled={steps.personalInfo.disabled}
             onPress={() => handleStepSelect('personalInfo')}
           />
-          
-       
           
           <VerificationStep 
             title="Business Information"
@@ -456,15 +467,7 @@ export default function VerificationScreen() {
             onPress={() => handleStepSelect('businessInfo')}
           />
 
-          {/* <VerificationStep 
-            title="Business Location"
-            description="Upload clear photos of your shop to verify your business location."
-            completed={steps.businessLocation.completed}
-            selected={steps.businessLocation.selected}
-            onPress={() => handleStepSelect('businessLocation')}
-          /> */}
-
-             <VerificationStep 
+          <VerificationStep 
             title="Government ID"
             description="Provide a Driver's License, National Identity Card, or Passport."
             completed={steps.governmentID.completed}
@@ -475,25 +478,28 @@ export default function VerificationScreen() {
         </View>
 
         <TouchableOpacity 
-          className={`py-4 rounded-xl mt-8 mb-6 ${
-            Object.values(steps).every(step => step.completed) 
-              ? 'bg-[#007BFF]' 
-              : 'bg-gray-300'
-          }`}
+          style={[
+            styles.verifyButton,
+            {
+              backgroundColor: Object.values(steps).every(step => step.completed) 
+                ? '#007BFF' 
+                : '#E5E7EB'
+            }
+          ]}
           onPress={handleVerify}
-          disabled={isUploading}
+          disabled={isUploading || !Object.values(steps).every(step => step.completed)}
         >
           {isUploading ? (
-            <View className="flex-row justify-center items-center">
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text className="text-white text-center text-lg font-medium ml-2">
+              <Text style={styles.loadingText}>
                 Uploading...
               </Text>
             </View>
           ) : (
-          <Text className="text-white text-center text-lg font-medium">
-            Verify
-          </Text>
+            <Text style={styles.verifyButtonText}>
+              Verify
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -505,35 +511,35 @@ export default function VerificationScreen() {
         visible={showIDSelect}
         onRequestClose={() => setShowIDSelect(false)}
       >
-        <View className="flex-1 justify-end bg-black bg-opacity-50">
-          <View className="bg-white rounded-t-3xl p-6">
-            <View className="w-16 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
             
-            <Text className="text-2xl font-bold text-center mb-8">
+            <Text style={styles.modalTitle}>
               Which photo ID would you like to use
             </Text>
 
             <TouchableOpacity 
-              className="flex-row justify-between items-center py-4 border-b border-gray-200"
+              style={styles.idOption}
               onPress={() => handleIDTypeSelect('drivers_license')}
             >
-              <Text className="text-xl font-bold">Driver's License</Text>
+              <Text style={styles.idOptionText}>Driver's License</Text>
               <Ionicons name="chevron-forward" size={24} color="#000" />
             </TouchableOpacity>
 
             <TouchableOpacity 
-              className="flex-row justify-between items-center py-4 border-b border-gray-200"
+              style={styles.idOption}
               onPress={() => handleIDTypeSelect('national_id')}
             >
-              <Text className="text-xl font-bold">National Identity Card (NIN)</Text>
+              <Text style={styles.idOptionText}>National Identity Card (NIN)</Text>
               <Ionicons name="chevron-forward" size={24} color="#000" />
             </TouchableOpacity>
 
             <TouchableOpacity 
-              className="flex-row justify-between items-center py-4 border-b border-gray-200"
+              style={styles.idOption}
               onPress={() => handleIDTypeSelect('passport')}
             >
-              <Text className="text-xl font-bold">Passport</Text>
+              <Text style={styles.idOptionText}>Passport</Text>
               <Ionicons name="chevron-forward" size={24} color="#000" />
             </TouchableOpacity>
           </View>
@@ -586,4 +592,135 @@ export default function VerificationScreen() {
       </Modal>
     </SafeAreaView>
   );
-}; 
+};
+
+const { width, height } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  // Layout
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF'
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24
+  },
+  headerContainer: {
+    marginTop: 40,
+    flexDirection: 'row',
+    justifyContent: 'flex-end'
+  },
+  closeButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 20
+  },
+  titleContainer: {
+    marginTop: 8,
+    alignItems: 'center'
+  },
+  title: {
+    color: '#0052CC',
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 16
+  },
+  subtitle: {
+    color: '#6B7280',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 32
+  },
+  offlineContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  offlineText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#4B5563'
+  },
+  
+  // Steps container
+  stepsContainer: {
+    marginTop: 16,
+    gap: 16
+  },
+  
+  // Verify button
+  verifyButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 32,
+    marginBottom: 24
+  },
+  verifyButtonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500'
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500',
+    marginLeft: 8
+  },
+  
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40
+  },
+  modalHandle: {
+    width: 64,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 24
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 32,
+    color: '#1F2937'
+  },
+  idOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB'
+  },
+  idOptionText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937'
+  },
+  // Add more styles as needed for other components
+});

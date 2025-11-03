@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert, BackHandler, RefreshControl, Dimensions } from "react-native";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert, BackHandler, RefreshControl, Dimensions, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { fetchUser } from "@/services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
@@ -57,64 +57,64 @@ const menuItems: MenuItem[] = [
     {
         label: "Your Operator Tier",
         icon: require("../assets/images/my_account.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/Tier",
     },
     {
         label: "My Account",
         icon: require("../assets/images/my_account.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/account",
     },
     {
         label: "Linked Banks",
         icon: require("../assets/images/card.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/link-bank",
     },
     {
         label: "Referral Program",
         icon: require("../assets/images/my_account.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/referral",
     },
     {
         label: "Settings",
         icon: require("../assets/images/settings.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/profile-settings",
     },
     {
         label: "Biometric Login",
         icon: require("../assets/images/security.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/security",
     },
     {
         label: "FAQs",
         icon: require("../assets/images/que.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/faq",
     },
     {
         label: "Support Center",
         icon: require("../assets/images/faqs.png"),
-        bgColor: "bg-blue-100",
-        textColor: "text-gray-800",
+        bgColor: "#DBEAFE",
+        textColor: "#1F2937",
         route: "/support-center",
     },
     {
         label: "Log Out",
         icon: require("../assets/images/logout.png"),
-        bgColor: "bg-red-100",
-        textColor: "text-red-500",
+        bgColor: "#FEE2E2",
+        textColor: "#EF4444",
         route: "/login/passcode",
     },
 ];
@@ -280,132 +280,197 @@ export default function Index() {
 
     if (!networkAvailable && !userDetails) {
         return (
-            <View className="flex-1 justify-center items-center">
-                <Text>No network. Please connect to the internet to load settings.</Text>
+            <View style={styles.noNetworkContainer}>
+                <Text style={styles.noNetworkText}>No network. Please connect to the internet to load settings.</Text>
             </View>
         );
     }
 
+    // Create dynamic styles function
+    const getStyles = (): any => ({
+        noNetworkContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        noNetworkText: {
+            textAlign: 'center',
+            paddingHorizontal: 20,
+        },
+        container: {
+            flex: 1,
+            backgroundColor: '#0074FF',
+        },
+        header: {
+            paddingVertical: getResponsiveSize(32),
+            marginBottom: getResponsiveSize(20),
+            marginTop: getResponsiveSize(40),
+            alignItems: 'center',
+        },
+        avatarContainer: {
+            borderRadius: getResponsiveSize(40),
+            width: getResponsiveSize(80),
+            height: getResponsiveSize(80),
+            overflow: 'hidden',
+            backgroundColor: '#FFFFFF',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        avatarImage: {
+            width: getResponsiveSize(80),
+            height: getResponsiveSize(80),
+        },
+        avatarPlaceholder: {
+            width: getResponsiveSize(80),
+            height: getResponsiveSize(80),
+            backgroundColor: '#0072CE',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        avatarInitial: {
+            fontSize: getResponsiveSize(32),
+            fontWeight: 'bold',
+            color: '#FFFFFF',
+        },
+        userName: {
+            fontSize: getResponsiveSize(20),
+            fontWeight: 'bold',
+            color: '#FFFFFF',
+            marginTop: 8,
+        },
+        userEmail: {
+            fontSize: getResponsiveSize(14),
+            color: '#BFDBFE',
+        },
+        contentContainer: {
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            borderTopLeftRadius: getResponsiveSize(32),
+            borderTopRightRadius: getResponsiveSize(32),
+        },
+        menuItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: getResponsiveSize(20),
+            paddingVertical: getResponsiveSize(16),
+        },
+        menuItemContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flex: 1,
+        },
+        menuIconContainer: (bgColor: string) => ({
+            backgroundColor: bgColor,
+            borderRadius: 6,
+            padding: getResponsiveSize(8),
+            marginRight: getResponsiveSize(12),
+        }),
+        menuIcon: {
+            width: getResponsiveSize(24),
+            height: getResponsiveSize(24),
+        },
+        menuText: (textColor: string) => ({
+            color: textColor,
+            fontWeight: '500',
+            fontSize: getResponsiveSize(16),
+        }),
+        menuArrow: {
+            width: getResponsiveSize(16),
+            height: getResponsiveSize(16),
+        },
+        listFooter: {
+            marginTop: getResponsiveSize(40),
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: getResponsiveSize(40),
+            paddingHorizontal: getResponsiveSize(32),
+        },
+    });
+
     // Render menu item
-    const renderMenuItem = ({ item, index }: { item: MenuItem; index: number }) => (
-        <TouchableOpacity
-            className={`flex-row items-center justify-between px-5 py-4 ${
-                index !== menuItems.length - 1 ? "border-b border-gray-200" : ""
-            }`}
-            style={{ paddingHorizontal: getResponsiveSize(20), paddingVertical: getResponsiveSize(16) }}
-            onPress={() => handlePress(item.route)}
-        >
-            <View className="flex-row items-center flex-1">
-                <View className={`${item.bgColor} rounded-md p-2 mr-3`} style={{ 
-                    padding: getResponsiveSize(8),
-                    marginRight: getResponsiveSize(12)
-                }}>
-                    <Image
-                        source={item.icon}
-                        style={{ width: getResponsiveSize(24), height: getResponsiveSize(24) }}
-                        resizeMode="contain"
-                    />
+    const renderMenuItem = ({ item, index }: { item: MenuItem; index: number }) => {
+        const dynamicStyles = getStyles();
+        return (
+            <TouchableOpacity
+                style={[
+                    dynamicStyles.menuItem,
+                    index !== menuItems.length - 1 && styles.menuItemBorder
+                ]}
+                onPress={() => handlePress(item.route)}
+            >
+                <View style={dynamicStyles.menuItemContent}>
+                    <View style={dynamicStyles.menuIconContainer(item.bgColor)}>
+                        <Image
+                            source={item.icon}
+                            style={dynamicStyles.menuIcon}
+                            resizeMode="contain"
+                        />
+                    </View>
+                    <Text style={dynamicStyles.menuText(item.textColor)} numberOfLines={1}>
+                        {item.label}
+                    </Text>
                 </View>
-                <Text className={`${item.textColor} font-medium`} style={{ fontSize: getResponsiveSize(16) }} numberOfLines={1}>
-                    {item.label}
-                </Text>
-            </View>
-            <Image
-                source={require("../assets/images/arrow-right.png")}
-                style={{ width: getResponsiveSize(16), height: getResponsiveSize(16) }}
-                resizeMode="contain"
-            />
-        </TouchableOpacity>
-    );
+                <Image
+                    source={require("../assets/images/arrow-right.png")}
+                    style={dynamicStyles.menuArrow}
+                    resizeMode="contain"
+                />
+            </TouchableOpacity>
+        );
+    };
 
     // Footer component for FlatList
-    const ListFooterComponent = () => (
-        <View className="mt-10 flex items-center justify-center pb-10" style={{ 
-            marginTop: getResponsiveSize(40),
-            paddingBottom: getResponsiveSize(40),
-            paddingHorizontal: getResponsiveSize(32)
-        }}>
-            {/* <Text className="text-[#A2A0A8] text-center" style={{ fontSize: getResponsiveSize(14) }}>
-                You joined Esusu on March 2025. It's been 1 month since then and our mission is still the same.
-            </Text> */}
-        </View>
-    );
+    const ListFooterComponent = () => {
+        const dynamicStyles = getStyles();
+        return (
+            <View style={dynamicStyles.listFooter}>
+                {/* <Text style={{ fontSize: getResponsiveSize(14), color: '#A2A0A8', textAlign: 'center' }}>
+                    You joined Esusu on March 2025. It's been 1 month since then and our mission is still the same.
+                </Text> */}
+            </View>
+        );
+    };
+
+    const dynamicStyles = getStyles();
 
     return (
-        <View className="flex-1 bg-[#0074FF]">
+        <View style={dynamicStyles.container}>
             {/* <StatusBarAdapter backgroundColor="#0074FF" barStyle="dark-content" /> */}
             
             {/* Header */}
-            <View className="py-8 items-center mb-5 mt-30" style={{ 
-                paddingVertical: getResponsiveSize(32),
-                marginBottom: getResponsiveSize(20),
-                marginTop: getResponsiveSize(40)
-            }}>
-                <View className="rounded-full overflow-hidden bg-white justify-center items-center" style={{
-                    borderRadius: getResponsiveSize(40),
-                    width: getResponsiveSize(80),
-                    height: getResponsiveSize(80)
-                }}>
+            <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.avatarContainer}>
                     {userDetails?.userImg ? (
                         <Image
                             source={{ uri: userDetails.userImg }}
-                            style={{ 
-                                width: getResponsiveSize(80), 
-                                height: getResponsiveSize(80) 
-                            }}
+                            style={dynamicStyles.avatarImage}
                             resizeMode="cover"
                         />
                     ) : (
-                        <View style={{
-                            width: getResponsiveSize(80),
-                            height: getResponsiveSize(80),
-                            backgroundColor: '#0072CE',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                            <Text style={{
-                                fontSize: getResponsiveSize(32),
-                                fontWeight: 'bold',
-                                color: 'white'
-                            }}>
+                        <View style={dynamicStyles.avatarPlaceholder}>
+                            <Text style={dynamicStyles.avatarInitial}>
                                 {userDetails?.firstName ? userDetails.firstName.charAt(0).toUpperCase() : 'U'}
                             </Text>
                         </View>
                     )}
                 </View>
                 {loading ? (
-                    <ActivityIndicator size="large" color="white" className="mt-4" />
+                    <ActivityIndicator size="large" color="white" style={{ marginTop: 16 }} />
                 ) : userDetails ? (
-                        <>
-                            <Text className="text-xl font-bold text-white mt-2" style={{ fontSize: getResponsiveSize(20) }}>
-                                {userDetails?.firstName} {userDetails?.lastName}
-                            </Text>
-                            <Text className="text-sm text-blue-200" style={{ fontSize: getResponsiveSize(14) }}>
-                                {userDetails?.email}
-                            </Text>
-                            
-                            {/* Additional User Info */}
-                            {/* <View className="mt-3 bg-white/20 rounded-lg p-3" style={{
-                                marginTop: getResponsiveSize(12),
-                                padding: getResponsiveSize(12),
-                                borderRadius: getResponsiveSize(8)
-                            }}>
-                                <Text className="text-white text-xs text-center" style={{ fontSize: getResponsiveSize(10) }}>
-                                    {userDetails?.accountTier?.toUpperCase()} • {userDetails?.contributorCount || 0} Contributors
-                                </Text>
-                                <Text className="text-white text-xs text-center mt-1" style={{ fontSize: getResponsiveSize(10) }}>
-                                    {userDetails?.documentsVerified ? '✓ Verified' : '⚠ Pending'} • {userDetails?.businessLocation ? '✓ Location Set' : '⚠ Location Pending'}
-                                </Text>
-                            </View> */}
-                        </>
+                    <>
+                        <Text style={dynamicStyles.userName}>
+                            {userDetails?.firstName} {userDetails?.lastName}
+                        </Text>
+                        <Text style={dynamicStyles.userEmail}>
+                            {userDetails?.email}
+                        </Text>
+                    </>
                 ) : null}
             </View>
 
             {/* Menu List */}
-            <View className="flex-1 bg-white rounded-t-[32px]" style={{ 
-                borderTopLeftRadius: getResponsiveSize(32),
-                borderTopRightRadius: getResponsiveSize(32)
-            }}>
+            <View style={dynamicStyles.contentContainer}>
                 <FlatList
                     data={menuItems}
                     renderItem={renderMenuItem}
@@ -422,3 +487,10 @@ export default function Index() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    menuItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+});

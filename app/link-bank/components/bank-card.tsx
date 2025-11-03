@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import type { Bank as BankType } from '../types';
 
 interface Bank extends BankType {
@@ -42,29 +42,103 @@ export default function BankCard({ bank, isPrimary, onPress }: { bank: Bank; isP
   return (
     <Pressable 
       onPress={onPress} 
-      className="border border-gray-100 rounded-2xl px-6 py-6 mt-6 bg-white shadow-sm"
-      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+      style={styles.container}
     >
       {/* Bank Logo */}
-      <View className="w-16 h-16 rounded-full bg-white shadow items-center justify-center mr-4" style={{ overflow: 'hidden' }}>
+      <View style={styles.logoContainer}>
         <Image 
           source={getBankLogo(bank.bankName || bank.bankCode || 'Unknown Bank')}
-          className="w-14 h-14"
+          style={styles.logo}
           resizeMode="cover"
         />
       </View>
       {/* Bank Info */}
-      <View style={{ flex: 1 }}>
-        <Text className="font-bold text-lg text-gray-900 mb-1">{bank.bankName || bank.bankCode || 'Unknown Bank'}</Text>
-        <Text className="text-gray-700 text-base mb-1 tracking-widest">{bank.accountNumber || 'N/A'}</Text>
-        <Text className="text-gray-500 text-base">{bank.accountName || 'N/A'}</Text>
+      <View style={styles.infoContainer}>
+        <Text style={styles.bankName}>{bank.bankName || bank.bankCode || 'Unknown Bank'}</Text>
+        <Text style={styles.accountNumber}>{bank.accountNumber || 'N/A'}</Text>
+        <Text style={styles.accountName}>{bank.accountName || 'N/A'}</Text>
       </View>
       {/* Default Badge */}
       {isPrimary && (
-        <View className="bg-[#E5F1FF] px-4 py-1 rounded-full ml-2">
-          <Text className="text-[#0074FF] text-xs font-semibold">Default</Text>
+        <View style={styles.defaultBadge}>
+          <Text style={styles.defaultBadgeText}>Default</Text>
         </View>
       )}
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    borderRadius: 16,
+    padding: 24,
+    marginTop: 24,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  logoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: 56,
+    height: 56,
+  },
+  infoContainer: {
+    flex: 1,
+  },
+  bankName: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#111827',
+    marginBottom: 4,
+  },
+  accountNumber: {
+    color: '#374151',
+    fontSize: 16,
+    marginBottom: 4,
+    letterSpacing: 1.5,
+  },
+  accountName: {
+    color: '#6B7280',
+    fontSize: 16,
+  },
+  defaultBadge: {
+    backgroundColor: '#E5F1FF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  defaultBadgeText: {
+    color: '#0074FF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});

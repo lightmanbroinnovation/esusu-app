@@ -12,6 +12,7 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router"; // Import useLocalSearchParams
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,197 @@ import { addNotification } from '../store/slices/notificationSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // @ts-ignore
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
+
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginLeft: 16,
+    color: '#1F2937',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 32,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#1F2937',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  inputFocused: {
+    borderColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  calendarButton: {
+    padding: 8,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    height: '55%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 8,
+    marginBottom: 8,
+  },
+  monthNavButton: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+  },
+  monthText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#1F2937',
+  },
+  weekDaysContainer: {
+    flexDirection: 'row',
+    padding: 8,
+    marginBottom: 8,
+  },
+  weekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  // Year selector
+  yearSelectorContainer: {
+    height: '50%',
+  },
+  yearItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+    borderRadius: 8,
+  },
+  yearItemSelected: {
+    backgroundColor: '#DBEAFE',
+  },
+  yearText: {
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  yearTextSelected: {
+    color: '#2563EB',
+    fontWeight: 'bold',
+  },
+  // Button styles
+  button: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  // Gender picker
+  genderPickerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 32,
+  },
+  genderOption: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  genderOptionSelected: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
+  genderText: {
+    fontSize: 16,
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  genderTextSelected: {
+    color: '#2563EB',
+    fontWeight: '500',
+  },
+});
 
 export default function UserData() {
   const router = useRouter();
@@ -499,99 +691,106 @@ export default function UserData() {
         )}
 
         {/* Calendar Modal */}
-        {showCalendar && (
-          <Modal
-            transparent={true}
-            visible={showCalendar}
-            animationType="slide"
-            onRequestClose={() => setShowCalendar(false)}
-          >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}>
-                <View className="flex-row justify-between items-center p-2 mb-2">
-                  <TouchableOpacity 
-                    onPress={() => changeMonth('prev')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-back" size={20} color="#0072CE" />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => setShowYearSelector(true)}
-                    className="flex-row items-center"
-                  >
-                    <Text className="text-xl font-bold text-center">{moment(dob).format('MMMM YYYY')}</Text>
-                    <Ionicons name="chevron-down" size={20} color="#0072CE" className="ml-1" />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => changeMonth('next')}
-                    className="p-2 rounded-full bg-gray-100"
-                  >
-                    <Ionicons name="chevron-forward" size={20} color="#0072CE" />
-                  </TouchableOpacity>
-                </View>
-                <View className="flex-row p-2 mb-2">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
-                  ))}
-                </View>
-                {renderCalendar()}
+        <Modal
+          transparent={true}
+          visible={showCalendar}
+          animationType="slide"
+          onRequestClose={() => setShowCalendar(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
                 <TouchableOpacity 
-                  onPress={() => setShowCalendar(false)}
-                  className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                  onPress={() => changeMonth('prev')}
+                  style={styles.monthNavButton}
                 >
-                  <Text className="text-white font-bold text-lg">Done</Text>
+                  <Ionicons name="chevron-back" size={20} color="#2563EB" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => setShowYearSelector(true)}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <Text style={styles.monthText}>{moment(dob).format('MMMM YYYY')}</Text>
+                  <Ionicons name="chevron-down" size={20} color="#2563EB" style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => changeMonth('next')}
+                  style={styles.monthNavButton}
+                >
+                  <Ionicons name="chevron-forward" size={20} color="#2563EB" />
                 </TouchableOpacity>
               </View>
+              <View style={styles.weekDaysContainer}>
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                  <Text key={day} style={styles.weekDay}>{day}</Text>
+                ))}
+              </View>
+              {renderCalendar()}
+              <TouchableOpacity 
+                onPress={() => setShowCalendar(false)}
+                style={[styles.button, { marginTop: 16 }]}
+              >
+                <Text style={styles.buttonText}>Done</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-        )}
+          </View>
+        </Modal>
 
         {/* Year Selector Modal */}
-        {showYearSelector && (
-          <Modal
-            transparent={true}
-            visible={showYearSelector}
-            animationType="slide"
-            onRequestClose={() => setShowYearSelector(false)}
-          >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4" style={{ height: '50%' }}>
-                <Text className="text-xl font-bold text-center mb-4">Select Year</Text>
-                <FlatList
-                  data={availableYears}
-                  keyExtractor={(item) => item.toString()}
-                  renderItem={({ item }) => (
+        <Modal
+          transparent={true}
+          visible={showYearSelector}
+          animationType="slide"
+          onRequestClose={() => setShowYearSelector(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalContent, { height: '50%' }]}>
+              <Text style={[styles.monthText, { marginBottom: 16 }]}>Select Year</Text>
+              <FlatList
+                data={availableYears}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => {
+                  const isSelected = moment(dob).year() === item;
+                  return (
                     <TouchableOpacity
-                      className={`py-3 px-4 mb-1 rounded-lg ${moment(dob).year() === item ? 'bg-blue-100' : ''}`}
+                      style={[
+                        styles.yearItem,
+                        isSelected && styles.yearItemSelected
+                      ]}
                       onPress={() => selectYear(item)}
                     >
-                      <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`}>{item}</Text>
+                      <Text style={[
+                        styles.yearText,
+                        isSelected && styles.yearTextSelected
+                      ]}>
+                        {item}
+                      </Text>
                     </TouchableOpacity>
-                  )}
-                  showsVerticalScrollIndicator={true}
-                  initialScrollIndex={availableYears.findIndex(year => year === moment(dob).year())}
-                  getItemLayout={(data, index) => ({
-                    length: 48, // height of item
-                    offset: 48 * index,
-                    index,
-                  })}
-                />
-                <TouchableOpacity 
-                  onPress={() => setShowYearSelector(false)}
-                  className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
-                >
-                  <Text className="text-white font-bold text-lg">Cancel</Text>
-                </TouchableOpacity>
-              </View>
+                  );
+                }}
+                showsVerticalScrollIndicator={true}
+                initialScrollIndex={availableYears.findIndex(year => year === moment(dob).year())}
+                getItemLayout={(data, index) => ({
+                  length: 48,
+                  offset: 48 * index,
+                  index,
+                })}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowYearSelector(false)}
+                style={[styles.button, { backgroundColor: '#EF4444' }]}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-        )}
+          </View>
+        </Modal>
 
         {/* Continue Button */}
-        <View className="pb-4">
+        <View style={{ paddingBottom: 16 }}>
           {!isKeyboardVisible && (
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+              style={styles.button}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -599,7 +798,7 @@ export default function UserData() {
                 <ActivityIndicator color="white" size="small" />
               ) : (
                 <>
-                  <Text className="text-white text-lg mr-2 font-semibold">Continue</Text>
+                  <Text style={styles.buttonText}>Continue</Text>
                   <MaterialIcons name="arrow-forward" size={18} color="white" />
                 </>
               )}

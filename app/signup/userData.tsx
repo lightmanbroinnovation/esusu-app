@@ -11,7 +11,8 @@ import {
   Dimensions,
   ScrollView,
   FlatList,
-  Modal
+  Modal,
+StyleSheet
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -194,131 +195,147 @@ export default function UserData() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-    >
-      <View
-          className="flex-1 px-6"
-        style={{
-            paddingTop: insets.top + getResponsiveSize(16),
-            paddingBottom: insets.bottom + getResponsiveSize(16),
-            paddingHorizontal: getResponsiveSize(24),
-        }}
       >
-        {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
-          <TouchableOpacity
-            className="flex-row items-center"
-            onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
-          >
+        <View
+          style={[
+            styles.container,
+            {
+              paddingTop: insets.top + getResponsiveSize(16),
+              paddingBottom: insets.bottom + getResponsiveSize(16),
+              paddingHorizontal: getResponsiveSize(24),
+            }
+          ]}
+        >
+          {/* Header */}
+          <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
+            <TouchableOpacity
+              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
+              onPress={() => router.back()}
+            >
               <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
-          </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 2 of 4</Text>
+            </TouchableOpacity>
+            <Text style={[styles.stepText, { fontSize: getResponsiveSize(16) }]}>Step 2 of 4</Text>
           </View>
 
           {/* Message Display */}
           {message && (
-            <View style={{
-              marginBottom: getResponsiveSize(16),
-              padding: getResponsiveSize(12),
-              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
-              borderRadius: getResponsiveSize(8)
-            }}>
-              <Text style={{
-                color: messageType === 'error' ? '#D92D20' : '#0072CE',
-                textAlign: 'center',
-                fontSize: getResponsiveSize(14)
-              }}>{message}</Text>
+            <View style={[
+              styles.messageContainer,
+              {
+                backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+                marginBottom: getResponsiveSize(16),
+                padding: getResponsiveSize(12),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.messageText,
+                {
+                  color: messageType === 'error' ? '#D92D20' : '#0072CE',
+                  fontSize: getResponsiveSize(14)
+                }
+              ]}>
+                {message}
+              </Text>
             </View>
           )}
 
-          <View style={{ marginTop: getResponsiveSize(16) }}>
-            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+          <View style={[styles.titleContainer, { marginTop: getResponsiveSize(16) }]}>
+            <Text style={[styles.title, { fontSize: getResponsiveSize(24) }]}>
               Tell us about yourself
             </Text>
-            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+            <Text style={[styles.subtitle, { fontSize: getResponsiveSize(16) }]}>
               We need some basic information to set up your account.
             </Text>
           </View>
 
           {/* Input Fields */}
-          <View style={{ marginTop: getResponsiveSize(32) }}>
+          <View style={[styles.inputContainer, { marginTop: getResponsiveSize(32) }]}>
             {/* First Name */}
-            <View style={{ marginBottom: getResponsiveSize(20) }}>
-              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>First Name</Text>
+            <View style={[styles.inputField, { marginBottom: getResponsiveSize(20) }]}>
+              <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>First Name</Text>
               <TextInput
                 placeholder="Enter your first name"
                 value={firstName}
                 onChangeText={setFirstName}
-                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                 placeholderTextColor="#BDBDBD"
-                style={{
-                  paddingHorizontal: getResponsiveSize(12),
-                  paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8),
-                  fontSize: getResponsiveSize(16)
-                }}
+                style={[
+                  styles.textInput,
+                  {
+                    paddingHorizontal: getResponsiveSize(12),
+                    paddingVertical: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(8),
+                    fontSize: getResponsiveSize(16)
+                  }
+                ]}
               />
             </View>
 
             {/* Last Name */}
-            <View style={{ marginBottom: getResponsiveSize(20) }}>
-              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Last Name</Text>
+            <View style={[styles.inputField, { marginBottom: getResponsiveSize(20) }]}>
+              <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Last Name</Text>
               <TextInput
                 placeholder="Enter your last name"
                 value={lastName}
                 onChangeText={setLastName}
-                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                 placeholderTextColor="#BDBDBD"
-                style={{
-                  paddingHorizontal: getResponsiveSize(12),
-                  paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8),
-                  fontSize: getResponsiveSize(16)
-                }}
+                style={[
+                  styles.textInput,
+                  {
+                    paddingHorizontal: getResponsiveSize(12),
+                    paddingVertical: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(8),
+                    fontSize: getResponsiveSize(16)
+                  }
+                ]}
               />
             </View>
 
             {/* Email */}
-            <View style={{ marginBottom: getResponsiveSize(20) }}>
-              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Email Address</Text>
+            <View style={[styles.inputField, { marginBottom: getResponsiveSize(20) }]}>
+              <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Email Address</Text>
               <TextInput
                 placeholder="Enter your email address"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                 placeholderTextColor="#BDBDBD"
-                style={{
-                  paddingHorizontal: getResponsiveSize(12),
-                  paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8),
-                  fontSize: getResponsiveSize(16)
-                }}
+                style={[
+                  styles.textInput,
+                  {
+                    paddingHorizontal: getResponsiveSize(12),
+                    paddingVertical: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(8),
+                    fontSize: getResponsiveSize(16)
+                  }
+                ]}
               />
             </View>
 
             {/* Date of Birth */}
-            <View style={{ marginBottom: getResponsiveSize(20) }}>
-              <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Date of Birth</Text>
+            <View style={[styles.inputField, { marginBottom: getResponsiveSize(20) }]}>
+              <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Date of Birth</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
-                style={{
-                  paddingHorizontal: getResponsiveSize(12),
-                  paddingVertical: getResponsiveSize(12),
-                  borderRadius: getResponsiveSize(8)
-                }}
+                style={[
+                  styles.dobButton,
+                  {
+                    paddingHorizontal: getResponsiveSize(12),
+                    paddingVertical: getResponsiveSize(12),
+                    borderRadius: getResponsiveSize(8)
+                  }
+                ]}
               >
-                <Text className="text-base text-[#1A1A1A]" style={{ fontSize: getResponsiveSize(16) }}>
+                <Text style={[styles.dobText, { fontSize: getResponsiveSize(16) }]}>
                   {moment(dob).format('MMMM DD, YYYY')}
                 </Text>
                 <Ionicons name="calendar-outline" size={getResponsiveSize(20)} color="#0072CE" />
@@ -434,21 +451,115 @@ export default function UserData() {
         )}
 
         {/* Continue Button */}
-          <View className="pb-4" style={{ paddingBottom: getResponsiveSize(16) }}>
-            <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={handleSubmit} // Use handleSubmit to pass data to the next page
-              style={{
+        <View style={[styles.continueButtonContainer, { paddingBottom: getResponsiveSize(16) }]}>
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              {
                 paddingVertical: getResponsiveSize(16),
                 borderRadius: getResponsiveSize(8)
-              }}
-            >
-              <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
-              <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
-            </TouchableOpacity>
-          </View>
+              }
+            ]}
+            onPress={handleSubmit}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+            <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </ScrollView>
+  </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontWeight: '600',
+    color: '#4F4F4F',
+  },
+  messageContainer: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  messageText: {
+    textAlign: 'center',
+  },
+  titleContainer: {
+    marginTop: 16,
+  },
+  title: {
+    fontWeight: 'bold',
+    color: '#0072CE',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#4F4F4F',
+  },
+  inputContainer: {
+    marginTop: 32,
+  },
+  inputField: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: '#4F4F4F',
+    marginBottom: 4,
+  },
+  textInput: {
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F4F4F5',
+  },
+  dobButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F4F4F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  dobText: {
+    color: '#1A1A1A',
+  },
+  continueButtonContainer: {
+    paddingBottom: 16,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  continueButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginRight: 8,
+    fontSize: 16,
+  },
+});

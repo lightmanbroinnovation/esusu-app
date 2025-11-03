@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
   Clipboard,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -36,6 +37,197 @@ try {
 
 const { width } = Dimensions.get('window');
 
+const styles = StyleSheet.create({
+  // Layout
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  
+  // Header
+  header: {
+    backgroundColor: 'white',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingTop: 64,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 999,
+    backgroundColor: '#F3F4F6',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  shareButton: {
+    padding: 8,
+    borderRadius: 999,
+    backgroundColor: '#EFF6FF',
+  },
+  
+  // Receipt Card
+  receiptCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+    padding: 24,
+    marginBottom: 16,
+  },
+  receiptHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  receiptIconContainer: {
+    width: 64,
+    height: 64,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  receiptTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  receiptSubtitle: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  
+  // Transaction Details
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  detailLabel: {
+    color: '#6B7280',
+    fontWeight: '500',
+    flex: 1,
+  },
+  detailValue: {
+    color: '#111827',
+    fontWeight: '600',
+    textAlign: 'right',
+    flex: 1,
+  },
+  detailValueRight: {
+    textAlign: 'right',
+  },
+  detailValueMonospace: {
+    fontFamily: 'monospace',
+    fontSize: 14,
+  },
+  
+  // Status Badges
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-end',
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  typeDeposit: {
+    backgroundColor: '#D1FAE5',
+  },
+  typeWithdrawal: {
+    backgroundColor: '#FEE2E2',
+  },
+  typeDefault: {
+    backgroundColor: '#DBEAFE',
+  },
+  textDeposit: {
+    color: '#065F46',
+  },
+  textWithdrawal: {
+    color: '#991B1B',
+  },
+  textDefault: {
+    color: '#1E40AF',
+  },
+  
+  // Amount
+  amountText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  amountPositive: {
+    color: '#059669',
+  },
+  amountNegative: {
+    color: '#DC2626',
+  },
+  
+  // Share Section
+  shareSection: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  shareInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shareIcon: {
+    marginRight: 8,
+  },
+  shareText: {
+    color: '#1E40AF',
+    fontWeight: '500',
+  },
+  shareButtonContainer: {
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  
+  // Footer
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  footerText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+  },
+});
+
 export default function TransactionReceipt() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -52,7 +244,7 @@ export default function TransactionReceipt() {
 
     // Otherwise, normalize from RecentActivity format
     return {
-      id: data.reference || `txn_${Date.now()}_${Math.random()}`,
+      id: data.reference || data._id || `txn_${Date.now()}_${Math.random()}`,
       name: data.from?.name || data.name || data.description || 'Transaction',
       description: data.description || 'Transaction',
       accountNumber: data.from?.accountNumber,
@@ -326,10 +518,7 @@ export default function TransactionReceipt() {
                 <div class="label">Time</div>
                 <div class="value">${formatTime(transaction.time)}</div>
               </div>
-              <div class="row">
-                <div class="label">Transaction ID</div>
-                <div class="value transaction-id">${formatTransactionReference(transaction.reference || transaction.id)}</div>
-              </div>
+            
               <div class="row">
                 <div class="label">Status</div>
                 <div class="value">
@@ -378,7 +567,7 @@ ${transaction.from?.accountNumber ? `• Account: ${maskAccountNumber(transactio
 • Amount: ${formatAmount(transaction.amount, transaction.type)}
 • Date: ${formatDate(transaction.createdAt)}
 • Time: ${formatTime(transaction.time)}
-• Transaction ID: ${transaction.reference || transaction.id}
+• Transaction ID: ${transaction.reference || transaction.id || transaction._id}
 • Status: ${transaction.status || 'Completed'}
 
 PDF saved to: ${uri}
@@ -419,7 +608,7 @@ ${transaction.from?.accountNumber ? `• Account: ${maskAccountNumber(transactio
 • Amount: ${formatAmount(transaction.amount, transaction.type)}
 • Date: ${formatDate(transaction.createdAt)}
 • Time: ${formatTime(transaction.time)}
-• Transaction ID: ${transaction.reference || transaction.id}
+• Transaction ID: ${transaction.reference || transaction.id || transaction._id}
 • Status: ${transaction.status || 'Completed'}
 
 PDF file saved at: ${uri}
@@ -467,73 +656,75 @@ Shared from Esusu App
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View className="bg-white px-4 py-4 pt-16 border-b border-gray-200">
-        <View className="flex-row items-center justify-between">
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="p-2 rounded-full bg-gray-100"
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">Transaction Receipt</Text>
+          <Text style={styles.headerTitle}>Transaction Receipt</Text>
           <TouchableOpacity
             onPress={handleShare}
-            className="p-2 rounded-full bg-blue-100"
+            style={styles.shareButtonContainer}
           >
-            <Ionicons name="share-outline" size={24} color="#0052CC" />
+            <Ionicons name="share-outline" size={24} color="#ffff" />
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={styles.contentContainer}
       >
         {/* Receipt Card */}
-        <View className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+        <View style={styles.receiptCard}>
             {/* Receipt Header */}
-            <View className="items-center mb-6">
-              <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mb-3">
-                <Ionicons name="receipt-outline" size={32} color="#0052CC" />
+            <View style={styles.receiptHeader}>
+              <View style={styles.receiptIconContainer}>
+                <Ionicons name="receipt-outline" size={32} color="#2563EB" />
               </View>
-              <Text className="text-xl font-bold text-gray-900">Payment Receipt</Text>
-              <Text className="text-gray-500 text-sm mt-1">Transaction Details</Text>
+              <Text style={styles.receiptTitle}>Payment Receipt</Text>
+              <Text style={styles.receiptSubtitle}>Transaction Details</Text>
             </View>
 
             {/* Transaction Details */}
-            <View className="space-y-4">
+            <View>
               {/* Transaction Type */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                <Text className="text-gray-600 font-medium">Transaction Type</Text>
-                <View className={`px-3 py-1 rounded-full ${
-                  transaction.type === 'deposit' ? 'bg-green-100' :
-                  transaction.type === 'withdrawal' ? 'bg-red-100' : 'bg-blue-100'
-                }`}>
-                  <Text className={`text-sm font-semibold ${
-                    transaction.type === 'deposit' ? 'text-green-700' :
-                    transaction.type === 'withdrawal' ? 'text-red-700' : 'text-blue-700'
-                  }`}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Transaction Type</Text>
+                <View style={[
+                  styles.statusBadge,
+                  transaction.type === 'deposit' ? styles.typeDeposit :
+                  transaction.type === 'withdrawal' ? styles.typeWithdrawal : styles.typeDefault
+                ]}>
+                  <Text style={[
+                    styles.statusText,
+                    transaction.type === 'deposit' ? styles.textDeposit :
+                    transaction.type === 'withdrawal' ? styles.textWithdrawal : styles.textDefault
+                  ]}>
                     {getTransactionTypeLabel(transaction.type)}
                   </Text>
                 </View>
               </View>
 
               {/* Description */}
-              <View className="flex-row justify-between items-start py-3 border-b border-gray-100">
-                <Text className="text-gray-600 font-medium">Description</Text>
-                <Text className="text-gray-900 font-semibold text-right max-w-[60%]">
+              <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                <Text style={styles.detailLabel}>Description</Text>
+                <Text style={[styles.detailValue, { maxWidth: '60%' }]}>
                   {transaction.name}
                 </Text>
               </View>
 
               {/* Sender Name */}
               {transaction.from?.name && (
-                <View className="flex-row justify-between items-start py-3 border-b border-gray-100">
-                  <Text className="text-gray-600 font-medium">From</Text>
-                  <Text className="text-gray-900 font-semibold text-right max-w-[60%]">
+                <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                  <Text style={styles.detailLabel}>From</Text>
+                  <Text style={[styles.detailValue, { maxWidth: '60%' }]}>
                     {transaction.from.name}
                   </Text>
                 </View>
@@ -541,61 +732,62 @@ Shared from Esusu App
 
               {/* Sender Account Number */}
               {transaction.from?.accountNumber && (
-                <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                  <Text className="text-gray-600 font-medium">Account Number</Text>
-                  <Text className="text-gray-900 font-semibold font-mono">
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Account Number</Text>
+                  <Text style={[styles.detailValue, styles.detailValueMonospace]}>
                     {maskAccountNumber(transaction.from.accountNumber)}
                   </Text>
                 </View>
               )}
 
               {/* Amount */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                <Text className="text-gray-600 font-medium">Amount</Text>
-                <Text className={`text-xl font-bold ${
-                  transaction.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'
-                }`}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Amount</Text>
+                <Text style={[
+                  styles.amountText,
+                  transaction.type === 'withdrawal' ? styles.amountNegative : styles.amountPositive
+                ]}>
                   {formatAmount(transaction.amount, transaction.type)}
                 </Text>
               </View>
 
               {/* Date */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                <Text className="text-gray-600 font-medium">Date</Text>
-                <Text className="text-gray-900 font-semibold">
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Date</Text>
+                <Text style={styles.detailValue}>
                   {formatDate(transaction.createdAt)}
                 </Text>
               </View>
 
               {/* Time */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
-                <Text className="text-gray-600 font-medium">Time</Text>
-                <Text className="text-gray-900 font-semibold">
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Time</Text>
+                <Text style={styles.detailValue}>
                   {formatTime(transaction.time)}
                 </Text>
               </View>
 
               {/* Transaction ID */}
-              <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
+              {/* <View className="flex-row justify-between items-center py-3 border-b border-gray-100">
                 <Text className="text-gray-600 font-medium">Transaction ID</Text>
                 <View className="flex-row items-center">
                   <Text className="text-gray-900 font-semibold font-mono text-sm mr-2">
-                    {formatTransactionReference(transaction.reference || transaction.id)}
+                    {formatTransactionReference(transaction.reference || transaction.id || transaction._id)}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => copyToClipboard(transaction.reference || transaction.id, 'Transaction ID')}
+                    onPress={() => copyToClipboard(transaction.reference || transaction.id || transaction._id, 'Transaction ID')}
                     className="p-1"
                   >
                     <Ionicons name="copy-outline" size={16} color="#0052CC" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </View> */}
 
               {/* Status */}
-              <View className="flex-row justify-between items-center py-3">
-                <Text className="text-gray-600 font-medium">Status</Text>
-                <View className="px-3 py-1 bg-green-100 rounded-full">
-                  <Text className="text-green-700 text-sm font-semibold">
+              <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.detailLabel}>Status</Text>
+                <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
+                  <Text style={[styles.statusText, { color: '#065F46' }]}>
                     {transaction.status || 'Completed'}
                   </Text>
                 </View>
@@ -604,25 +796,25 @@ Shared from Esusu App
           </View>
 
         {/* Share Section */}
-        <View className="bg-blue-50 rounded-xl p-4 mb-4">
-          <View className="flex-row items-center">
-            <Ionicons name="information-circle-outline" size={20} color="#0052CC" />
-            <Text className="text-blue-700 font-medium ml-2">
+        <View style={styles.shareSection}>
+          <View style={styles.shareInfo}>
+            <Ionicons name="information-circle-outline" size={20} color="#2563EB" style={styles.shareIcon} />
+            <Text style={styles.shareText}>
               Share receipt as PDF file
             </Text>
           </View>
           <TouchableOpacity
             onPress={handleShare}
-            className="bg-blue-600 rounded-lg py-3 px-4 mt-3 flex-row items-center justify-center"
+            style={styles.shareButtonContainer}
           >
             <Ionicons name="share-outline" size={20} color="#fff" />
-            <Text className="text-white font-semibold ml-2">Share as PDF</Text>
+            <Text style={styles.shareButtonText}>Share as PDF</Text>
           </TouchableOpacity>
         </View>
 
         {/* Footer */}
-        <View className="items-center py-6">
-          <Text className="text-gray-400 text-sm">
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
             Powered by Esusu
           </Text>
         </View>

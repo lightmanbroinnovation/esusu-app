@@ -5,7 +5,8 @@ import {
   TouchableOpacity, 
   RefreshControl,
   ActivityIndicator,
-  FlatList
+  FlatList,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -35,8 +36,8 @@ export default function Notifications() {
   // Check if context is available
   if (!notificationContext) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <Text className="text-red-500">Error loading notifications</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error loading notifications</Text>
       </View>
     );
   }
@@ -99,30 +100,31 @@ export default function Notifications() {
           console.warn('Error marking notification as read:', error);
         }
       }}
-      className={`p-4 mb-3 rounded-xl border ${
-        item.isRead 
-          ? 'bg-gray-50 border-gray-200' 
-          : 'bg-blue-50 border-blue-200'
-      }`}
+      style={[
+        styles.notificationItem,
+        item.isRead ? styles.notificationItemRead : styles.notificationItemUnread
+      ]}
     >
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1 mr-3">
-          <Text className={`text-lg font-semibold mb-1 ${
-            item.isRead ? 'text-gray-900' : 'text-blue-900'
-          }`}>
+      <View style={styles.notificationContent}>
+        <View style={styles.notificationTextContainer}>
+          <Text style={[
+            styles.notificationTitle,
+            item.isRead ? styles.notificationTitleRead : styles.notificationTitleUnread
+          ]}>
             {item.subject}
           </Text>
-          <Text className={`text-sm mb-2 ${
-            item.isRead ? 'text-gray-600' : 'text-blue-700'
-          }`}>
+          <Text style={[
+            styles.notificationText,
+            item.isRead ? styles.notificationTextRead : styles.notificationTextUnread
+          ]}>
             {item.text}
           </Text>
-          <Text className="text-xs text-gray-500">
+          <Text style={styles.notificationDate}>
             {formatDate(item.createdAt)}
           </Text>
         </View>
         {!item.isRead && (
-          <View className="w-3 h-3 bg-blue-500 rounded-full" />
+          <View style={styles.unreadDot} />
         )}
       </View>
     </TouchableOpacity>
@@ -130,12 +132,12 @@ export default function Notifications() {
 
   // Render empty state
   const renderEmptyState = () => (
-    <View className="flex-1 items-center justify-center py-20">
+    <View style={styles.emptyContainer}>
       <Ionicons name="notifications-outline" size={64} color="#9CA3AF" />
-      <Text className="text-lg font-semibold text-gray-900 mt-4 mb-2">
+      <Text style={styles.emptyTitle}>
         No Notifications
       </Text>
-      <Text className="text-sm text-gray-500 text-center px-8">
+      <Text style={styles.emptyText}>
         You're all caught up! New notifications will appear here.
       </Text>
     </View>
@@ -144,43 +146,43 @@ export default function Notifications() {
   // Render loading state
   if (loading) {
     return (
-      <View className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
+      <View style={styles.container}>
+        <View style={styles.header}>
           <TouchableOpacity 
             onPress={handlePreviousPage}
-            className="p-2 rounded-full"
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold">Notifications</Text>
-          <View className="w-10" />
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <View style={styles.headerSpacer} />
         </View>
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0074FF" />
-          <Text className="text-gray-500 mt-4">Loading notifications...</Text>
+          <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-10 pb-4">
+      <View style={styles.header}>
         <TouchableOpacity 
           onPress={handlePreviousPage}
-          className="p-2 rounded-full"
+          style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         
         {/* Centered Title and Badge */}
-        <View className="flex-1 items-center">
-          <View className="flex-row items-center">
-            <Text className="text-lg font-semibold">Notifications</Text>
+        <View style={styles.headerCenter}>
+          <View style={styles.titleRow}>
+            <Text style={styles.headerTitle}>Notifications</Text>
             {/* {unreadCount > 0 && (
-              <View className="ml-2 bg-red-500 rounded-full px-2 py-1">
-                <Text className="text-white text-xs font-bold">
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
                   {unreadCount}
                 </Text>
               </View>
@@ -198,15 +200,15 @@ export default function Notifications() {
                 console.warn('Error marking all notifications as read:', error);
               }
             }}
-            className="p-2"
+            style={styles.markAllButton}
           >
-            <Text className="text-blue-600 text-sm font-medium">Mark All Read</Text>
+            <Text style={styles.markAllText}>Mark All Read</Text>
           </TouchableOpacity>
         )} */}
       </View>
 
       {/* Notifications List */}
-      <View className="flex-1 px-4">
+      <View style={styles.listContainer}>
         {notifications && notifications.length > 0 ? (
           <FlatList
             data={notifications}
@@ -267,4 +269,168 @@ export default function Notifications() {
     </View>
     );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40,
+  },
+  badge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  markAllButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  markAllText: {
+    color: '#3B82F6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  notificationItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  notificationItemRead: {
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+  },
+  notificationItemUnread: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  notificationTextContainer: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  notificationTitleRead: {
+    color: '#6B7280',
+  },
+  notificationTitleUnread: {
+    color: '#111827',
+  },
+  notificationText: {
+    fontSize: 14,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  notificationTextRead: {
+    color: '#9CA3AF',
+  },
+  notificationTextUnread: {
+    color: '#4B5563',
+  },
+  notificationDate: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6',
+    marginLeft: 8,
+    marginTop: 4,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#6B7280',
+    fontSize: 14,
+  },
+});
 

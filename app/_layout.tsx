@@ -2,11 +2,11 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from 'expo-status-bar';
-import { Platform, useColorScheme as useNativeColorScheme, ScrollView, View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { Platform, ScrollView, View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import "./global.css";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Device from 'expo-device';
@@ -39,12 +39,6 @@ export const NoScrollbarScrollView = ({ children, ...props }: React.ComponentPro
     {children}
   </ScrollView>
 );
-
-// Define a local useColorScheme hook
-function useColorScheme(): 'light' | 'dark' {
-  const nativeColorScheme = useNativeColorScheme();
-  return nativeColorScheme ?? 'light';
-}
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
@@ -196,7 +190,6 @@ async function registerForPushNotificationsAsync() {
 
 function RootLayoutWithAuth() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
-  const colorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [isTryingToReconnect, setIsTryingToReconnect] = useState(false);
@@ -350,7 +343,7 @@ function RootLayoutWithAuth() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DefaultTheme}>
         <LoadingProvider>
           <NotificationProvider>
             <ConnectionStatus />
@@ -363,7 +356,7 @@ function RootLayoutWithAuth() {
             <PerformanceMonitor visible={__DEV__} />
           </NotificationProvider>
         </LoadingProvider>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
       </ThemeProvider>
     </SafeAreaProvider>
   );

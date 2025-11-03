@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Platform, RefreshControl } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -62,7 +62,122 @@ const normalizeUser = (user: any): UserDetails => ({
   userImg: user.userImg,
   gender: user.gender || '',
   dob: user.dob || '',
-  pin: user.pin || '', // Ensure pin is always present
+    pin: user.pin || '', // Ensure pin is always present
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 32,
+        paddingBottom: 16,
+        backgroundColor: '#FFFFFF',
+    },
+    headerSpacer: {
+        width: 32,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    profileSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    profileImageContainer: {
+        borderRadius: 999,
+        overflow: 'hidden',
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    profileImage: {
+        width: 80,
+        height: 80,
+    },
+    profileImagePlaceholder: {
+        width: 80,
+        height: 80,
+        backgroundColor: '#0072CE',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    profileImagePlaceholderText: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: 'white',
+    },
+    profileImageLoading: {
+        width: 80,
+        height: 80,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cameraButton: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#928FFF',
+        borderRadius: 999,
+        padding: 4,
+    },
+    inputContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: 12,
+        marginTop: 16,
+        paddingHorizontal: 16,
+    },
+    inputGroup: {
+        flexDirection: 'column',
+        gap: 8,
+        width: '100%',
+    },
+    inputLabel: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#272636',
+    },
+    inputWrapper: {
+        backgroundColor: '#F4F4F5',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14.4,
+        borderRadius: 8,
+    },
+    input: {
+        color: '#272636',
+        flex: 1,
+    },
+    saveButton: {
+        backgroundColor: '#2563EB',
+        marginHorizontal: 16,
+        marginTop: 32,
+        marginBottom: 40,
+        paddingVertical: 12,
+        borderRadius: 6,
+        alignItems: 'center',
+    },
+    saveButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    loadingBanner: {
+        padding: 8,
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#A9A8AF',
+    },
 });
 
 function MyAccount() {
@@ -245,159 +360,165 @@ function MyAccount() {
     };
 
     return (
-        <ScrollView style={{flex:1, backgroundColor: '#fff'}} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
             <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
             
             {/* Header */}
-            <View className="flex-row items-center justify-between px-4 pt-8 pb-4 bg-white">
+            <View style={styles.header}>
                 <TouchableOpacity onPress={handlePreviousPage}>
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-                <Text className="text-lg font-semibold">My Account</Text>
-                <View className="w-8" />
+                    <Ionicons name="arrow-back" size={24} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>My Account</Text>
+                <View style={styles.headerSpacer} />
             </View>
 
                     {/* Profile Section */}
-                    <View className="items-center mb-6">
-                      <View className="relative">
-                        <View className="rounded-full overflow-hidden bg-white justify-center items-center" style={{
-                          borderRadius: getResponsiveSize(40),
-                          width: getResponsiveSize(80),
-                          height: getResponsiveSize(80)
-                        }}>
-                          {uploadingImage ? (
-                            <View style={{
-                              width: getResponsiveSize(80),
-                              height: getResponsiveSize(80),
-                              backgroundColor: '#E5E7EB',
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}>
-                              <ActivityIndicator size="large" color="#0052CC" />
+                    <View style={styles.profileSection}>
+                        <View style={{ position: 'relative' }}>
+                            <View style={[
+                                styles.profileImageContainer,
+                                {
+                                    borderRadius: getResponsiveSize(40),
+                                    width: getResponsiveSize(80),
+                                    height: getResponsiveSize(80)
+                                }
+                            ]}>
+                                {uploadingImage ? (
+                                    <View style={[
+                                        styles.profileImageLoading,
+                                        {
+                                            width: getResponsiveSize(80),
+                                            height: getResponsiveSize(80)
+                                        }
+                                    ]}>
+                                        <ActivityIndicator size="large" color="#0052CC" />
+                                    </View>
+                                ) : userDetails?.userImg ? (
+                                    <Image
+                                        source={{ uri: userDetails.userImg }}
+                                        style={{ 
+                                            width: getResponsiveSize(80), 
+                                            height: getResponsiveSize(80) 
+                                        }}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <View style={[
+                                        styles.profileImagePlaceholder,
+                                        {
+                                            width: getResponsiveSize(80),
+                                            height: getResponsiveSize(80)
+                                        }
+                                    ]}>
+                                        <Text style={[
+                                            styles.profileImagePlaceholderText,
+                                            {
+                                                fontSize: getResponsiveSize(32)
+                                            }
+                                        ]}>
+                                            {userDetails?.firstname ? userDetails.firstname.charAt(0).toUpperCase() : 'U'}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
-                          ) : userDetails?.userImg ? (
-                            <Image
-                              source={{ uri: userDetails.userImg }}
-                              style={{ 
-                                width: getResponsiveSize(80), 
-                                height: getResponsiveSize(80) 
-                              }}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View style={{
-                              width: getResponsiveSize(80),
-                              height: getResponsiveSize(80),
-                              backgroundColor: '#0072CE',
-                              justifyContent: 'center',
-                              alignItems: 'center'
-                            }}>
-                              <Text style={{
-                                fontSize: getResponsiveSize(32),
-                                fontWeight: 'bold',
-                                color: 'white'
-                              }}>
-                                {userDetails?.firstname ? userDetails.firstname.charAt(0).toUpperCase() : 'U'}
-                              </Text>
-                            </View>
-                          )}
+                            <TouchableOpacity 
+                                style={[
+                                    styles.cameraButton,
+                                    {
+                                        padding: getResponsiveSize(4),
+                                        borderRadius: getResponsiveSize(12)
+                                    }
+                                ]}
+                                onPress={handleImageUpload}
+                                disabled={uploadingImage}
+                            >
+                                <Ionicons name="camera" size={getResponsiveSize(18)} color="white" />
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity 
-                          className="absolute bottom-0 right-0 bg-[#928FFF] rounded-full p-1"
-                          style={{
-                            padding: getResponsiveSize(4),
-                            borderRadius: getResponsiveSize(12)
-                          }}
-                          onPress={handleImageUpload}
-                          disabled={uploadingImage}
-                        >
-                          <Ionicons name="camera" size={getResponsiveSize(18)} color="white" />
-                        </TouchableOpacity>
-                      </View>
                     </View>
 
                     {/* Input Fields */}
-                    <View className="flex flex-col items-start gap-3 mt-4 px-4">
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">First Name</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                    <View style={styles.inputContainer}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>First Name</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.firstname || ''}
+                                    style={styles.input}
+                                    value={userDetails?.firstname || ''}
                                     editable={false}
                                     placeholder="First Name"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Last Name</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Last Name</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.lastname || ''}
+                                    style={styles.input}
+                                    value={userDetails?.lastname || ''}
                                     editable={false}
                                     placeholder="Last Name"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Business Name</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Business Name</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.business || ''}
+                                    style={styles.input}
+                                    value={userDetails?.business || ''}
                                     editable={false}
                                     placeholder="Business Name"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Email Address</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Email Address</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.email || ''}
+                                    style={styles.input}
+                                    value={userDetails?.email || ''}
                                     editable={false}
                                     placeholder="Email Address"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Phone Number</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Phone Number</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.phonenumber || ''}
+                                    style={styles.input}
+                                    value={userDetails?.phonenumber || ''}
                                     editable={false}
                                     placeholder="Phone Number"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Date of Birth</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Date of Birth</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
+                                    style={styles.input}
                                     value={userDetails?.dob ? new Date(userDetails.dob).toLocaleDateString() : ''}
                                     editable={false}
                                     placeholder="Date of Birth"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
 
                             {showDatePicker && (
@@ -411,17 +532,17 @@ function MyAccount() {
                             )}
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Gender</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Gender</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
+                                    style={styles.input}
                                     value={gender || userDetails?.gender || ''} 
                                     editable={false}
                                     placeholder="Gender"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
 
                             {showGenderPicker && (
@@ -441,39 +562,39 @@ function MyAccount() {
                             )}
                         </View>
 
-                        <View className='flex flex-col gap-2 w-full'>
-                            <Text className="text-base font-medium text-[#272636]">Address</Text>
-                            <View className='bg-[#F4F4F5] flex flex-row items-center justify-between px-[1rem] py-[0.9rem] rounded-lg'>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Address</Text>
+                            <View style={styles.inputWrapper}>
                                 <TextInput
-                                    className="text-[#272636] flex-1"
-                            value={userDetails?.address || ''}
+                                    style={styles.input}
+                                    value={userDetails?.address || ''}
                                     editable={false}
                                     placeholder="Address"
                                     placeholderTextColor="#A9A8AF"
                                 />
-                        <Image source={require('../assets/images/lock.png')} />
+                                <Image source={require('../assets/images/lock.png')} />
                             </View>
                         </View>
                     </View>
 
                     {/* Save Button */}
                     <TouchableOpacity 
-                        className="bg-blue-600 mx-4 mt-8 mb-10 py-3 rounded-md items-center"
+                        style={styles.saveButton}
                         onPress={handleSaveProfile}
                         disabled={loading}
                     >
                         {loading ? (
                             <ActivityIndicator size="small" color="white" />
                         ) : (
-                            <Text className="text-white font-semibold">Back to Dashboard</Text>
+                            <Text style={styles.saveButtonText}>Back to Dashboard</Text>
                         )}
                     </TouchableOpacity>
 
             {/* Show error or loading as a banner, not as a full screen */}
             {loading && (
-                <View style={{padding: 8, alignItems: 'center'}}>
+                <View style={styles.loadingBanner}>
                     <ActivityIndicator size="small" color="#0052CC" />
-                    <Text style={{color:'#A9A8AF'}}>Loading...</Text>
+                    <Text style={styles.loadingText}>Loading...</Text>
                 </View>
             )}
         </ScrollView>

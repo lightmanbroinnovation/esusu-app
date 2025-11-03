@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   TextInput,
   SectionList,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -113,7 +114,35 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
   };
 
   // Determine text color based on transaction type
-  const amountColorClass = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
+  const amountColor = type === 'withdrawal' ? '#EF4444' : '#16A34A';
+
+  const transactionStyles = StyleSheet.create({
+    item: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+    },
+    itemLeft: {
+      flex: 1,
+      paddingRight: 16,
+    },
+    itemTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#1F2937',
+    },
+    itemSubtitle: {
+      color: '#6B7280',
+      fontSize: 14,
+    },
+    itemAmount: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+  });
 
   const handlePress = () => {
     // Navigate to receipt page with transaction data
@@ -127,31 +156,133 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
 
   return (
     <TouchableOpacity
-      className="flex-row justify-between items-center py-4 border-b border-gray-200"
+      style={transactionStyles.item}
       onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View className="flex-1 pr-4">
+      <View style={transactionStyles.itemLeft}>
         <Text
-          className="text-base font-semibold text-gray-800"
+          style={transactionStyles.itemTitle}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {getTransactionTitle()}
         </Text>
         <Text
-          className="text-gray-500 text-sm"
+          style={transactionStyles.itemSubtitle}
           numberOfLines={1}
         >
           {getTransactionSubtitle()}
         </Text>
       </View>
-      <Text className={`text-base font-bold ${amountColorClass}`}>
+      <Text style={[transactionStyles.itemAmount, { color: amountColor }]}>
         {formattedAmount()}
       </Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 999,
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 32,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchBar: {
+    backgroundColor: '#F0F8FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flex: 1,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  sectionHeader: {
+    color: '#9CA3AF',
+    fontSize: 18,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#4B5563',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    marginTop: 8,
+    color: '#EF4444',
+  },
+  goBackButton: {
+    marginTop: 16,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  goBackButtonText: {
+    color: '#FFFFFF',
+  },
+  emptyContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 40,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  emptyTitle: {
+    color: '#9CA3AF',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+});
 
 export default function ContributorTransactionsScreen() {
   const router = useRouter();
@@ -281,7 +412,7 @@ export default function ContributorTransactionsScreen() {
   // Render section header
   // Show date and time in section header (Today, Yesterday, or MM/DD/YYYY)
   const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-    <Text className="text-gray-400 text-lg mt-2 mb-2">
+    <Text style={styles.sectionHeader}>
       {getDateHeading(section.title)}
     </Text>
   );
@@ -296,11 +427,11 @@ export default function ContributorTransactionsScreen() {
 
   // Render search component
   const renderSearchHeader = () => (
-    <View className="flex-row items-center mb-4">
-      <View className="bg-[#F0F8FF] flex-row items-center px-4 py-2 rounded-xl flex-1">
+    <View style={styles.searchContainer}>
+      <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#A0A0A0" />
         <TextInput
-          className="flex-1 ml-2"
+          style={styles.searchInput}
           placeholder="Search by name or amount..."
           placeholderTextColor="#A0A0A0"
           value={searchQuery}
@@ -318,45 +449,45 @@ export default function ContributorTransactionsScreen() {
 
   // Render empty state
   const renderEmptyComponent = () => (
-    <View className="bg-white py-10 rounded-xl mt-2">
-      <Text className="text-gray-400 text-lg font-medium text-center">No Transactions</Text>
-      <Text className="text-gray-400 text-sm text-center mt-2 px-4">
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyTitle}>No Transactions</Text>
+      <Text style={styles.emptyText}>
         No transactions found for this contributor.
       </Text>
     </View>
   );
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <SafeAreaView className="flex-1">
-        <View className="p-4 flex-1 ">
-          <View className="flex-row items-center mb-4">
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <View style={styles.header}>
             <TouchableOpacity 
               onPress={navigateBack}
-              className=" p-2 rounded-full mr-4"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-xl font-bold flex-1 text-center mr-8">
+            <Text style={styles.headerTitle}>
               Transactions
             </Text>
           </View>
 
           {loading && !refreshing ? (
-            <View className="flex-1 justify-center items-center">
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#0066FF" />
-              <Text className="mt-2 text-gray-600">Loading transactions...</Text>
+              <Text style={styles.loadingText}>Loading transactions...</Text>
             </View>
           ) : error && transactions.length === 0 && !isConnected ? (
-            <View className="flex-1 justify-center items-center">
+            <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={48} color="red" />
-              <Text className="mt-2 text-red-500">{error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity 
-                className="mt-4 bg-blue-600 px-4 py-2 rounded-lg"
+                style={styles.goBackButton}
                 onPress={navigateBack}
               >
-                <Text className="text-white">Go Back</Text>
+                <Text style={styles.goBackButtonText}>Go Back</Text>
               </TouchableOpacity>
             </View>
           ) : (

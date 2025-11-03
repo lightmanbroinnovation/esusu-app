@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ViewStyle, 
+  TextStyle, 
+  TouchableOpacityProps 
+} from 'react-native';
 import { Transaction } from './index';
 
 interface TransactionItemProps {
@@ -46,22 +54,58 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onPress 
   };
   
   // Determine text color based on transaction type
-  const amountColor = type === 'withdrawal' ? 'text-red-500' : 'text-green-500';
+  const amountColor = type === 'withdrawal' ? styles.amountWithdrawal : styles.amountDeposit;
   
   return (
     <TouchableOpacity 
-      className="flex-row justify-between items-center py-4 border-b border-gray-100"
+      style={styles.container}
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      <View className="flex-1 pr-4">
-        <Text className="text-lg font-semibold text-gray-800">{getTransactionTitle()}</Text>
-        <Text className="text-gray-500">{getTransactionSubtitle()}</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>{getTransactionTitle()}</Text>
+        <Text style={styles.subtitle}>{getTransactionSubtitle()}</Text>
       </View>
-      <Text className={`text-lg font-bold ${amountColor}`}>
+      <Text style={[styles.amount, amountColor]}>
         {formattedAmount()}
       </Text>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  content: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  amount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  amountWithdrawal: {
+    color: '#EF4444',
+  },
+  amountDeposit: {
+    color: '#10B981',
+  },
+});
 
 export default TransactionItem; 

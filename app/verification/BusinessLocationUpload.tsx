@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image, FlatList, Platform, TextInput, ActivityIndicator, Modal, ScrollView as RNScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image, FlatList, Platform, TextInput, ActivityIndicator, Modal, ScrollView as RNScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { uploadBusinessLocation } from '../../services/api';
 // @ts-ignore
@@ -184,81 +184,86 @@ const BusinessLocationUpload = ({
   };
   
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1">
-        <View className="p-6">
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.content}>
           <TouchableOpacity 
-            className="absolute right-6 top-6 bg-gray-100 p-2 rounded-full z-10"
+            style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons name="close" size={24} color="#000" />
+            <Ionicons name="close" size={24} color="#000000" />
           </TouchableOpacity>
 
-          <View className="mt-16 mb-8">
-            <Text className="text-[#0052CC] text-3xl font-bold text-center">
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>
               Business Location
             </Text>
-            <Text className="text-gray-600 text-base text-center mt-2 px-4">
+            <Text style={styles.subtitle}>
               Upload clear photos of your shop to verify your business location.
             </Text>
           </View>
 
-          {/* Instructions/Notes moved to top */}
-          <View className="mt-4 mb-8">
-            <Text className="text-gray-700 mb-6 text-center">
+          {/* Instructions/Notes */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { marginBottom: 24 }]}>
               Please take photos that clearly show:
             </Text>
-            <View className="space-y-4">
-              <View className="flex-row items-center">
-                <View className="bg-[#007BFF] rounded-full w-8 h-8 items-center justify-center mr-3">
-                  <Text className="text-white font-bold">1</Text>
+            <View style={{ gap: 16 }}>
+              <View style={styles.instructionItem}>
+                <View style={styles.numberBadge}>
+                  <Text style={styles.numberText}>1</Text>
                 </View>
-                <Text className="text-gray-700 flex-1">The front of your business with signage</Text>
+                <Text style={styles.instructionText}>The front of your business with signage</Text>
               </View>
-              <View className="flex-row items-center">
-                <View className="bg-[#007BFF] rounded-full w-8 h-8 items-center justify-center mr-3">
-                  <Text className="text-white font-bold">2</Text>
+              <View style={styles.instructionItem}>
+                <View style={styles.numberBadge}>
+                  <Text style={styles.numberText}>2</Text>
                 </View>
-                <Text className="text-gray-700 flex-1">Inside your shop or business premises</Text>
+                <Text style={styles.instructionText}>Inside your shop or business premises</Text>
               </View>
-              <View className="flex-row items-center">
-                <View className="bg-[#007BFF] rounded-full w-8 h-8 items-center justify-center mr-3">
-                  <Text className="text-white font-bold">3</Text>
+              <View style={styles.instructionItem}>
+                <View style={styles.numberBadge}>
+                  <Text style={styles.numberText}>3</Text>
                 </View>
-                <Text className="text-gray-700 flex-1">Any official business registration displayed</Text>
+                <Text style={styles.instructionText}>Any official business registration displayed</Text>
               </View>
             </View>
           </View>
 
-          <View className="mt-4 mb-8">
-            <Text className="text-gray-700 mb-4 font-semibold">Upload Business Location Photo</Text>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { textAlign: 'left', marginBottom: 16 }]}>Upload Business Location Photo</Text>
+            
             {/* State Dropdown */}
             <TouchableOpacity
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50 flex-row justify-between items-center"
+              style={styles.dropdownButton}
               onPress={() => setShowStateDropdown(true)}
             >
-              <Text className={state ? "text-gray-800" : "text-gray-400"}>{state || 'Select the state'}</Text>
-              <Ionicons name={'chevron-down'} size={20} color="#9B9B9B" />
+              <Text style={state ? styles.dropdownButtonText : [styles.dropdownButtonText, styles.dropdownButtonTextPlaceholder]}>
+                {state || 'Select the state'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} style={styles.dropdownIcon} />
             </TouchableOpacity>
+            
             <Modal
               visible={showStateDropdown}
               transparent
               animationType="fade"
               onRequestClose={() => setShowStateDropdown(false)}
             >
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ backgroundColor: 'white', borderRadius: 12, width: '85%', maxHeight: 400, padding: 16 }}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
                   <TextInput
                     placeholder="Search state..."
                     value={stateSearch}
                     onChangeText={setStateSearch}
-                    style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, marginBottom: 12, padding: 8 }}
+                    style={styles.searchInput}
+                    placeholderTextColor="#9CA3AF"
                   />
-                  <RNScrollView style={{ maxHeight: 300 }}>
+                  <RNScrollView style={styles.dropdownList}>
                     {states.filter(s => s.toLowerCase().includes(stateSearch.toLowerCase())).map((s) => (
                       <TouchableOpacity
                         key={s}
-                        style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}
+                        style={styles.dropdownItem}
                         onPress={() => {
                           setState(s);
                           setShowStateDropdown(false);
@@ -266,90 +271,94 @@ const BusinessLocationUpload = ({
                           fetchCities(s);
                         }}
                       >
-                        <Text style={{ fontSize: 16, color: '#222' }}>{s}</Text>
+                        <Text style={styles.dropdownItemText}>{s}</Text>
                       </TouchableOpacity>
                     ))}
                   </RNScrollView>
-                  <TouchableOpacity onPress={() => setShowStateDropdown(false)} style={{ marginTop: 12, alignSelf: 'flex-end' }}>
-                    <Text style={{ color: '#0072CE', fontWeight: 'bold' }}>Close</Text>
+                  <TouchableOpacity onPress={() => setShowStateDropdown(false)} style={styles.modalCloseButton}>
+                    <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </Modal>
+
             {/* City Dropdown */}
             <TouchableOpacity
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50 flex-row justify-between items-center mt-2"
+              style={[styles.dropdownButton, { marginTop: 8, opacity: state ? 1 : 0.6 }]}
               onPress={() => state && setShowCityDropdown(true)}
               disabled={!state}
             >
-              <Text className={city ? "text-gray-800" : "text-gray-400"}>{city || 'Select the city'}</Text>
-              <Ionicons name={'chevron-down'} size={20} color="#9B9B9B" />
+              <Text style={city ? styles.dropdownButtonText : [styles.dropdownButtonText, styles.dropdownButtonTextPlaceholder]}>
+                {city || 'Select the city'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} style={styles.dropdownIcon} />
             </TouchableOpacity>
+
             <Modal
               visible={showCityDropdown}
               transparent
               animationType="fade"
               onRequestClose={() => setShowCityDropdown(false)}
             >
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ backgroundColor: 'white', borderRadius: 12, width: '85%', maxHeight: 400, padding: 16 }}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
                   <TextInput
                     placeholder="Search city..."
                     value={citySearch}
                     onChangeText={setCitySearch}
-                    style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, marginBottom: 12, padding: 8 }}
+                    style={styles.searchInput}
+                    placeholderTextColor="#9CA3AF"
                   />
-                  <RNScrollView style={{ maxHeight: 300 }}>
+                  <RNScrollView style={styles.dropdownList}>
                     {cities.filter(c => c.toLowerCase().includes(citySearch.toLowerCase())).map((c) => (
                       <TouchableOpacity
                         key={c}
-                        style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}
+                        style={styles.dropdownItem}
                         onPress={() => {
                           setCity(c);
                           setShowCityDropdown(false);
                           setCitySearch('');
                         }}
                       >
-                        <Text style={{ fontSize: 16, color: '#222' }}>{c}</Text>
+                        <Text style={styles.dropdownItemText}>{c}</Text>
                       </TouchableOpacity>
                     ))}
                   </RNScrollView>
-                  <TouchableOpacity onPress={() => setShowCityDropdown(false)} style={{ marginTop: 12, alignSelf: 'flex-end' }}>
-                    <Text style={{ color: '#0072CE', fontWeight: 'bold' }}>Close</Text>
+                  <TouchableOpacity onPress={() => setShowCityDropdown(false)} style={styles.modalCloseButton}>
+                    <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             </Modal>
+
             {/* Notes input */}
             <TextInput
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50 mt-2"
+              style={styles.notesInput}
               placeholder="Notes (optional)"
+              placeholderTextColor="#9CA3AF"
               value={notes}
               onChangeText={setNotes}
             />
+
             {/* Image preview and upload button */}
             {selectedImage && (
-              <Text className="text-green-700 text-xs mt-2">Selected: {selectedImage.name || 'Image selected'}</Text>
+              <Text style={styles.selectedFileText}>
+                Selected: {selectedImage.name || 'Image selected'}
+              </Text>
             )}
+
             <TouchableOpacity
-              className="flex-row items-center justify-center bg-[#E5F1FF] py-6 rounded-xl mt-10"
-              onPress={() => {
-                if (Platform.OS === 'web') {
-                  if (fileInputRef.current) {
-                    (fileInputRef.current as HTMLInputElement).click();
-                  }
-                } else {
-                  alert('Image upload for mobile not implemented');
-                }
-              }}
+              style={styles.uploadButton}
+              onPress={handleTakePhoto}
             >
-              <View className="bg-[#007BFF] rounded-full w-12 h-12 items-center justify-center mr-4">
+              <View style={styles.uploadIconContainer}>
                 <Ionicons name="camera" size={24} color="white" />
               </View>
-              <Text className="text-[#007BFF] text-xl font-medium">
+              <Text style={styles.uploadButtonText}>
                 Take Photo
               </Text>
             </TouchableOpacity>
+
             {Platform.OS === 'web' && (
               <input
                 ref={fileInputRef}
@@ -359,32 +368,32 @@ const BusinessLocationUpload = ({
                 onChange={handleFileChange}
               />
             )}
+
             <TouchableOpacity
-              className="bg-[#007BFF] py-3 rounded-lg mt-4"
+              style={styles.submitButton}
               onPress={handleUpload}
               disabled={isUploading}
             >
               {isUploading ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text className="text-white text-center font-semibold">Upload</Text>
+                <Text style={styles.submitButtonText}>Upload</Text>
               )}
             </TouchableOpacity>
+
             {successMessage && (
-              <View style={{ backgroundColor: '#D1FAE5', borderRadius: 8, padding: 12, marginTop: 16 }}>
-                <Text style={{ color: '#065F46', fontWeight: 'bold', textAlign: 'center' }}>{successMessage}</Text>
+              <View style={styles.successMessage}>
+                <Text style={styles.successMessageText}>{successMessage}</Text>
               </View>
             )}
           </View>
 
           {existingPhotos.length > 0 && (
             <TouchableOpacity 
-              className="py-4 rounded-xl mt-6 bg-[#007BFF]"
+              style={styles.doneButton}
               onPress={onClose}
             >
-              <Text className="text-white text-center text-lg font-medium">
-                Done
-              </Text>
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -393,4 +402,210 @@ const BusinessLocationUpload = ({
   );
 };
 
-export default BusinessLocationUpload; 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white'
+  },
+  scrollView: {
+    flex: 1
+  },
+  content: {
+    padding: 24
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 24,
+    top: 24,
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 20,
+    zIndex: 10
+  },
+  modalCloseButton: {
+    marginTop: 12,
+    alignSelf: 'flex-end'
+  },
+  headerContainer: {
+    marginTop: 64,
+    marginBottom: 32
+  },
+  title: {
+    color: '#0052CC',
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  subtitle: {
+    color: '#6B7280',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16
+  },
+  section: {
+    marginTop: 16,
+    marginBottom: 32
+  },
+  sectionTitle: {
+    color: '#374151',
+    marginBottom: 24,
+    textAlign: 'center',
+    fontSize: 16
+  },
+  instructionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  numberBadge: {
+    backgroundColor: '#007BFF',
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12
+  },
+  numberText: {
+    color: 'white',
+    fontWeight: 'bold'
+  },
+  instructionText: {
+    color: '#374151',
+    flex: 1,
+    fontSize: 16
+  },
+  inputLabel: {
+    color: '#374151',
+    marginBottom: 8,
+    fontWeight: '600'
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  dropdownButtonText: {
+    color: '#111827'
+  },
+  dropdownButtonTextPlaceholder: {
+    color: '#9CA3AF'
+  },
+  dropdownIcon: {
+    color: '#9B9B9B'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    width: '85%',
+    maxHeight: 400,
+    padding: 16
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    marginBottom: 12,
+    padding: 8
+  },
+  dropdownList: {
+    maxHeight: 300
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0'
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#222222'
+  },
+  closeButtonText: {
+    color: '#0072CE',
+    fontWeight: 'bold'
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    marginTop: 8
+  },
+  selectedFileText: {
+    color: '#065F46',
+    fontSize: 12,
+    marginTop: 8
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E5F1FF',
+    paddingVertical: 24,
+    borderRadius: 16,
+    marginTop: 40
+  },
+  uploadIconContainer: {
+    backgroundColor: '#007BFF',
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16
+  },
+  uploadButtonText: {
+    color: '#007BFF',
+    fontSize: 20,
+    fontWeight: '500'
+  },
+  submitButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16
+  },
+  submitButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: '600'
+  },
+  successMessage: {
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16
+  },
+  successMessageText: {
+    color: '#065F46',
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  doneButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginTop: 24,
+    backgroundColor: '#007BFF'
+  },
+  doneButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+});
+
+export default BusinessLocationUpload;

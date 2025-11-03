@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Vibration, ScrollView, Alert, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -7,6 +7,142 @@ import { transferToBank } from '../../../services/api';
 // @ts-ignore
 import { sendNotification, NotificationTemplates } from '../../services/notificationService';
 import { useBackButtonHandler } from '../../utils/backButtonHandler';
+
+const styles = StyleSheet.create({
+  // Layout
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 16,
+    justifyContent: 'space-between'
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
+  },
+  content: {
+    alignItems: 'center',
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subheading: {
+    color: '#6B7280',
+    marginBottom: 48,
+    textAlign: 'center',
+  },
+  
+  // Pin Input
+  pinContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    textAlign: 'center',
+    marginRight: 8,
+    fontSize: 20,
+    fontWeight: 'bold',
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  
+  // Keypad
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+    rowGap: 24,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  keypadButton: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  keypadText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+  
+  // Buttons
+  submitButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  
+  // Messages
+  errorMessage: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  successMessage: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  messageText: {
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#B91C1C',
+  },
+  successText: {
+    color: '#166534',
+  },
+});
 
 export default function EnterTransactionPinScreen() {
   const router = useRouter();
@@ -35,17 +171,19 @@ export default function EnterTransactionPinScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-6">
+      <View style={styles.pinContainer}>
         {[0, 1, 2, 3].map((i) => (
           <TextInput
             key={i}
             value={pin[i] || ""}
             editable={false}
-            className="w-12 h-12 text-center mr-2 p-1 text-xl text-primaryText font-bold border rounded-lg"
-            style={{
-              borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
-            }}
+            style={[
+              styles.pinInput,
+              {
+                borderColor: i < pin.length ? "#0072CE" : "#ccc",
+                backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
+              }
+            ]}
           />
         ))}
       </View>
@@ -55,28 +193,28 @@ export default function EnterTransactionPinScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
     return (
-      <View className="mt-10 space-y-8 w-full">
+      <View style={styles.keypadContainer}>
         {Array(3)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-between">
+            <View key={rowIndex} style={styles.keypadRow}>
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 <TouchableOpacity
                   key={key}
                   onPress={() => handleKeyPress(key)}
-                  className="w-20 h-20 bg-white justify-center items-center"
+                  style={styles.keypadButton}
                 >
-                  <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text>
+                  <Text style={styles.keypadText}>{key}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           ))}
-        {/* Last row with "x" and "0" */}
-        <View className="flex-row justify-between">
-          {/* Cancel Button */}
+        {/* Last row with backspace and "0" */}
+        <View style={styles.keypadRow}>
+          {/* Backspace Button */}
           <TouchableOpacity
             onPress={handleBackspace}
-            className="w-20 h-20 bg-white justify-center items-center"
+            style={styles.keypadButton}
           >
             <Ionicons name="backspace-outline" size={30} color="#0072CE" />
           </TouchableOpacity>
@@ -84,13 +222,13 @@ export default function EnterTransactionPinScreen() {
           {/* Zero Button */}
           <TouchableOpacity
             onPress={() => handleKeyPress("0")}
-            className="w-20 h-20 bg-white justify-center items-center"
+            style={styles.keypadButton}
           >
-            <Text className="text-3xl font-semibold text-[#0072CE]">0</Text>
+            <Text style={styles.keypadText}>0</Text>
           </TouchableOpacity>
 
           {/* Placeholder for alignment */}
-          <View className="w-20 h-20" />
+          <View style={styles.keypadButton} />
         </View>
       </View>
     );
@@ -150,58 +288,66 @@ export default function EnterTransactionPinScreen() {
 
   return (
     <ScrollView 
-      className="flex-1 bg-white"
+      style={styles.scrollView}
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
     >
-      <View className="flex-1 px-6 justify-between pt-10 pb-4">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mt-6">
-        <TouchableOpacity
-          className="flex-row items-center"
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={28} />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-center flex-1">Enter Transaction Pin</Text>
-      </View>
-      {error && (
-        <View className="bg-red-100 border border-red-400 rounded-lg p-4 mt-6 mb-2">
-          <Text className="text-red-700 text-center font-semibold">{error}</Text>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={28} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Enter Transaction Pin</Text>
+          <View style={{ width: 28 }} /> {/* Spacer for alignment */}
         </View>
-      )}
-      {success && (
-        <View className="bg-green-100 border border-green-400 rounded-lg p-4 mt-6 mb-2">
-          <Text className="text-green-700 text-center font-semibold">Transfer successful! Redirecting to dashboard...</Text>
-        </View>
-      )}
-      <View className="items-center">
-        <Text className="text-2xl font-bold text-primaryText mt-4 mb-2">
-          Enter your Transaction Pin
-        </Text>
-        <Text className="text-gray-500 mb-12">
-          Please input your 4-digit transaction pin to continue.
-        </Text>
-        {renderPinInputs()}
-      </View>
-      {renderKeypad()}
-      <View className="pb-4">
-        <TouchableOpacity
-          className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Text className="text-white text-lg mr-2 font-semibold">
-              Continue
+
+        {error && (
+          <View style={[styles.errorMessage, { marginTop: 24 }]}>
+            <Text style={[styles.messageText, styles.errorText]}>{error}</Text>
+          </View>
+        )}
+
+        {success && (
+          <View style={[styles.successMessage, { marginTop: 24 }]}>
+            <Text style={[styles.messageText, styles.successText]}>
+              Transfer successful! Redirecting to dashboard...
             </Text>
-          )}
-          {!loading && <MaterialIcons name="arrow-forward" size={18} color="white" />}
-        </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.content}>
+          <Text style={styles.heading}>
+            Enter your Transaction Pin
+          </Text>
+          <Text style={styles.subheading}>
+            Please input your 4-digit transaction pin to continue.
+          </Text>
+          {renderPinInputs()}
+        </View>
+
+        {renderKeypad()}
+
+        <View style={{ paddingBottom: 16 }}>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.submitButtonText}>
+                Continue
+              </Text>
+            )}
+            {!loading && <Ionicons name="arrow-forward" size={24} color="white" />}
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
     </ScrollView>
   );
-} 
+}

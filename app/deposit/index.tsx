@@ -11,6 +11,13 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+  TextInputProps,
+  ScrollViewProps,
+  ImageSourcePropType
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,6 +50,171 @@ type GroupedContributors = {
 type ApiResponse = GroupedContributors & {
   status?: string;
 };
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+  },
+  offlineContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  offlineText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  backButton: {
+    padding: 8,
+  },
+  titleContainer: {
+    marginTop: 32,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#0072CE',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4F4F4F',
+    lineHeight: 22,
+  },
+  inputContainer: {
+    marginTop: 32,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#4F4F4F',
+    marginBottom: 8,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  flagImage: {
+    width: 24,
+    height: 18,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#BDBDBD',
+  },
+  phoneInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  errorText: {
+    color: '#EF4444',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  contributorsList: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    maxHeight: 256,
+    overflow: 'hidden',
+  },
+  contributorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E5E7EB',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#6B7280',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  contributorInfo: {
+    flex: 1,
+  },
+  contributorName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  contributorPhone: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 16,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  continueButtonDisabled: {
+    backgroundColor: 'rgba(0, 114, 206, 0.5)',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+});
 
 export default function DepositScreen() {
   const router = useRouter();
@@ -251,8 +423,8 @@ export default function DepositScreen() {
 
   if (!networkAvailable && !phone) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>No network. Please connect to the internet to load deposit page.</Text>
+      <View style={styles.offlineContainer}>
+        <Text style={styles.offlineText}>No network. Please connect to the internet to load deposit page.</Text>
       </View>
     );
   }
@@ -260,50 +432,39 @@ export default function DepositScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1"
+      style={styles.keyboardAvoidingView}
     >
       <View
-        className="flex-1 bg-white px-6"
-        style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        }}
+        style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+        <View style={styles.header}>
           <TouchableOpacity
-            className="flex-row items-center"
+            style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={28} />
+            <Ionicons name="arrow-back" size={28} color="#000" />
           </TouchableOpacity>
         </View>
 
-        <View className="mt-8">
-          <Text className="text-[26px] font-semibold text-[#0072CE] mb-2">
-          Deposit Contribution
-          </Text>
-          <Text className="text-base text-[#4F4F4F]">
-          Enter the contributor's registered phone number to retrieve their details
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Deposit Contribution</Text>
+          <Text style={styles.subtitle}>
+            Enter the contributor's registered phone number to retrieve their details
           </Text>
         </View>
 
         {/* Input */}
-        <View className="mt-8">
-          <Text className="text-sm text-[#4F4F4F] mb-2">Phone Number</Text>
-          <View className="flex-row items-center">
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Phone Number</Text>
+          <View style={styles.phoneInputContainer}>
             {/* NG Flag + Code */}
-            <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
+            <View style={styles.countryCodeContainer}>
               <Image
                 source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                style={{
-                  width: 24,
-                  height: 18,
-                  borderRadius: 2,
-                  marginRight: 6,
-                }}
+                style={styles.flagImage}
               />
-              <Text className="text-base text-[#BDBDBD]">NGN</Text>
+              <Text style={styles.countryCodeText}>NGN</Text>
             </View>
 
             {/* Phone input */}
@@ -313,19 +474,19 @@ export default function DepositScreen() {
               maxLength={11}
               value={phone}
               onChangeText={setPhone}
-              className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+              style={styles.phoneInput}
               placeholderTextColor="#BDBDBD"
             />
           </View>
           
           {/* Error message */}
           {error ? (
-            <Text className="text-red-500 mt-2">{error}</Text>
+            <Text style={styles.errorText}>{error}</Text>
           ) : null}
           
           {/* Contributors list */}
           {filteredContributors.length > 0 && (
-            <View className="mt-2 border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+            <View style={styles.contributorsList}>
               {filteredContributors.map((contributor: Contributor, index: number) => {
                 // Skip if contributor is missing required fields
                 if (!contributor) return null;
@@ -336,28 +497,28 @@ export default function DepositScreen() {
                 return (
                   <TouchableOpacity
                     key={contributor._id || `contributor-${index}`}
-                    className="flex-row items-center p-3 border-b border-gray-100 bg-white"
+                    style={styles.contributorItem}
                     onPress={() => handleContributorSelect(contributor)}
                   >
                     {contributor.photo ? (
                       <Image
                         source={{ uri: contributor.photo }}
-                        className="w-10 h-10 rounded-full mr-3"
+                        style={styles.avatarImage}
                         resizeMode="cover"
                       />
                     ) : (
-                      <View className="w-10 h-10 rounded-full bg-gray-200 mr-3 items-center justify-center">
-                        <Text className="text-gray-500 text-lg font-medium">
+                      <View style={styles.avatarPlaceholder}>
+                        <Text style={styles.avatarText}>
                           {name[0]?.toUpperCase() || '?'}
                         </Text>
                       </View>
                     )}
-                    <View className="flex-1">
-                      <Text className="text-base font-medium" numberOfLines={1}>
+                    <View style={styles.contributorInfo}>
+                      <Text style={styles.contributorName} numberOfLines={1}>
                         {name || 'Unnamed Contributor'}
                       </Text>
                       {phoneNumber ? (
-                        <Text className="text-sm text-gray-500">{phoneNumber}</Text>
+                        <Text style={styles.contributorPhone}>{phoneNumber}</Text>
                       ) : null}
                     </View>
                   </TouchableOpacity>
@@ -368,18 +529,21 @@ export default function DepositScreen() {
         </View>
 
         {/* Spacer to push button down */}
-        <View className="flex-1 justify-end pb-4">
+        <View style={styles.buttonContainer}>
           {/* Continue Button */}
-          {!isKeyboardVisible && ( // Hide button when keyboard is visible
+          {!isKeyboardVisible && (
             <TouchableOpacity
-              className={`flex-row justify-center items-center ${loading || !phone ? 'bg-[#0072CE]/50' : 'bg-[#0072CE]'} py-4 rounded-lg`}
+              style={[
+                styles.continueButton,
+                (loading || !phone) && styles.continueButtonDisabled
+              ]}
               onPress={() => fetchContributorDetails()}
               disabled={loading || !phone}
             >
               {loading ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Text className="text-white text-lg mr-2 font-semibold">Next</Text>
+                <Text style={styles.continueButtonText}>Next</Text>
               )}
             </TouchableOpacity>
           )}

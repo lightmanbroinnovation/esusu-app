@@ -11,7 +11,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Share,
-  RefreshControl
+  RefreshControl,
+  StyleSheet 
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -34,6 +35,254 @@ interface ReferralActivity {
 
 export default function ReferralScreen() {
   const router = useRouter();
+  const styles = StyleSheet.create({
+    keyboardAvoidingView: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    scrollViewContent: {
+      flexGrow: 1,
+    },
+    container: {
+      flex: 1,
+    },
+    
+    // Loading State
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      color: '#6B7280',
+      marginTop: 16,
+    },
+    
+    // Error State
+    errorContainer: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    errorText: {
+      color: '#111827',
+      fontSize: 18,
+      fontWeight: '600',
+      marginTop: 16,
+      textAlign: 'center',
+    },
+    retryButton: {
+      backgroundColor: '#0072CE',
+      borderRadius: 8,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      marginTop: 16,
+    },
+    retryButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '500',
+    },
+    
+    // Header
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerTitle: {
+      fontWeight: '600',
+      color: '#111827',
+    },
+    
+    // Stats
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: '#E5F1FF',
+      borderRadius: 8,
+      padding: 16,
+    },
+    statLabel: {
+      color: '#0072CE',
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 4,
+    },
+    statValue: {
+      color: '#0072CE',
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    
+    // Cards
+    card: {
+      backgroundColor: '#FFFFFF',
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 24,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#111827',
+      marginBottom: 8,
+    },
+    cardSubtitle: {
+      color: '#6B7280',
+      fontSize: 12,
+      marginTop: 8,
+    },
+    
+    // Referral Code
+    referralCodeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: '#F4F4F5',
+      borderRadius: 8,
+      padding: 12,
+      marginTop: 8,
+    },
+    referralCodeText: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#0072CE',
+    },
+    
+    // Buttons
+    shareButton: {
+      backgroundColor: '#0072CE',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    shareButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '500',
+    },
+    submitButton: {
+      backgroundColor: '#0072CE',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    submitButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '500',
+    },
+    
+    // Input
+    referralInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    referralInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      backgroundColor: '#F4F4F5',
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      fontSize: 16,
+      marginRight: 8,
+    },
+    
+    // Withdraw Button
+    withdrawContainer: {
+      marginBottom: 24,
+    },
+    withdrawButton: {
+      backgroundColor: '#10B981',
+      borderRadius: 8,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    withdrawButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    
+    // Activities
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#111827',
+      marginBottom: 16,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 32,
+    },
+    emptyStateText: {
+      color: '#6B7280',
+      textAlign: 'center',
+      marginTop: 8,
+    },
+    emptyStateSubtext: {
+      color: '#9CA3AF',
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    activityItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+    },
+    activityInfo: {
+      flex: 1,
+    },
+    activityName: {
+      fontWeight: '500',
+      color: '#111827',
+      marginBottom: 2,
+    },
+    activityEmail: {
+      color: '#6B7280',
+      marginBottom: 2,
+    },
+    activityDate: {
+      color: '#9CA3AF',
+    },
+    activityMeta: {
+      alignItems: 'flex-end',
+    },
+    statusBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginBottom: 4,
+    },
+    statusText: {
+      fontSize: 10,
+      fontWeight: '500',
+    },
+    bonusAmount: {
+      color: '#10B981',
+      fontWeight: '600',
+      marginTop: 4,
+    },
+  });
   const insets = useSafeAreaInsets();
   const { width, height } = Dimensions.get('window');
   
@@ -207,23 +456,23 @@ export default function ReferralScreen() {
 
   if (isLoadingData) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0072CE" />
-        <Text className="text-gray-500 mt-4">Loading referral data...</Text>
+        <Text style={styles.loadingText}>Loading referral data...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View className="flex-1 bg-white justify-center items-center px-6">
+      <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-        <Text className="text-gray-900 text-lg font-semibold mt-4 text-center">{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           onPress={fetchReferralData}
-          className="bg-[#0072CE] rounded-lg px-6 py-3 mt-4"
+          style={styles.retryButton}
         >
-          <Text className="text-white font-medium">Try Again</Text>
+          <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
       </View>
     );
@@ -232,99 +481,136 @@ export default function ReferralScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isLoadingData} onRefresh={fetchReferralData} />
         }
       >
-        <View
-          className="flex-1"
-          style={{
+        <View style={[
+          styles.container,
+          {
             paddingTop: insets.top + getResponsiveSize(16),
             paddingBottom: insets.bottom + getResponsiveSize(16),
             paddingHorizontal: getResponsiveSize(24),
-          }}
-        >
+          }
+        ]}>
           {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
+          <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
             <TouchableOpacity
-              className="flex-row items-center"
               onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
+              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
             >
               <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
             </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Referral Program</Text>
+            <Text style={[styles.headerTitle, { fontSize: getResponsiveSize(18) }]}>Referral Program</Text>
             <View style={{ width: getResponsiveSize(44) }} />
           </View>
 
           {/* Stats Cards */}
-          <View className="flex-row justify-between mb-6" style={{ marginBottom: getResponsiveSize(24) }}>
-            <View className="flex-1 bg-[#E5F1FF] rounded-lg p-4 mr-2" style={{
-              padding: getResponsiveSize(16),
-              marginRight: getResponsiveSize(8),
-              borderRadius: getResponsiveSize(8)
-            }}>
-              <Text className="text-[#0072CE] text-sm font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+          <View style={[styles.statsContainer, { marginBottom: getResponsiveSize(24) }]}>
+            <View style={[
+              styles.statCard,
+              { 
+                padding: getResponsiveSize(16),
+                marginRight: getResponsiveSize(8),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.statLabel,
+                { fontSize: getResponsiveSize(14) }
+              ]}>
                 Total Referrals
               </Text>
-              <Text className="text-[#0072CE] text-2xl font-bold" style={{ fontSize: getResponsiveSize(24) }}>
+              <Text style={[
+                styles.statValue,
+                { fontSize: getResponsiveSize(24) }
+              ]}>
                 {totalReferrals}
               </Text>
             </View>
-            <View className="flex-1 bg-[#E5F1FF] rounded-lg p-4 ml-2" style={{
-              padding: getResponsiveSize(16),
-              marginLeft: getResponsiveSize(8),
-              borderRadius: getResponsiveSize(8)
-            }}>
-              <Text className="text-[#0072CE] text-sm font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+            <View style={[
+              styles.statCard,
+              { 
+                padding: getResponsiveSize(16),
+                marginLeft: getResponsiveSize(8),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.statLabel,
+                { fontSize: getResponsiveSize(14) }
+              ]}>
                 Total Earnings
               </Text>
-              <Text className="text-[#0072CE] text-2xl font-bold" style={{ fontSize: getResponsiveSize(24) }}>
+              <Text style={[
+                styles.statValue,
+                { fontSize: getResponsiveSize(24) }
+              ]}>
                 ₦{totalEarnings.toLocaleString()}
               </Text>
             </View>
           </View>
 
-                    {/* Your Referral Code */}
+          {/* Your Referral Code */}
           {referralCode && (
-            <View className="bg-white border border-[#E0E0E0] rounded-lg p-4 mb-6" style={{
-              padding: getResponsiveSize(16),
-              marginBottom: getResponsiveSize(24),
-              borderRadius: getResponsiveSize(8)
-            }}>
-              <Text className="text-lg font-semibold mb-2" style={{ fontSize: getResponsiveSize(18) }}>
+            <View style={[
+              styles.card,
+              { 
+                padding: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(24),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.cardTitle,
+                { fontSize: getResponsiveSize(18) }
+              ]}>
                 Your Referral Code
               </Text>
-              <View className="flex-row items-center justify-between bg-[#F4F4F5] rounded-lg p-3" style={{
-                padding: getResponsiveSize(12),
-                borderRadius: getResponsiveSize(8)
-              }}>
-                <Text className="text-xl font-bold text-[#0072CE]" style={{ fontSize: getResponsiveSize(20) }}>
+              <View style={[
+                styles.referralCodeContainer,
+                { 
+                  padding: getResponsiveSize(12),
+                  borderRadius: getResponsiveSize(8)
+                }
+              ]}>
+                <Text style={[
+                  styles.referralCodeText,
+                  { fontSize: getResponsiveSize(20) }
+                ]}>
                   {referralCode}
                 </Text>
                 <TouchableOpacity
                   onPress={handleShareReferralCode}
-                  className="bg-[#0072CE] rounded-lg px-4 py-2"
-                  style={{
-                    paddingHorizontal: getResponsiveSize(16),
-                    paddingVertical: getResponsiveSize(8),
-                    borderRadius: getResponsiveSize(8)
-                  }}
+                  style={[
+                    styles.shareButton,
+                    { 
+                      paddingHorizontal: getResponsiveSize(16),
+                      paddingVertical: getResponsiveSize(8),
+                      borderRadius: getResponsiveSize(8)
+                    }
+                  ]}
                 >
-                  <Text className="text-white font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                  <Text style={[
+                    styles.shareButtonText,
+                    { fontSize: getResponsiveSize(14) }
+                  ]}>
                     Share
                   </Text>
                 </TouchableOpacity>
               </View>
-              <Text className="text-gray-600 text-sm mt-2" style={{ fontSize: getResponsiveSize(12) }}>
+              <Text style={[
+                styles.cardSubtitle,
+                { fontSize: getResponsiveSize(12) }
+              ]}>
                 Share this code with friends to earn ₦500 for each successful referral
               </Text>
             </View>
@@ -332,50 +618,66 @@ export default function ReferralScreen() {
 
           {/* Enter Referral Code - Only show if user hasn't entered one */}
           {!hasEnteredReferralCode && (
-            <View className="bg-white border border-[#E0E0E0] rounded-lg p-4 mb-6" style={{
-              padding: getResponsiveSize(16),
-              marginBottom: getResponsiveSize(24),
-              borderRadius: getResponsiveSize(8)
-            }}>
-              <Text className="text-lg font-semibold mb-2" style={{ fontSize: getResponsiveSize(18) }}>
+            <View style={[
+              styles.card,
+              { 
+                padding: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(24),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
+              <Text style={[
+                styles.cardTitle,
+                { fontSize: getResponsiveSize(18) }
+              ]}>
                 Enter Referral Code
               </Text>
-              <View className="flex-row items-center">
+              <View style={styles.referralInputContainer}>
                 <TextInput
                   placeholder="Enter referral code"
                   value={inputCode}
                   onChangeText={setInputCode}
-                  className="flex-1 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5] mr-2"
-                  style={{
-                    paddingHorizontal: getResponsiveSize(12),
-                    paddingVertical: getResponsiveSize(12),
-                    borderRadius: getResponsiveSize(8),
-                    marginRight: getResponsiveSize(8),
-                    fontSize: getResponsiveSize(16)
-                  }}
+                  style={[
+                    styles.referralInput,
+                    { 
+                      paddingHorizontal: getResponsiveSize(12),
+                      paddingVertical: getResponsiveSize(12),
+                      borderRadius: getResponsiveSize(8),
+                      marginRight: getResponsiveSize(8),
+                      fontSize: getResponsiveSize(16)
+                    }
+                  ]}
                   placeholderTextColor="#BDBDBD"
                 />
                 <TouchableOpacity
                   onPress={handleSubmitReferralCode}
                   disabled={loading}
-                  className="bg-[#0072CE] rounded-lg px-4 py-3"
-                  style={{
-                    paddingHorizontal: getResponsiveSize(16),
-                    paddingVertical: getResponsiveSize(12),
-                    borderRadius: getResponsiveSize(8),
-                    opacity: loading ? 0.7 : 1
-                  }}
+                  style={[
+                    styles.submitButton,
+                    { 
+                      paddingHorizontal: getResponsiveSize(16),
+                      paddingVertical: getResponsiveSize(12),
+                      borderRadius: getResponsiveSize(8),
+                      opacity: loading ? 0.7 : 1
+                    }
+                  ]}
                 >
                   {loading ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <Text className="text-white font-medium" style={{ fontSize: getResponsiveSize(14) }}>
+                    <Text style={[
+                      styles.submitButtonText,
+                      { fontSize: getResponsiveSize(14) }
+                    ]}>
                       Submit
                     </Text>
                   )}
                 </TouchableOpacity>
               </View>
-              <Text className="text-gray-600 text-sm mt-2" style={{ fontSize: getResponsiveSize(12) }}>
+              <Text style={[
+                styles.cardSubtitle,
+                { fontSize: getResponsiveSize(12) }
+              ]}>
                 Enter a friend's referral code to earn ₦500 bonus
               </Text>
             </View>
@@ -383,21 +685,26 @@ export default function ReferralScreen() {
 
           {/* Withdraw Bonus Button */}
           {totalEarnings > 0 && (
-            <View className="mb-6" style={{ marginBottom: getResponsiveSize(24) }}>
+            <View style={[styles.withdrawContainer, { marginBottom: getResponsiveSize(24) }]}>
               <TouchableOpacity
                 onPress={handleWithdrawBonus}
                 disabled={loading}
-                className="bg-[#10B981] rounded-lg py-4 items-center"
-                style={{
-                  paddingVertical: getResponsiveSize(16),
-                  borderRadius: getResponsiveSize(8),
-                  opacity: loading ? 0.7 : 1
-                }}
+                style={[
+                  styles.withdrawButton,
+                  {
+                    paddingVertical: getResponsiveSize(16),
+                    borderRadius: getResponsiveSize(8),
+                    opacity: loading ? 0.7 : 1
+                  }
+                ]}
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text className="text-white font-semibold text-lg" style={{ fontSize: getResponsiveSize(18) }}>
+                  <Text style={[
+                    styles.withdrawButtonText,
+                    { fontSize: getResponsiveSize(18) }
+                  ]}>
                     Withdraw ₦{totalEarnings.toLocaleString()}
                   </Text>
                 )}
@@ -406,21 +713,39 @@ export default function ReferralScreen() {
           )}
 
           {/* Referral Activities */}
-          <View className="bg-white border border-[#E0E0E0] rounded-lg p-4" style={{
-            padding: getResponsiveSize(16),
-            borderRadius: getResponsiveSize(8)
-          }}>
-            <Text className="text-lg font-semibold mb-4" style={{ fontSize: getResponsiveSize(18) }}>
+          <View style={[
+            styles.card,
+            { 
+              padding: getResponsiveSize(16),
+              borderRadius: getResponsiveSize(8)
+            }
+          ]}>
+            <Text style={[
+              styles.sectionTitle,
+              { 
+                fontSize: getResponsiveSize(18),
+                marginBottom: getResponsiveSize(16)
+              }
+            ]}>
               Referral Activities
             </Text>
             
             {referralActivities.length === 0 ? (
-              <View className="items-center py-8" style={{ paddingVertical: getResponsiveSize(32) }}>
+              <View style={[
+                styles.emptyState,
+                { paddingVertical: getResponsiveSize(32) }
+              ]}>
                 <Ionicons name="people-outline" size={getResponsiveSize(48)} color="#9CA3AF" />
-                <Text className="text-gray-500 text-center mt-2" style={{ fontSize: getResponsiveSize(14) }}>
+                <Text style={[
+                  styles.emptyStateText,
+                  { fontSize: getResponsiveSize(14) }
+                ]}>
                   No referral activities yet
                 </Text>
-                <Text className="text-gray-400 text-center mt-1" style={{ fontSize: getResponsiveSize(12) }}>
+                <Text style={[
+                  styles.emptyStateSubtext,
+                  { fontSize: getResponsiveSize(12) }
+                ]}>
                   Share your referral code to start earning
                 </Text>
               </View>
@@ -429,47 +754,63 @@ export default function ReferralScreen() {
                 {referralActivities.map((activity, index) => (
                   <View
                     key={`${activity._id}-${index}`}
-                    className={`flex-row items-center justify-between py-3 ${
-                      index !== referralActivities.length - 1 ? 'border-b border-gray-200' : ''
-                    }`}
-                    style={{
-                      paddingVertical: getResponsiveSize(12),
-                      borderBottomWidth: index !== referralActivities.length - 1 ? 1 : 0,
-                      borderBottomColor: '#E5E7EB'
-                    }}
+                    style={[
+                      styles.activityItem,
+                      {
+                        paddingVertical: getResponsiveSize(12),
+                        borderBottomWidth: index !== referralActivities.length - 1 ? 1 : 0,
+                        borderBottomColor: '#E5E7EB'
+                      }
+                    ]}
                   >
-                    <View className="flex-1">
-                      <Text className="font-medium text-gray-900" style={{ fontSize: getResponsiveSize(16) }}>
+                    <View style={styles.activityInfo}>
+                      <Text style={[
+                        styles.activityName,
+                        { fontSize: getResponsiveSize(16) }
+                      ]}>
                         {activity.merchant.firstName} {activity.merchant.lastName}
                       </Text>
-                      <Text className="text-gray-500 text-sm" style={{ fontSize: getResponsiveSize(12) }}>
+                      <Text style={[
+                        styles.activityEmail,
+                        { fontSize: getResponsiveSize(12) }
+                      ]}>
                         {activity.merchant.email}
                       </Text>
-                      <Text className="text-gray-400 text-xs" style={{ fontSize: getResponsiveSize(10) }}>
+                      <Text style={[
+                        styles.activityDate,
+                        { fontSize: getResponsiveSize(10) }
+                      ]}>
                         {formatDate(activity.dateReferred)}
                       </Text>
                     </View>
-                    <View className="items-end">
+                    <View style={styles.activityMeta}>
                       <View
-                        className="px-2 py-1 rounded-full"
-                        style={{
-                          paddingHorizontal: getResponsiveSize(8),
-                          paddingVertical: getResponsiveSize(4),
-                          borderRadius: getResponsiveSize(12),
-                          backgroundColor: `${getStatusColor(activity.bonusPaid)}20`
-                        }}
+                        style={[
+                          styles.statusBadge,
+                          {
+                            paddingHorizontal: getResponsiveSize(8),
+                            paddingVertical: getResponsiveSize(4),
+                            borderRadius: getResponsiveSize(12),
+                            backgroundColor: `${getStatusColor(activity.bonusPaid)}20`
+                          }
+                        ]}
                       >
                         <Text
-                          className="text-xs font-medium"
-                          style={{
-                            fontSize: getResponsiveSize(10),
-                            color: getStatusColor(activity.bonusPaid)
-                          }}
+                          style={[
+                            styles.statusText,
+                            {
+                              fontSize: getResponsiveSize(10),
+                              color: getStatusColor(activity.bonusPaid)
+                            }
+                          ]}
                         >
                           {getStatusText(activity.bonusPaid)}
                         </Text>
                       </View>
-                      <Text className="text-green-600 font-semibold text-sm mt-1" style={{ fontSize: getResponsiveSize(12) }}>
+                      <Text style={[
+                        styles.bonusAmount,
+                        { fontSize: getResponsiveSize(12) }
+                      ]}>
                         ₦500
                       </Text>
                     </View>
@@ -482,4 +823,4 @@ export default function ReferralScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
-} 
+}

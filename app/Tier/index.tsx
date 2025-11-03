@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -32,21 +32,25 @@ const TierCard: React.FC<TierCardProps> = ({
   bonusAccess,
   isCurrent = false,
 }) => (
-  <View
-    className={`bg-white rounded-xl p-5 mb-4 shadow-sm ${isCurrent ? 'border-2 border-green-600' : ''}`}
-  >
-    <View className="flex-row justify-between items-center mb-2">
-      <Text className="text-xl font-bold text-gray-800">{title}</Text>
+  <View style={[styles.tierCard, isCurrent && styles.tierCardCurrent]}>
+    <View style={styles.tierCardHeader}>
+      <Text style={styles.tierCardTitle}>{title}</Text>
       {isCurrent && (
-        <View className="bg-green-100 rounded-full px-3 py-1">
-          <Text className="text-green-800 text-xs font-semibold">Current Tier</Text>
+        <View style={styles.currentBadge}>
+          <Text style={styles.currentBadgeText}>Current Tier</Text>
         </View>
       )}
     </View>
-    <Text className="text-gray-500 text-sm mb-3">{description}</Text>
-    <Text className="text-gray-700 text-sm mb-1"><Text className="font-semibold">Requirement:</Text> {requirement}</Text>
-    <Text className="text-gray-700 text-sm mb-1"><Text className="font-semibold">Commission:</Text> {commission}</Text>
-    <Text className="text-gray-700 text-sm"><Text className="font-semibold">Bonus Access:</Text> {bonusAccess}</Text>
+    <Text style={styles.tierCardDescription}>{description}</Text>
+    <Text style={styles.tierCardDetail}>
+      <Text style={styles.tierCardLabel}>Requirement:</Text> {requirement}
+    </Text>
+    <Text style={styles.tierCardDetail}>
+      <Text style={styles.tierCardLabel}>Commission:</Text> {commission}
+    </Text>
+    <Text style={styles.tierCardDetail}>
+      <Text style={styles.tierCardLabel}>Bonus Access:</Text> {bonusAccess}
+    </Text>
   </View>
 );
 
@@ -134,22 +138,19 @@ export default function TierScreen() {
   const currentTier = getCurrentTier(userDetails?.accountTier);
 
   return (
-    <View className="flex-1 bg-gray-100 pb-8">
-      <View
-        className="flex-row items-center bg-white px-4 pb-4 pt-6"
-        style={{ paddingTop: insets.top }}
-      >
-        <TouchableOpacity onPress={() => router.back()} className="p-2">
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="#000" />
         </TouchableOpacity>
-        <Text className="flex-1 text-center text-xl font-bold text-gray-800">Tier</Text>
-        <View className="w-8" />{/* Spacer for alignment */}
+        <Text style={styles.headerTitle}>Tier</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView className="flex-1 px-4 py-6">
-        <View className="mb-6">
-          <Text className="text-3xl font-bold text-[#0052CC] mb-2">Your Operator Tier</Text>
-          <Text className="text-gray-600 text-base">Track your progress, grow your customer base, and earn more with every tier.</Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.mainTitle}>Your Operator Tier</Text>
+          <Text style={styles.subtitle}>Track your progress, grow your customer base, and earn more with every tier.</Text>
         </View>
 
         <TierCard
@@ -200,3 +201,101 @@ export default function TierScreen() {
     </View>
   );
 } 
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingBottom: 32,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  titleContainer: {
+    marginBottom: 24,
+  },
+  mainTitle: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#0052CC',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#4B5563',
+    fontSize: 16,
+  },
+  tierCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tierCardCurrent: {
+    borderWidth: 2,
+    borderColor: '#16A34A',
+  },
+  tierCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  tierCardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  currentBadge: {
+    backgroundColor: '#D1FAE5',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  currentBadgeText: {
+    color: '#065F46',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tierCardDescription: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  tierCardDetail: {
+    color: '#374151',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  tierCardLabel: {
+    fontWeight: '600',
+  },
+}); 

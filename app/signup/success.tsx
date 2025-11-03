@@ -10,7 +10,8 @@ import {
   Dimensions,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  StyleSheet
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -94,89 +95,107 @@ export default function Success() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="flex-1 items-center bg-white px-4"
-          style={{ 
-            paddingTop: insets.top + getResponsiveSize(16), 
-            paddingBottom: insets.bottom + getResponsiveSize(16),
-            paddingHorizontal: getResponsiveSize(16)
-          }}
+          style={[
+            styles.container,
+            { 
+              paddingTop: insets.top + getResponsiveSize(16), 
+              paddingBottom: insets.bottom + getResponsiveSize(16),
+              paddingHorizontal: getResponsiveSize(16)
+            }
+          ]}
         >
-          <View className="flex-1 items-start p-0" style={{ width: '100%' }}>
+          <View style={[styles.contentContainer, { width: '100%' }]}>
             <ImageBackground
               source={require("../assets/images/success.png")}
-              className="flex-1 justify-center items-center w-full"
+              style={[
+                styles.imageBackground,
+                { 
+                  height: getResponsiveSize(460),
+                }
+              ]}
               resizeMode="contain"
-              style={{ 
-                height: getResponsiveSize(460),
-                width: '100%'
-              }}
             >
               <Image
                 source={require("../assets/images/check.png")}
-                className="w-28 h-28 mb-4"
+                style={[
+                  styles.checkIcon,
+                  {
+                    width: getResponsiveSize(112),
+                    height: getResponsiveSize(112),
+                    marginBottom: getResponsiveSize(16)
+                  }
+                ]}
                 resizeMode="contain"
-                style={{
-                  width: getResponsiveSize(112),
-                  height: getResponsiveSize(112),
-                  marginBottom: getResponsiveSize(16)
-                }}
               />
-              <Text
-                className="text-2xl font-bold text-center text-primary mb-2"
-                style={{ 
-                  color: "#0072CE",
+              <Text style={[
+                styles.successTitle,
+                { 
                   fontSize: getResponsiveSize(24),
                   marginBottom: getResponsiveSize(8)
-                }}
-              >
+                }
+              ]}>
                 You're All Set!
               </Text>
-              <Text className="text-center text-gray-600 px-4 mb-4" style={{
-                fontSize: getResponsiveSize(16),
-                paddingHorizontal: getResponsiveSize(16),
-                marginBottom: getResponsiveSize(16)
-              }}>
+              <Text style={[
+                styles.successMessage,
+                {
+                  fontSize: getResponsiveSize(16),
+                  paddingHorizontal: getResponsiveSize(16),
+                  marginBottom: getResponsiveSize(16)
+                }
+              ]}>
                 Your Esusu POS Operator account has been successfully created. Please log in to continue.
               </Text>
             </ImageBackground>
           </View>
           
           {loading ? (
-            <View className="w-full bg-[#0072CE] py-4 rounded-lg mb-6 flex-row justify-center items-center" style={{
-              paddingVertical: getResponsiveSize(16),
-              marginBottom: getResponsiveSize(24),
-              borderRadius: getResponsiveSize(8)
-            }}>
+            <View style={[
+              styles.loadingButton,
+              {
+                paddingVertical: getResponsiveSize(16),
+                marginBottom: getResponsiveSize(24),
+                borderRadius: getResponsiveSize(8)
+              }
+            ]}>
               <ActivityIndicator color="white" size="small" />
-              <Text className="text-white font-bold text-center ml-2" style={{
-                fontSize: getResponsiveSize(16),
-                marginLeft: getResponsiveSize(8)
-              }}>
+              <Text style={[
+                styles.loadingButtonText,
+                {
+                  fontSize: getResponsiveSize(16),
+                  marginLeft: getResponsiveSize(8)
+                }
+              ]}>
                 Preparing Login...
               </Text>
             </View>
           ) : (
             <TouchableOpacity
-              className="w-full bg-[#0072CE] py-4 rounded-lg mb-6"
+              style={[
+                styles.loginButton,
+                {
+                  paddingVertical: getResponsiveSize(16),
+                  marginBottom: getResponsiveSize(24),
+                  borderRadius: getResponsiveSize(8)
+                }
+              ]}
               onPress={handleGoToLogin}
               disabled={loading}
-              style={{
-                paddingVertical: getResponsiveSize(16),
-                marginBottom: getResponsiveSize(24),
-                borderRadius: getResponsiveSize(8)
-              }}
             >
-              <Text className="text-white font-bold text-center" style={{ fontSize: getResponsiveSize(16) }}>
+              <Text style={[
+                styles.loginButtonText,
+                { fontSize: getResponsiveSize(16) }
+              ]}>
                 Go to Login
               </Text>
             </TouchableOpacity>
@@ -186,3 +205,71 @@ export default function Success() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    padding: 0,
+    width: '100%',
+  },
+  imageBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  checkIcon: {
+    width: 112,
+    height: 112,
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#0072CE',
+  },
+  successMessage: {
+    textAlign: 'center',
+    color: '#4B5563',
+    paddingHorizontal: 16,
+  },
+  loadingButton: {
+    width: '100%',
+    backgroundColor: '#0072CE',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  loginButton: {
+    width: '100%',
+    backgroundColor: '#0072CE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});

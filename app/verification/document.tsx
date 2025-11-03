@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -167,37 +168,33 @@ export default function UploadDocumentScreen() {
 
   return (
     <View
-      className="flex-1 bg-white px-6"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={[docStyles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
     >
       {/* Header */}
-      <View className="flex-row justify-between items-center px-5 mt-2">
+      <View style={docStyles.headerRow}>
         <TouchableOpacity
-          className="flex-row items-center"
+          style={docStyles.headerBack}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={28} />
         </TouchableOpacity>
-        <Text className="font-semibold">Step 3 of 4</Text>
+        <Text style={docStyles.stepText}>Step 3 of 4</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingTop: 10 }}>
         {/* Title */}
-        <Text className="text-[#0072CE] text-[24px] font-bold mb-2">
+        <Text style={docStyles.title}>
           Upload Your Business Document
         </Text>
-        <Text className="text-base text-[#4F4F4F] mb-4">
+        <Text style={docStyles.subtitle}>
           To ensure security & compliance, please provide your details.
         </Text>
 
         {/* BVN Input */}
-        <Text className="text-sm text-[#4F4F4F] font-semibold mb-1">BVN Number</Text>
+        <Text style={docStyles.label}>BVN Number</Text>
         <TextInput
-          className="border border-[#E0E0E0] rounded-lg px-4 py-3 mb-6 bg-[#F4F4F5]"
+          style={[docStyles.fullInput, { backgroundColor: "#F4F4F5" }]}
           keyboardType="numeric"
-          style={{
-            backgroundColor: "#F4F4F5",
-          }}
           maxLength={11}
           placeholder="Enter BVN number"
           placeholderTextColor="#BDBDBD"
@@ -206,51 +203,43 @@ export default function UploadDocumentScreen() {
         />
 
         {/* Upload CAC */}
-        <Text className="text-sm text-[#4F4F4F] font-semibold my-2">
+        <Text style={docStyles.label}>
           Upload CAC Certificate
         </Text>
         <View
-          className="rounded-2xl px-4 items-center bg-[#F4F4F5]"
-          style={{
-            height: 160,
-            backgroundColor: "#F4F4F5",
-            padding: 30,
-            borderWidth: 2,
-            borderColor: "#E0E0E0",
-            borderStyle: "dashed",
-          }}
+          style={docStyles.uploadBox}
         >
           {uploadingCac ? (
-            <View className="items-center justify-center" style={{ height: 100 }}>
+            <View style={docStyles.center100}>
               <ActivityIndicator size="large" color="#0072CE" />
-              <Text className="text-[#0072CE] mt-2 text-center">
+              <Text style={docStyles.progressText}>
                 Uploading document...
               </Text>
             </View>
           ) : cacImage ? (
-            <View className="items-center">
+            <View style={docStyles.itemsCenter}>
               <Image
                 source={{ uri: cacImage }}
                 style={{ width: 100, height: 100, borderRadius: 8 }}
               />
               <TouchableOpacity
                 onPress={pickImage}
-                className="mt-2"
+                style={{ marginTop: 8 }}
               >
-                <Text className="text-[#0072CE]">Change Document</Text>
+                <Text style={docStyles.linkText}>Change Document</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
               onPress={pickImage}
-              className="items-center"
+              style={docStyles.itemsCenter}
             >
               <View
-                className="w-12 h-12 rounded-full bg-[#0072CE] items-center justify-center mb-2"
+                style={docStyles.uploadIconCircle}
               >
                 <Ionicons name="cloud-upload-outline" size={24} color="white" />
               </View>
-              <Text className="text-[#0072CE] text-center">
+              <Text style={docStyles.linkTextCenter}>
                 Click to upload CAC certificate
               </Text>
             </TouchableOpacity>
@@ -259,10 +248,10 @@ export default function UploadDocumentScreen() {
 
         {/* Submit Button */}
         <TouchableOpacity
-          className="bg-[#0072CE] rounded-xl py-4 mt-8"
+          style={docStyles.primaryBtn}
           onPress={handleSubmit}
         >
-          <Text className="text-white text-center font-semibold text-base">
+          <Text style={docStyles.primaryText}>
             Continue
           </Text>
         </TouchableOpacity>
@@ -270,3 +259,23 @@ export default function UploadDocumentScreen() {
     </View>
   );
 }
+
+const docStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 8 },
+  headerBack: { flexDirection: 'row', alignItems: 'center' },
+  stepText: { fontWeight: '600' },
+  title: { color: '#0072CE', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#4F4F4F', marginBottom: 16 },
+  label: { fontSize: 14, color: '#4F4F4F', fontWeight: '600', marginBottom: 4 },
+  fullInput: { borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 24, backgroundColor: '#F4F4F5' },
+  uploadBox: { borderRadius: 16, paddingHorizontal: 16, alignItems: 'center', backgroundColor: '#F4F4F5', height: 160, padding: 30, borderWidth: 2, borderColor: '#E0E0E0', borderStyle: 'dashed' },
+  center100: { alignItems: 'center', justifyContent: 'center', height: 100 },
+  progressText: { color: '#0072CE', marginTop: 8, textAlign: 'center' },
+  itemsCenter: { alignItems: 'center' },
+  linkText: { color: '#0072CE' },
+  uploadIconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0072CE', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  linkTextCenter: { color: '#0072CE', textAlign: 'center' },
+  primaryBtn: { backgroundColor: '#0072CE', borderRadius: 12, paddingVertical: 16, marginTop: 32 },
+  primaryText: { color: '#FFFFFF', textAlign: 'center', fontWeight: '600', fontSize: 16 },
+});

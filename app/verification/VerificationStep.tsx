@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface VerificationStepProps {
@@ -21,35 +21,101 @@ const VerificationStep = ({
 }: VerificationStepProps) => {
   return (
     <TouchableOpacity 
-      className="bg-[#F0F8FF] rounded-xl my-2 p-6 relative"
+      style={[
+        styles.container,
+        selected && styles.containerSelected,
+        disabled && styles.containerDisabled
+      ]}
       onPress={disabled ? undefined : onPress}
       activeOpacity={disabled ? 1 : 0.7}
       disabled={disabled}
     >
-      <View className="flex-col space-x-4 justify-center items-center">
-        <View className="flex-1 pr-4">
-          <Text className="text-[#0052CC] text-center text-xl font-semibold mb-2">
-            {title}
-          </Text>
-          <Text className="text-gray-600 text-center mb-2 text-sm">
-            {description}
-          </Text>
+      <View style={styles.content}>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
         </View>
+        
         {(completed || disabled) ? (
-          <View className="bg-green-100 mt-2 rounded-full w-12 h-12 items-center justify-center">
-            <Ionicons name="checkmark" size={24} color="green" />
+          <View style={styles.completedIconContainer}>
+            <Ionicons name="checkmark" size={24} color="#10B981" />
           </View>
         ) : (
-          <View className="items-center mt-2">
-            <View className="bg-[#E5F1FF] rounded-full w-12 h-12 items-center justify-center mb-1">
+          <View style={styles.addIconContainer}>
+            <View style={styles.addIconCircle}>
               <Ionicons name="add" size={24} color="#007BFF" />
             </View>
-            <Text className="text-[#007BFF] text-xs">Select</Text>
+            <Text style={styles.selectText}>Select</Text>
           </View>
         )}
       </View>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#F0F8FF',
+    borderRadius: 12,
+    marginVertical: 8,
+    padding: 24,
+  },
+  containerSelected: {
+    borderWidth: 2,
+    borderColor: '#007BFF',
+  },
+  containerDisabled: {
+    opacity: 0.7,
+  },
+  content: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainer: {
+    flex: 1,
+    paddingRight: 16,
+    marginBottom: 8,
+  },
+  title: {
+    color: '#0052CC',
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  description: {
+    color: '#6B7280',
+    textAlign: 'center',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  completedIconContainer: {
+    backgroundColor: '#D1FAE5',
+    marginTop: 8,
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addIconContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  addIconCircle: {
+    backgroundColor: '#E5F1FF',
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  selectText: {
+    color: '#007BFF',
+    fontSize: 12,
+  },
+});
 
 export default VerificationStep; 

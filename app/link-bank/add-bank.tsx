@@ -11,7 +11,8 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  Modal
+  Modal,
+  StyleSheet
 } from "react-native";
 import { useBank } from "./context/bank-context";
 import React from 'react';
@@ -249,52 +250,58 @@ export default function AddBankScreen() {
     );
   }
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="px-6">
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollView}>
         {successMessage && (
-          <View style={{ backgroundColor: '#D1FAE5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-            <Text style={{ color: '#065F46', fontWeight: 'bold', textAlign: 'center' }}>{successMessage}</Text>
+          <View style={styles.successMessageContainer}>
+            <Text style={styles.successMessageText}>{successMessage}</Text>
           </View>
         )}
         {/* Header */}
-        <View className="flex-row items-center justify-between mt-12">
-        <TouchableOpacity
-              onPress={() => router.back()}
-              className="w-10 h-10 rounded-full  items-center justify-center"
-            >
-              <Ionicons name="arrow-back" size={24} color="#000" />
-            </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">Recipient</Text>
-          <View style={{ width: 40 }} />
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Recipient</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Content */}
-        <View className="mt-8">
-          <Text className="text-[#004699] text-3xl font-semibold">Add New Bank Account</Text>
-          <Text className="text-gray-700 mt-2 text-base">
+        <View style={styles.contentContainer}>
+          <Text style={styles.title}>Add New Bank Account</Text>
+          <Text style={styles.subtitle}>
             Enter your bank details to receive commission payouts.
           </Text>
 
-          <View className="mt-8">
-            <Text className="text-gray-800 font-medium mb-2">What is the account number?</Text>
+          <View style={styles.formSection}>
+            <Text style={styles.inputLabel}>What is the account number?</Text>
             <TextInput
-              className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base"
+              style={[styles.input, !isSaving && styles.inputDisabled]}
               value={accountNumber}
               onChangeText={setAccountNumber}
               keyboardType="numeric"
               placeholder="Enter account number"
               maxLength={10}
               editable={!isSaving}
+              placeholderTextColor="#9CA3AF"
             />
 
-            <Text className="text-gray-800 font-medium mb-2 mt-6">Select Bank</Text>
+            <Text style={[styles.inputLabel, styles.mt6]}>Select Bank</Text>
             <TouchableOpacity
-              className="bg-gray-100 px-4 py-4 rounded-lg flex-row justify-between items-center"
+              style={[styles.bankSelect, isSaving && styles.disabled]}
               onPress={() => setShowBankDropdown(true)}
               disabled={isSaving}
             >
-              <Text className={bankName ? "text-gray-700" : "text-gray-400"}>{bankName || "Select the bank"}</Text>
-              <Image source={require('../assets/images/arrow-down.png')} className="h-4 w-4 ml-2" />
+              <Text style={bankName ? styles.bankName : styles.bankPlaceholder}>
+                {bankName || "Select the bank"}
+              </Text>
+              <Image 
+                source={require('../assets/images/arrow-down.png')} 
+                style={styles.arrowIcon} 
+              />
             </TouchableOpacity>
             {showBankDropdown && (
               <Modal
@@ -303,59 +310,66 @@ export default function AddBankScreen() {
                 animationType="fade"
                 onRequestClose={() => setShowBankDropdown(false)}
               >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                  <View style={{ backgroundColor: 'white', borderRadius: 12, width: '85%', maxHeight: 400, padding: 16 }}>
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
                     <TextInput
                       placeholder="Search bank..."
                       value={bankSearch}
                       onChangeText={setBankSearch}
-                      style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, marginBottom: 12, padding: 8 }}
+                      style={styles.searchInput}
+                      placeholderTextColor="#9CA3AF"
                     />
-                    <ScrollView style={{ maxHeight: 300 }}>
+                    <ScrollView style={styles.bankList}>
                       {banks.filter(b => (b.name || b.bankName || "").toLowerCase().includes(bankSearch.toLowerCase())).map((b) => (
                         <TouchableOpacity
                           key={String(b.code || b.bankCode || b.id || b.name || b.bankName || Math.random())}
-                          style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}
+                          style={styles.bankItem}
                           onPress={() => {
                             setBankName(b.name ? String(b.name) : (b.bankName ? String(b.bankName) : ""));
                             setShowBankDropdown(false);
                             setBankSearch("");
                           }}
                         >
-                          <Text style={{ fontSize: 16, color: '#222' }}>{b.name || b.bankName || "Unnamed Bank"}</Text>
+                          <Text style={styles.bankItemText}>{b.name || b.bankName || "Unnamed Bank"}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
-                    <TouchableOpacity onPress={() => setShowBankDropdown(false)} style={{ marginTop: 12, alignSelf: 'flex-end' }}>
-                      <Text style={{ color: '#0072CE', fontWeight: 'bold' }}>Close</Text>
+                    <TouchableOpacity 
+                      onPress={() => setShowBankDropdown(false)} 
+                      style={styles.closeButton}
+                    >
+                      <Text style={styles.closeButtonText}>Close</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               </Modal>
             )}
             {verifying && (
-              <View className="flex-row items-center mt-2">
+              <View style={styles.verifyingContainer}>
                 <ActivityIndicator size="small" color="#0074FF" />
-                <Text className="ml-2 text-blue-600">Verifying...</Text>
+                <Text style={styles.verifyingText}>Verifying...</Text>
               </View>
             )}
             {verifyError && (
-              <View><Text className="text-red-500 text-xs mt-2">{verifyError}</Text></View>
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{verifyError}</Text>
+              </View>
             )}
 
-            <Text className="text-gray-800 font-medium mb-2 mt-6">Account Name</Text>
+            <Text style={[styles.inputLabel, styles.mt6]}>Account Name</Text>
             <TextInput
-              className="bg-gray-100 px-4 py-4 rounded-lg text-gray-700 text-base"
+              style={[styles.input, !isSaving && styles.inputDisabled]}
               value={accountName}
               onChangeText={setAccountName}
               placeholder="Account name"
               editable={!isSaving}
+              placeholderTextColor="#9CA3AF"
             />
 
-            <View className="flex-row justify-between items-center mt-8">
+            <View style={styles.primaryAccountContainer}>
               <View>
-                <Text className="text-gray-800 font-medium text-base">Set as Primary Account</Text>
-                <Text className="text-gray-400 text-sm mt-1">This will be your default withdrawal account.</Text>
+                <Text style={styles.primaryAccountText}>Set as Primary Account</Text>
+                <Text style={styles.primaryAccountSubtext}>This will be your default withdrawal account.</Text>
               </View>
               <Switch 
                 value={isPrimary} 
@@ -370,31 +384,256 @@ export default function AddBankScreen() {
         </View>
 
         {/* Footer Buttons */}
-        <View className="flex-row justify-between mt-auto mb-8 pt-20">
+        <View style={styles.footerContainer}>
           <TouchableOpacity 
             onPress={handlePreviousPage} 
-            className="bg-red-100 py-4 rounded-xl flex-1 mr-2"
+            style={[styles.cancelButton, isSaving && styles.disabledButton]}
             disabled={isSaving}
           >
-            <Text className="text-red-500 text-lg font-medium text-center">Cancel</Text>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             onPress={handleSave} 
-            className={`${isSaving ? 'bg-blue-400' : 'bg-blue-600'} py-4 rounded-xl flex-1 ml-2 flex-row justify-center items-center`}
+            style={[
+              styles.saveButton, 
+              isSaving ? styles.saveButtonDisabled : styles.saveButtonActive
+            ]}
             disabled={isSaving}
           >
             {isSaving ? (
               <React.Fragment>
                 <ActivityIndicator size="small" color="white" />
-                <Text className="text-white text-lg font-medium ml-2">Saving...</Text>
+                <Text style={styles.saveButtonText}>Saving...</Text>
               </React.Fragment>
             ) : (
-              <Text className="text-white text-lg font-medium text-center">Save Bank Account</Text>
+              <Text style={styles.saveButtonText}>Save Bank Account</Text>
             )}
           </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    paddingHorizontal: 24,
+  },
+  successMessageContainer: {
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  successMessageText: {
+    color: '#065F46',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 48,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  contentContainer: {
+    marginTop: 32,
+  },
+  title: {
+    color: '#004699',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  subtitle: {
+    color: '#374151',
+    marginTop: 8,
+    fontSize: 16,
+  },
+  formSection: {
+    marginTop: 32,
+  },
+  inputLabel: {
+    color: '#1F2937',
+    fontWeight: '500',
+    marginBottom: 8,
+    fontSize: 16,
+  },
+  input: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 8,
+    color: '#374151',
+    fontSize: 16,
+  },
+  inputDisabled: {
+    opacity: 0.7,
+  },
+  mt6: {
+    marginTop: 24,
+  },
+  bankSelect: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  disabled: {
+    opacity: 0.7,
+  },
+  bankName: {
+    color: '#374151',
+  },
+  bankPlaceholder: {
+    color: '#9CA3AF',
+  },
+  arrowIcon: {
+    height: 16,
+    width: 16,
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    width: '85%',
+    maxHeight: 400,
+    padding: 16,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    marginBottom: 12,
+    padding: 8,
+    color: '#1F2937',
+  },
+  bankList: {
+    maxHeight: 300,
+  },
+  bankItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  bankItemText: {
+    fontSize: 16,
+    color: '#222222',
+  },
+  closeButton: {
+    marginTop: 12,
+    alignSelf: 'flex-end',
+  },
+  closeButtonText: {
+    color: '#0072CE',
+    fontWeight: 'bold',
+  },
+  verifyingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  verifyingText: {
+    marginLeft: 8,
+    color: '#2563EB',
+  },
+  errorContainer: {
+    marginTop: 8,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+  },
+  primaryAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 32,
+    paddingVertical: 20,
+    marginBottom: 8,
+  },
+  primaryAccountText: {
+    color: '#1F2937',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  primaryAccountSubtext: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 'auto',
+    marginBottom: 32,
+    paddingTop: 80,
+  },
+  cancelButton: {
+    backgroundColor: '#FEE2E2',
+    paddingVertical: 16,
+    borderRadius: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#EF4444',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  saveButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    flex: 1,
+    marginLeft: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saveButtonActive: {
+    backgroundColor: '#2563EB',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#93C5FD',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginLeft: 8,
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+}); 

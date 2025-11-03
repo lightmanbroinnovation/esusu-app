@@ -9,7 +9,8 @@ import {
   SectionList,
   ListRenderItemInfo,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,132 @@ import { fetchTransactions } from '../../services/api';
 import EsusuLoader from './EsusuLoader';
 import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  searchHeader: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  filterButton: {
+    padding: 8,
+    borderRadius: 999,
+  },
+  filterButtonActive: {
+    backgroundColor: '#DBEAFE',
+  },
+  filterButtonInactive: {
+    backgroundColor: '#F3F4F6',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#111827',
+  },
+  activeFiltersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  activeFiltersText: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginRight: 8,
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    color: '#2563EB',
+    fontWeight: '500',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
+  emptyText: {
+    color: '#6B7280',
+    fontSize: 18,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  clearSearchButton: {
+    marginTop: 16,
+  },
+  clearSearchText: {
+    color: '#2563EB',
+    fontWeight: '500',
+  },
+  sectionHeader: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4B5563',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    marginTop: 16,
+    color: '#4B5563',
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#4B5563',
+  },
+});
 
 // Helper function to format date for grouping (just the day)
 const getDayFromDate = (dateString: string): string => {
@@ -299,16 +426,19 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
   };
 
   const renderSearchHeader = () => (
-    <View className="bg-white px-4 py-3 border-b border-gray-100">
+    <View style={styles.searchHeader}>
       {/* Header with back button and title */}
-      <View className="flex-row items-center justify-between mb-4">
-        <TouchableOpacity onPress={navigateBack} className="p-2">
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">Activities</Text>
+        <Text style={styles.headerTitle}>Activities</Text>
         <TouchableOpacity 
           onPress={() => setShowFilter(true)}
-          className={`p-2 rounded-full ${hasActiveFilters() ? 'bg-blue-100' : 'bg-gray-100'}`}
+          style={[
+            styles.filterButton,
+            hasActiveFilters() ? styles.filterButtonActive : styles.filterButtonInactive
+          ]}
         >
           <Ionicons 
             name="filter" 
@@ -319,10 +449,10 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
       </View>
 
       {/* Search Bar */}
-      <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+      <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="#666" />
         <TextInput
-          className="flex-1 ml-2 text-base text-gray-900"
+          style={styles.searchInput}
           placeholder="Search...."
           placeholderTextColor="#999"
           value={searchQuery}
@@ -339,10 +469,10 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
 
       {/* Active filters indicator */}
       {hasActiveFilters() && (
-        <View className="flex-row items-center mt-2">
-          <Text className="text-sm text-gray-600 mr-2">Active filters:</Text>
+        <View style={styles.activeFiltersRow}>
+          <Text style={styles.activeFiltersText}>Active filters:</Text>
           <TouchableOpacity onPress={clearAllFilters}>
-            <Text className="text-sm text-blue-600 font-medium">Clear all</Text>
+            <Text style={styles.clearFiltersText}>Clear all</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -350,24 +480,24 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
   );
 
   const renderEmptyComponent = () => (
-    <View className="flex-1 justify-center items-center py-20">
+    <View style={styles.emptyContainer}>
       <Ionicons name="receipt-outline" size={64} color="#9CA3AF" />
-      <Text className="text-gray-500 text-lg mt-4 text-center">
+      <Text style={styles.emptyText}>
         {searchQuery || hasActiveFilters() 
           ? 'No transactions found matching your search' 
           : 'No transactions yet'}
       </Text>
       {(searchQuery || hasActiveFilters()) && (
-        <TouchableOpacity onPress={clearAllFilters} className="mt-4">
-          <Text className="text-blue-600 font-medium">Clear search & filters</Text>
+        <TouchableOpacity onPress={clearAllFilters} style={styles.clearSearchButton}>
+          <Text style={styles.clearSearchText}>Clear search & filters</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-    <View className="bg-gray-50 px-4 py-2">
-      <Text className="text-sm font-medium text-gray-600">
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>
         {section.title}
       </Text>
     </View>
@@ -381,19 +511,19 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
   if (!transactions || !Array.isArray(transactions)) {
     console.error('Transactions data is invalid:', transactions);
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={styles.container}>
         <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
         {renderSearchHeader()}
-        <View className="flex-1 justify-center items-center">
+        <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-          <Text className="mt-4 text-gray-600 text-center">
+          <Text style={styles.errorText}>
             Unable to load transactions.{'\n'}Please try again later.
           </Text>
           <TouchableOpacity 
             onPress={() => window.location.reload()} 
-            className="mt-4 bg-blue-600 px-4 py-2 rounded-lg"
+            style={styles.retryButton}
           >
-            <Text className="text-white font-medium">Retry</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -402,19 +532,19 @@ export default function TransactionsScreen({ initialTransactionHistory }: Transa
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView style={styles.container}>
         <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
         {renderSearchHeader()}
-        <View className="flex-1 justify-center items-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0052CC" />
-          <Text className="mt-4 text-gray-600">Loading transactions...</Text>
+          <Text style={styles.loadingText}>Loading transactions...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       {renderSearchHeader()}
       

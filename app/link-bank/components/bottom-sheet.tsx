@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBank } from "../context/bank-context";
@@ -182,47 +183,63 @@ export default function BankBottomSheet({
   };
 
   return (
-    <Modal visible={true} transparent animationType="fade" onRequestClose={handleClose}>
+    <Modal 
+      visible={true} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={handleClose}
+    >
       {/* Overlay */}
-      <Pressable className="flex-1 bg-black/60 items-center" onPress={handleClose}>
+      <Pressable 
+        style={styles.overlay} 
+        onPress={handleClose}
+      >
         {/* Bottom Sheet */}
-        <View className="absolute bg-white rounded-t-[40px] p-6 w-full bottom-0 items-center" style={{ paddingBottom: 32 }}>
+        <View style={styles.bottomSheet}>
           {loading && (
-            <View className="absolute top-0 left-0 right-0 bottom-0 bg-black/10 z-10 justify-center items-center rounded-xl">
+            <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#0074FF" />
             </View>
           )}
           
           {/* Large Bank Logo */}
-          <View className="w-24 h-24 rounded-full bg-white shadow items-center justify-center -mt-16 mb-4" style={{ overflow: 'hidden' }}>
+          <View style={styles.bankLogoContainer}>
             <Image
               source={getBankLogo(bank.bankName)}
-              className="w-20 h-20"
+              style={styles.bankLogo}
               resizeMode="cover"
             />
           </View>
 
           {/* Bank Name */}
-          <Text className="text-gray-500 text-base mb-1">Bank name</Text>
-          <Text className="text-2xl font-bold text-gray-900 mb-4">{bank.bankName || bank.bankCode || 'Unknown Bank'}</Text>
+          <Text style={styles.label}>Bank name</Text>
+          <Text style={styles.value}>
+            {bank.bankName || bank.bankCode || 'Unknown Bank'}
+          </Text>
+
+          {/* Account Name */}
+          <Text style={styles.label}>Account Name</Text>
+          <Text style={[styles.value, styles.trackingWide]}>
+            {bank.accountName || 'N/A'}
+          </Text>
 
           {/* Account Number */}
-          <Text className="text-gray-500 text-base mb-1">Account Name</Text>
-          <Text className="text-2xl font-bold text-gray-900 mb-4 tracking-widest">{bank.accountName || 'N/A'}</Text>
-          {/* Account Number */}
-
-          <Text className="text-gray-500 text-base mb-1">Account Number</Text>
-          <Text className="text-2xl font-bold text-gray-900 mb-4 tracking-widest">{bank.accountNumber || 'N/A'}</Text>
+          <Text style={styles.label}>Account Number</Text>
+          <Text style={[styles.value, styles.trackingWide]}>
+            {bank.accountNumber || 'N/A'}
+          </Text>
 
           {/* Set as Primary Account */}
-          <View className="flex-row justify-between items-center w-full py-5 mb-2">
+          <View style={styles.primaryAccountContainer}>
             <View>
-              <Text className="text-base font-semibold text-gray-800">Set as Primary Account</Text>
-              <Text className="text-gray-500 text-sm mt-1">This will be your default withdrawal account.</Text>
+              <Text style={styles.primaryAccountText}>Set as Primary Account</Text>
+              <Text style={styles.primaryAccountSubtext}>
+                This will be your default withdrawal account.
+              </Text>
             </View>
             <Switch
               trackColor={{ false: "#E0E0E0", true: "#0074FF" }}
-              thumbColor={isPrimary ? "#FFFFFF" : "#FFFFFF"}
+              thumbColor="#FFFFFF"
               ios_backgroundColor="#E0E0E0"
               onValueChange={handleSetPrimary}
               value={isPrimary}
@@ -237,13 +254,109 @@ export default function BankBottomSheet({
               handleRemoveBank();
             }}
             disabled={loading}
-            className="bg-red-100 py-4 rounded-2xl mt-8 w-full"
-            style={{ opacity: loading ? 0.7 : 1 }}
+            style={[styles.removeButton, loading && styles.disabledButton]}
           >
-            <Text className="text-red-500 font-bold text-center text-lg">Remove Settlement Account</Text>
+            <Text style={styles.removeButtonText}>Remove Settlement Account</Text>
           </TouchableOpacity>
         </View>
       </Pressable>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 24,
+    paddingBottom: 40,
+    maxHeight: '90%',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    borderRadius: 40,
+  },
+  bankLogoContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'white',
+    alignSelf: 'center',
+    marginTop: -64,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  bankLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  label: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  trackingWide: {
+    letterSpacing: 1.5,
+  },
+  primaryAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  primaryAccountText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  primaryAccountSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  removeButton: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 24,
+  },
+  removeButtonText: {
+    color: '#DC2626',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+});

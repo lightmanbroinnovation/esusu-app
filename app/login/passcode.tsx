@@ -3,7 +3,7 @@ export const options = {
 };
 
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator, BackHandler, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Vibration, Alert, ActivityIndicator, BackHandler, ScrollView, StyleSheet } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -20,6 +20,198 @@ import { useDisableBackHandler } from '../utils/backButtonHandler';
 import { store } from '../store/store';
 import { logout } from '../store/slices/userSlice';
 import { clearNotifications } from '../store/slices/notificationSlice';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 50,
+    paddingBottom: 24,
+  },
+  topSection: {
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0074FF',
+  },
+  subtitle: {
+    color: '#6B7280',
+    marginTop: 8,
+    marginBottom: 40,
+  },
+  pinInputsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginRight: 8,
+    borderRadius: 999,
+    borderWidth: 2,
+  },
+  pinDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingIndicator: {
+    marginTop: 24,
+  },
+  forgotPasscodeButton: {
+    marginTop: 16,
+  },
+  forgotPasscodeText: {
+    fontSize: 14,
+    color: '#0074FF',
+  },
+  fingerprintButton: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  fingerprintText: {
+    fontSize: 14,
+    color: '#0074FF',
+    marginTop: 4,
+  },
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 32,
+  },
+  keypadKey: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
+  },
+  keypadText: {
+    fontSize: 30,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+  emptyKey: {
+    width: 80,
+    height: 80,
+  },
+  switchAccountButton: {
+    marginTop: 32,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  switchAccountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  switchAccountText: {
+    fontSize: 16,
+    color: '#0072CE',
+    fontWeight: '600',
+  },
+  fingerprintModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+    flex: 1,
+    zIndex: 30,
+  },
+  fingerprintModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 0,
+  },
+  fingerprintModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: '100%',
+  },
+  fingerprintIconContainer: {
+    alignItems: 'center',
+  },
+  fingerprintIconLoading: {
+    marginTop: 8,
+  },
+  fingerprintModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  fingerprintModalSubtitle: {
+    color: '#4B5563',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  usePasscodeButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+  },
+  usePasscodeText: {
+    color: '#374151',
+    fontWeight: '500',
+  },
+  logoutOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 50,
+  },
+  logoutModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+  },
+  logoutModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  logoutModalSubtitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+});
 
 export default function PasscodeScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -616,34 +808,34 @@ export default function PasscodeScreen() {
 
   const renderFingerprintModal = () => {
     return (
-      <View className="absolute inset-0 bg-gray-500 bg-opacity-10 flex-1 z-30">
-        <View className="flex-1 justify-end pb-0">
-          <View className="bg-white rounded-t-3xl p-8 shadow-lg w-full">
-            <View className="items-center">
+      <View style={styles.fingerprintModalOverlay}>
+        <View style={styles.fingerprintModalContainer}>
+          <View style={styles.fingerprintModalContent}>
+            <View style={styles.fingerprintIconContainer}>
               <TouchableOpacity
                 onPress={handleFingerprintAuth}
-                className="items-center"
+                style={styles.fingerprintIconContainer}
                 disabled={loading}
               >
                 <Ionicons name="finger-print" size={80} color="#0072CE" />
                 {loading && (
-                  <ActivityIndicator size="small" color="#0072CE" className="mt-2" />
+                  <ActivityIndicator size="small" color="#0072CE" style={styles.fingerprintIconLoading} />
                 )}
               </TouchableOpacity>
               
-              <Text className="text-xl font-bold text-gray-800 mt-4 text-center">
+              <Text style={styles.fingerprintModalTitle}>
                 Use Fingerprint
               </Text>
-              <Text className="text-gray-600 text-center mt-2 mb-6">
+              <Text style={styles.fingerprintModalSubtitle}>
                 Tap the fingerprint icon to authenticate
               </Text>
               
               <TouchableOpacity
                 onPress={showKeypadInstead}
-                className="py-3 px-6 bg-gray-100 rounded-xl"
+                style={styles.usePasscodeButton}
                 disabled={loading}
               >
-                <Text className="text-gray-700 font-medium">Login with Passcode</Text>
+                <Text style={styles.usePasscodeText}>Login with Passcode</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -654,18 +846,20 @@ export default function PasscodeScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-3 ">
+      <View style={styles.pinInputsContainer}>
         {[0, 1, 2, 3].map((i) => (
           <View 
             key={i}
-            className="w-12 h-12 items-center justify-between mr-2 rounded-full border-2" 
-            style={{
-              borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < pin.length ? "#0072CE" : "transparent",
-            }}
+            style={[
+              styles.pinInput,
+              {
+                borderColor: i < pin.length ? "#0072CE" : "#ccc",
+                backgroundColor: i < pin.length ? "#0072CE" : "transparent",
+              }
+            ]}
           >
             {i < pin.length && (
-              <View className="w-4 h-4 rounded-full bg-white" />
+              <View style={styles.pinDot} />
             )}
           </View>
         ))}
@@ -676,11 +870,11 @@ export default function PasscodeScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"];
     return (
-      <View className="mt-10 space-y-8 w-full">
+      <View style={styles.keypadContainer}>
         {Array(4)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-around">
+            <View key={rowIndex} style={styles.keypadRow}>
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 key ? (
                   <TouchableOpacity
@@ -692,20 +886,22 @@ export default function PasscodeScreen() {
                         handleKeyPress(key);
                       }
                     }}
-                    className="w-20 h-20 bg-white justify-center items-center rounded-full"
-                    style={{ 
-                      opacity: loading ? 0.6 : 1,
-                    }}
+                    style={[
+                      styles.keypadKey,
+                      { 
+                        opacity: loading ? 0.6 : 1,
+                      }
+                    ]}
                     disabled={loading}
                   >
                     {key === "⌫" ? (
                       <Ionicons name="backspace-outline" size={28} color="#0072CE" />
                     ) : (
-                      <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text>
+                      <Text style={styles.keypadText}>{key}</Text>
                     )}
                   </TouchableOpacity>
                 ) : (
-                  <View key={`empty-${rowIndex}-${Math.random()}`} className="w-20 h-20" />
+                  <View key={`empty-${rowIndex}-${Math.random()}`} style={styles.emptyKey} />
                 )
               ))}
             </View>
@@ -715,28 +911,28 @@ export default function PasscodeScreen() {
   };
 
     return (
-    <View className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-20 pb-6">
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
         {/* Top section */}
-        <View className="items-center">
-          <Text className="text-2xl font-bold text-primaryText">Enter passcode</Text>
-          <Text className="text-gray-500 mt-2 mb-16">Enter your passcode to log in</Text>
+        <View style={styles.topSection}>
+          <Text style={styles.title}>Enter passcode</Text>
+          <Text style={styles.subtitle}>Enter your passcode to log in</Text>
 
           {renderPinInputs()}
 
           {loading && (
-            <ActivityIndicator size="large" color="#0072CE" className="mt-6" />
+            <ActivityIndicator size="large" color="#0072CE" style={styles.loadingIndicator} />
           )}
 
           <TouchableOpacity 
-            className="mt-4"
+            style={styles.forgotPasscodeButton}
             onPress={() => router.push({
               pathname: "/reset",
               params: { phone, email, loginMethod }
             })}
             disabled={loading}
           >
-            <Text className="text-sm text-primaryText">Forgot passcode?</Text>
+            <Text style={styles.forgotPasscodeText}>Forgot passcode?</Text>
           </TouchableOpacity>
           
           {/* Show fingerprint option if available but not currently using it */}
@@ -746,11 +942,11 @@ export default function PasscodeScreen() {
                 setShowKeypad(false);
                 setShowFingerprintModal(true);
               }} 
-              className="mt-6 items-center"
+              style={styles.fingerprintButton}
               disabled={loading}
             >
               <Ionicons name="finger-print" size={40} color="#0072CE" />
-              <Text className="text-sm text-primaryText mt-1">Use fingerprint</Text>
+              <Text style={styles.fingerprintText}>Use fingerprint</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -760,18 +956,20 @@ export default function PasscodeScreen() {
 
         {/* Switch Account */}
         <TouchableOpacity
-          className="mt-8 mb-4 items-center"
+          style={[
+            styles.switchAccountButton,
+            { opacity: (loading || logoutLoading) ? 0.6 : 1 }
+          ]}
           onPress={handleSwitchAccount}
           disabled={loading || logoutLoading}
-          style={{ opacity: (loading || logoutLoading) ? 0.6 : 1 }}
         >
           {logoutLoading ? (
-            <View className="flex-row items-center">
+            <View style={styles.switchAccountRow}>
               <ActivityIndicator size="small" color="#0072CE" style={{ marginRight: 8 }} />
-              <Text className="text-base text-[#0072CE] font-semibold">Switching Account...</Text>
+              <Text style={styles.switchAccountText}>Switching Account...</Text>
             </View>
           ) : (
-            <Text className="text-base text-[#0072CE] font-semibold">Switch Account</Text>
+            <Text style={styles.switchAccountText}>Switch Account</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -781,13 +979,13 @@ export default function PasscodeScreen() {
       
       {/* Logout Loading Overlay */}
       {logoutLoading && (
-        <View className="absolute inset-0 bg-black bg-opacity-50 flex-1 justify-center items-center z-50">
-          <View className="bg-white rounded-2xl p-8 items-center">
+        <View style={styles.logoutOverlay}>
+          <View style={styles.logoutModal}>
             <ActivityIndicator size="large" color="#0072CE" />
-            <Text className="text-lg font-semibold text-gray-800 mt-4 text-center">
+            <Text style={styles.logoutModalTitle}>
               Switching Account...
             </Text>
-            <Text className="text-sm text-gray-600 mt-2 text-center">
+            <Text style={styles.logoutModalSubtitle}>
               Please wait while we clear your data
             </Text>
           </View>

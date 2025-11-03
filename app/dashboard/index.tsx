@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FlatList, SafeAreaView, Text, View, TouchableOpacity, Modal, ActivityIndicator, RefreshControl, BackHandler, Platform, ToastAndroid, Dimensions } from 'react-native';
+import { FlatList, SafeAreaView, Text, View, TouchableOpacity, Modal, ActivityIndicator, RefreshControl, BackHandler, Platform, ToastAndroid, Dimensions, StyleSheet } from 'react-native';
 import UserCard from '../components/UserCard';
 import Footer from '../components/Footer';
 import RecentActivity from '../components/RecentActivity';
@@ -312,13 +312,17 @@ const HomeScreen = () => {
             disabled={!userData} // Disable when no user data
             style={{ opacity: userData ? 1 : 0.5 }} // Visual feedback
           > 
-            <View className='flex-row justify-center items-center p-4 rounded-2xl mt-6 bg-[#E5F1FF]' style={{
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
               padding: getResponsiveSize(16),
+              borderRadius: getResponsiveSize(16),
               marginTop: getResponsiveSize(24),
-              borderRadius: getResponsiveSize(16)
+              backgroundColor: '#E5F1FF'
             }}>
               <Ionicons name="person-add-outline" size={getResponsiveSize(24)} color="#0052CC" style={{ marginRight: getResponsiveSize(8) }} />
-              <Text className="text-[#0052CC] font-medium" style={{ fontSize: getResponsiveSize(16) }}>New User</Text>
+              <Text style={{ color: '#0052CC', fontWeight: '500', fontSize: getResponsiveSize(16) }}>New User</Text>
             </View>
           </TouchableOpacity>
         );
@@ -359,16 +363,28 @@ const HomeScreen = () => {
     return <EsusuLoader />;
   }
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#F9FAFB',
+    },
+    safeArea: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: getResponsiveSize(16),
+      marginTop: getResponsiveSize(16),
+    },
+  });
+
   // Always render the main layout, even if error
   return (
     <AuthGuard>
-      <View className="flex-1 bg-gray-50">
+      <View style={styles.container}>
         <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-4 mt-4" style={{ 
-            paddingHorizontal: getResponsiveSize(16),
-            marginTop: getResponsiveSize(16)
-          }}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.content}>
             {/* Do not show error message/banner at all */}
             <FlatList
               data={dashboardItems}

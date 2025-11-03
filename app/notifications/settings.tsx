@@ -7,7 +7,8 @@ import {
   Switch,
   Alert,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -280,48 +281,48 @@ export default function NotificationSettings() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-gray-50">
+      <View style={styles.container}>
         {/* <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" /> */}
-        <View className="bg-white pt-6 pb-6 px-6 shadow-sm mt-10">
-          <View className="flex-row items-center justify-between">
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
             <TouchableOpacity
               onPress={handlePreviousPage}
-              className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={20} color="#374151" />
             </TouchableOpacity>
-            <Text className="text-xl font-bold text-gray-900">Notification Settings</Text>
-            <View className="w-10 h-10" />
+            <Text style={styles.headerTitle}>Notification Settings</Text>
+            <View style={styles.headerSpacer} />
           </View>
         </View>
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Loading settings...</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading settings...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={styles.container}>
       {/* <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" /> */}
 
       {/* Header */}
-      <View className="bg-white pt-6 pb-6 px-6 shadow-sm mt-10">
-        <View className="flex-row items-center justify-between">
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={handlePreviousPage}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={20} color="#374151" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">Notification Settings</Text>
-          <View className="w-10 h-10" />
+          <Text style={styles.headerTitle}>Notification Settings</Text>
+          <View style={styles.headerSpacer} />
         </View>
       </View>
 
       {/* Content */}
       <ScrollView
-        className="flex-1"
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
@@ -734,4 +735,54 @@ export default function NotificationSettings() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    marginTop: 40,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#6B7280',
+  },
+  scrollView: {
+    flex: 1,
+  },
+});
 

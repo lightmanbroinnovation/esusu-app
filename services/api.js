@@ -8,6 +8,109 @@ import { ENV } from "../config/environment";
 const API_BASE_URL = ENV.API_BASE_URL;
 const API_TIMEOUT = ENV.API_TIMEOUT;
 
+// Safe AsyncStorage wrapper to handle module resolution errors
+const safeAsyncStorage = {
+  getItem: async (key) => {
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+        console.error('💡 This may require clearing Metro bundler cache: npx expo start --clear');
+        console.error('⚠️ Falling back to null - API calls may fail without token');
+      } else {
+        console.error('AsyncStorage.getItem error:', error);
+      }
+      return null;
+    }
+  },
+  setItem: async (key, value) => {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+        console.error('💡 This may require clearing Metro bundler cache: npx expo start --clear');
+      } else {
+        console.error('AsyncStorage.setItem error:', error);
+      }
+      // Don't throw - allow app to continue even if storage fails
+    }
+  },
+  removeItem: async (key) => {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+      } else {
+        console.error('AsyncStorage.removeItem error:', error);
+      }
+      // Don't throw - allow app to continue
+    }
+  },
+  clear: async () => {
+    try {
+      await AsyncStorage.clear();
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+      } else {
+        console.error('AsyncStorage.clear error:', error);
+      }
+      // Don't throw - allow app to continue
+    }
+  },
+  getAllKeys: async () => {
+    try {
+      return await AsyncStorage.getAllKeys();
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+      } else {
+        console.error('AsyncStorage.getAllKeys error:', error);
+      }
+      return [];
+    }
+  },
+  multiRemove: async (keys) => {
+    try {
+      await AsyncStorage.multiRemove(keys);
+    } catch (error) {
+      if (error instanceof Error && (
+        error.message.includes('asyncrequire') ||
+        error.message.includes('AsyncStorage') ||
+        error.message.includes('Unable to resolve module')
+      )) {
+        console.error('⚠️ AsyncStorage module resolution error detected:', error.message);
+      } else {
+        console.error('AsyncStorage.multiRemove error:', error);
+      }
+      // Don't throw - allow app to continue
+    }
+  }
+};
+
 // Global API error handler
 const handleApiError = (error, endpoint) => {
   console.error(`API Error for ${endpoint}:`, error);
@@ -60,7 +163,7 @@ const axiosInstance = axios.create({
 // Add request interceptor to track performance and include token
 axiosInstance.interceptors.request.use(async request => { // Made async to await secure storage
   request.metadata = { startTime: new Date().getTime() };
-  const token = await AsyncStorage.getItem('auth_token'); // Get token from AsyncStorage
+  const token = await safeAsyncStorage.getItem('auth_token'); // Get token from AsyncStorage using safe wrapper
   
   // Debug logging for authentication issues
   console.log(`🔐 API Request to: ${request.url}`);
@@ -142,7 +245,7 @@ export const completeBasicSignup = async (phoneNumber, email, passCode) => {
     console.log("API Response - completeSignUp:", response.data);
     // Assuming the token is returned here and needs to be stored
     if (response.data.data && response.data.data.token) {
-      await AsyncStorage.setItem('auth_token', response.data.data.token);
+      await safeAsyncStorage.setItem('auth_token', response.data.data.token);
       console.log("Auth token stored.");
     }
     return response.data;
@@ -297,13 +400,13 @@ export const loginUser = async (phoneNumber, passCodeOrFingerprint) => {
     console.log('Login response:', response.data);
     
     if (response.data.data && response.data.data.token) {
-      await AsyncStorage.setItem('auth_token', response.data.data.token);
+      await safeAsyncStorage.setItem('auth_token', response.data.data.token);
       // Store user data if available
       if (response.data.data.user) {
-        await AsyncStorage.setItem('userData', JSON.stringify(response.data.data.user));
-        await AsyncStorage.setItem('userId', response.data.data.user._id); // FIXED: use _id
+        await safeAsyncStorage.setItem('userData', JSON.stringify(response.data.data.user));
+        await safeAsyncStorage.setItem('userId', response.data.data.user._id); // FIXED: use _id
       }
-      await AsyncStorage.setItem('isLoggedIn', 'true');
+      await safeAsyncStorage.setItem('isLoggedIn', 'true');
     }
     return response.data;
   } catch (error) {
@@ -540,7 +643,7 @@ export const getVerificationStatus = async (userId) => {
 // Function to get user bank accounts
 export const getUserBankAccounts = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/account/settlement-accounts', {
       method: 'GET',
@@ -773,7 +876,7 @@ export const fetchGroupedContributors = async () => {
 export const fetchGroupedContributorPhotos = async () => {
   try {
     // Get token from AsyncStorage
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/group', {
       headers
@@ -800,7 +903,7 @@ export const fetchGroupedContributorPhotos = async () => {
 // Fetch merchant dashboard account directly (not using baseURL or axiosInstance)
 export const fetchMerchantDashboardAccount = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const res = await fetch('https://esusu-server.onrender.com/api/account/dashboard', { headers });
     const data = await res.json();
@@ -817,7 +920,7 @@ export const fetchSettlementAccounts = async () => {
   try {
     let token = '';
     try {
-      token = await AsyncStorage.getItem('auth_token') || '';
+      token = await safeAsyncStorage.getItem('auth_token') || '';
     } catch (e) {
       console.log('Could not get token from AsyncStorage:', e);
     }
@@ -844,7 +947,7 @@ export const fetchSettlementAccounts = async () => {
 // Fetch transaction history
 export const fetchTransactionHistory = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/account/history', {
@@ -884,7 +987,7 @@ export const fetchContributorDetailsForDeposit = async (phoneNumber) => {
     console.log(`Fetching contributor details for deposit with phone: ${phoneNumber}`);
     
     // Get token from AsyncStorage
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/details', {
@@ -919,7 +1022,7 @@ export const creditContributorAccount = async (phoneNumber, amount) => {
     console.log(`Crediting contributor account with phone: ${phoneNumber}, amount: ${amount}`);
     
     // Get token from AsyncStorage
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/credit', {
@@ -951,7 +1054,7 @@ export const creditContributorAccount = async (phoneNumber, amount) => {
 // Function to fetch contributor details for withdrawal
 export const fetchContributorDetailsForWithdrawal = async (phoneNumber) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/details', {
       method: 'POST',
@@ -978,7 +1081,7 @@ export const fetchContributorDetailsForWithdrawal = async (phoneNumber) => {
 // Fetch public bank list with token
 export const fetchBankList = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/verification/safehaven/banks', {
       method: 'GET',
@@ -1001,7 +1104,7 @@ export const fetchBankList = async () => {
 // Function to set transaction pin
 export const setTransactionPin = async (transactionPin) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/account/set-transaction-pin', {
       method: 'POST',
@@ -1026,7 +1129,7 @@ export const setTransactionPin = async (transactionPin) => {
 // Function to transfer to bank
 export const transferToBank = async (payload) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     // Log the full body data
     console.log('transferToBank body:', payload);
@@ -1050,7 +1153,7 @@ export const transferToBank = async (payload) => {
 // Request withdrawal code
 export const requestWithdrawalCode = async (phoneNumber) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/account/withdrawal-code', {
       method: 'POST',
@@ -1072,7 +1175,7 @@ export const requestWithdrawalCode = async (phoneNumber) => {
 // Verify withdrawal code
 export const verifyWithdrawalCode = async (phoneNumber, code) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     const response = await fetch('https://esusu-server.onrender.com/api/account/verify-code', {
       method: 'POST',
@@ -1208,10 +1311,10 @@ export const forceClearAllData = async () => {
       'commissionData'
     ];
     
-    for (const key of specificKeys) {
+      for (const key of specificKeys) {
       try {
-        await AsyncStorage.removeItem(key);
-        await AsyncStorage.removeItem(`cache_${key}`);
+        await safeAsyncStorage.removeItem(key);
+        await safeAsyncStorage.removeItem(`cache_${key}`);
       } catch (e) {
         // Ignore errors for individual key removal
       }
@@ -1220,7 +1323,7 @@ export const forceClearAllData = async () => {
     
     // 4. Clear any potential cache keys with patterns
     try {
-      const allKeys = await AsyncStorage.getAllKeys();
+      const allKeys = await safeAsyncStorage.getAllKeys();
       const cacheKeys = allKeys.filter(key => 
         key.startsWith('cache_') || 
         key.includes('contributor') ||
@@ -1239,7 +1342,7 @@ export const forceClearAllData = async () => {
       );
       
       if (cacheKeys.length > 0) {
-        await AsyncStorage.multiRemove(cacheKeys);
+        await safeAsyncStorage.multiRemove(cacheKeys);
         console.log(`✓ Cleared ${cacheKeys.length} additional cache keys`);
       }
     } catch (e) {
@@ -1352,7 +1455,7 @@ export const forceClearAllData = async () => {
     console.error('Error during force clear:', error);
     // Try to clear at least AsyncStorage as fallback
     try {
-      await AsyncStorage.clear();
+      await safeAsyncStorage.clear();
       console.log('Fallback: AsyncStorage cleared');
     } catch (fallbackError) {
       console.error('Even fallback clear failed:', fallbackError);
@@ -1374,7 +1477,7 @@ export const logCurrentUserDetails = async () => {
 
 export const uploadCacDocument = async ({ identityType, businessAddress, regNumber, document, businessName }) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const formData = new FormData();
     formData.append('identityType', identityType);
     formData.append('businessAddress', businessAddress);
@@ -1406,7 +1509,7 @@ export const uploadCacDocument = async ({ identityType, businessAddress, regNumb
 
 export const uploadBusinessLocation = async ({ locationImage, longitude, latitude, city, state, notes }) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const formData = new FormData();
     if (locationImage) formData.append('locationImage', locationImage);
     if (longitude) formData.append('longitude', longitude);
@@ -1435,7 +1538,7 @@ export const uploadBusinessLocation = async ({ locationImage, longitude, latitud
 
 export const saveBankAccount = async ({ accountNumber, accountName, bankCode, sessionId, isPrimary, bankName }) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -1459,7 +1562,7 @@ export const saveBankAccount = async ({ accountNumber, accountName, bankCode, se
 // Fetch commission and history for the current user
 export const fetchAccountCommission = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await enhancedFetch('https://esusu-server.onrender.com/api/account/commission', {
@@ -1531,7 +1634,7 @@ export const updatePasscode = async (newPassCode) => {
 // Get referral data for the current merchant
 export const getReferrals = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/get-referral', {
@@ -1559,7 +1662,7 @@ export const getReferrals = async () => {
 // Save referral code (can only be done once by a user)
 export const saveReferral = async (referralCode) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/save-referral', {
@@ -1588,7 +1691,7 @@ export const saveReferral = async (referralCode) => {
 // Withdraw referral bonus
 export const withdrawBonus = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
     
     const response = await fetch('https://esusu-server.onrender.com/api/account/withraw-bonus', {
@@ -1617,7 +1720,7 @@ export const withdrawBonus = async () => {
 // Function to check current authentication status
 export const checkAuthStatus = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const tokenExists = !!token;
     
     console.log('🔍 Authentication Status Check:');
@@ -1643,7 +1746,7 @@ export const checkAuthStatus = async () => {
           if (isExpired) {
             console.log('❌ Token is expired! This could be causing 403 errors.');
             // Clear expired token
-            await AsyncStorage.removeItem('auth_token');
+            await safeAsyncStorage.removeItem('auth_token');
             console.log('🗑️ Expired token cleared');
           }
         }
@@ -1697,7 +1800,7 @@ export const registerDevice = async (deviceData) => {
 // Fetch merchant notification settings
 export const fetchMerchantNotificationSettings = async () => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/notification-settings', {
@@ -1725,7 +1828,7 @@ export const fetchMerchantNotificationSettings = async () => {
 // Update merchant notification settings
 export const updateMerchantNotificationSettings = async (settings) => {
   try {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/notification-settings', {

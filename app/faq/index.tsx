@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBackButtonHandler } from '../utils/backButtonHandler';
@@ -115,6 +115,110 @@ const topics = [
     }
 ];
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#007BFF',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 8,
+    marginTop: 64,
+    gap: 40,
+    width: '100%',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    marginTop: 8,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  searchContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'center',
+  },
+  searchInput: {
+    width: '90%',
+  },
+  scrollView: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: 32,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  handleBar: {
+    backgroundColor: '#E5E6EB',
+    height: 6,
+    width: 48,
+    alignSelf: 'center',
+    borderRadius: 4,
+    marginBottom: 32,
+  },
+  topicsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  topicsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#0095FF',
+  },
+  topicCard: {
+    backgroundColor: '#F5F7FF',
+    padding: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  topicCardContent: {
+    width: '75%',
+    flexDirection: 'column',
+    gap: 12,
+  },
+  topicCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0074FF',
+    marginBottom: 4,
+  },
+  topicCardDescription: {
+    fontSize: 14,
+    color: '#272636',
+  },
+  viewTopicText: {
+    color: '#0095FF',
+    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 4,
+  },
+});
+
 const FAQ = () => {
     const router = useRouter();
     
@@ -133,34 +237,38 @@ const FAQ = () => {
     };
 
     return (
-        <View className="flex-1 bg-[#007BFF]">
+        <View style={styles.container}>
             {/* Header */}
-            <View className="px-5 pt-12 pb-2  mt-16 gap-10 w-full">
+            <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full  items-center justify-center"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-                <Text className="text-white text-[32px] mt-2 font-semibold mb-2">Have a burning Question?</Text>
-                <View className="bg-white rounded-full w-full px-4 py-5 flex flex-row gap-4 items-center">
+                <Text style={styles.title}>Have a burning Question?</Text>
+                <View style={styles.searchContainer}>
                     <Image source={require('../assets/images/Search.png')} />
                     <TextInput
                         placeholder="Search topics"
                         placeholderTextColor="#A9A8AF"
-                        className='w-[90%]'
+                        style={styles.searchInput}
                     />
                 </View>
             </View>
 
             {/* Topics */}
-            <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false} className='bg-white rounded-t-[32px] mt-8'>
-                <View className='bg-[#E5E6EB] h-[6px] w-[48px] flex mx-auto rounded-md mb-8'></View>
+            <ScrollView 
+              contentContainerStyle={styles.scrollContent} 
+              showsVerticalScrollIndicator={false} 
+              style={styles.scrollView}
+            >
+                <View style={styles.handleBar} />
 
-                <View className="flex-row items-center justify-between mb-6">
-                    <Text className="text-[14px] font-semibold text-black">Topics</Text>
+                <View style={styles.topicsHeader}>
+                    <Text style={styles.topicsTitle}>Topics</Text>
                     <TouchableOpacity>
-                        <Text className="text-[14px] text-[#0095FF]">View all</Text>
+                        <Text style={styles.viewAllText}>View all</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -168,15 +276,15 @@ const FAQ = () => {
                     <TouchableOpacity
                         key={item.id}
                         onPress={() => handleNextPage(item)}
-                        className="bg-[#F5F7FF] p-4 mb-4 rounded-xl flex-row justify-between items-center"
+                        style={styles.topicCard}
                     >
-                        <View className="w-[75%] flex flex-col gap-3">
-                            <Text className="text-[14px] font-semibold text-[#0074FF] mb-1">{item.title}</Text>
-                            <Text className="text-[14px] text-[#272636]">{item.description}</Text>
-                            <Text className="text-[#0095FF] font-semibold text-[12px] mt-1">View Topic</Text>
+                        <View style={styles.topicCardContent}>
+                            <Text style={styles.topicCardTitle}>{item.title}</Text>
+                            <Text style={styles.topicCardDescription}>{item.description}</Text>
+                            <Text style={styles.viewTopicText}>View Topic</Text>
                         </View>
                         {item.icon && (
-                            <Image source={item.icon} className="" resizeMode="contain" />
+                            <Image source={item.icon} resizeMode="contain" />
                         )}
                     </TouchableOpacity>
                 ))}

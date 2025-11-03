@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput, Vibration, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Vibration, ScrollView, Alert, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -7,6 +7,142 @@ import { transferToBank } from '../../services/api';
 import NetInfo from '@react-native-community/netinfo';
 // @ts-ignore
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    paddingTop: 40,
+    paddingBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
+  },
+  networkError: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  networkErrorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#F87171',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  errorText: {
+    color: '#B91C1C',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  successBanner: {
+    backgroundColor: '#D1FAE5',
+    borderWidth: 1,
+    borderColor: '#34D399',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  successText: {
+    color: '#065F46',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  titleSection: {
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0074FF',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#6B7280',
+    marginBottom: 48,
+  },
+  pinInputsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    textAlign: 'center',
+    marginRight: 8,
+    padding: 4,
+    fontSize: 20,
+    color: '#0074FF',
+    fontWeight: 'bold',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  keypadKey: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  keypadText: {
+    fontSize: 30,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+  emptyKey: {
+    width: 80,
+    height: 80,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    marginRight: 8,
+    fontWeight: '600',
+  },
+});
 
 export default function EnterTransactionPinScreen() {
   const [pin, setPin] = useState<string>("");
@@ -39,17 +175,19 @@ export default function EnterTransactionPinScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row justify-center space-x-8 mt-6">
+      <View style={styles.pinInputsContainer}>
         {[0, 1, 2, 3].map((i) => (
           <TextInput
             key={i}
             value={pin[i] || ""}
             editable={false}
-            className="w-12 h-12 text-center mr-2 p-1 text-xl text-primaryText font-bold border rounded-lg"
-            style={{
-              borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
-            }}
+            style={[
+              styles.pinInput,
+              {
+                borderColor: i < pin.length ? "#0072CE" : "#ccc",
+                backgroundColor: i < pin.length ? "#ffffff" : "#F4F4F5",
+              }
+            ]}
           />
         ))}
       </View>
@@ -59,28 +197,28 @@ export default function EnterTransactionPinScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
     return (
-      <View className="mt-10 space-y-8 w-full">
+      <View style={styles.keypadContainer}>
         {Array(3)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-between">
+            <View key={rowIndex} style={styles.keypadRow}>
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 <TouchableOpacity
                   key={key}
                   onPress={() => handleKeyPress(key)}
-                  className="w-20 h-20 bg-white justify-center items-center"
+                  style={styles.keypadKey}
                 >
-                  <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text>
+                  <Text style={styles.keypadText}>{key}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           ))}
-        {/* Last row with "x" and "0" */}
-        <View className="flex-row justify-between">
+        {/* Last row with backspace and "0" */}
+        <View style={styles.keypadRow}>
           {/* Cancel Button */}
           <TouchableOpacity
             onPress={handleBackspace}
-            className="w-20 h-20 bg-white justify-center items-center"
+            style={styles.keypadKey}
           >
             <Ionicons name="backspace-outline" size={30} color="#0072CE" />
           </TouchableOpacity>
@@ -88,13 +226,13 @@ export default function EnterTransactionPinScreen() {
           {/* Zero Button */}
           <TouchableOpacity
             onPress={() => handleKeyPress("0")}
-            className="w-20 h-20 bg-white justify-center items-center"
+            style={styles.keypadKey}
           >
-            <Text className="text-3xl font-semibold text-[#0072CE]">0</Text>
+            <Text style={styles.keypadText}>0</Text>
           </TouchableOpacity>
 
           {/* Placeholder for alignment */}
-          <View className="w-20 h-20" />
+          <View style={styles.emptyKey} />
         </View>
       </View>
     );
@@ -153,62 +291,64 @@ export default function EnterTransactionPinScreen() {
 
   return (
     <ScrollView 
-      className="flex-1 bg-white"
+      style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
     >
-      <View className="flex-1 px-6 justify-between pt-10 pb-4">
+      <View style={styles.content}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mt-6">
+      <View style={styles.header}>
         <TouchableOpacity
-          className="flex-row items-center"
+          style={styles.backButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={28} />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold text-center flex-1">Enter Transaction Pin</Text>
+        <Text style={styles.headerTitle}>Enter Transaction Pin</Text>
       </View>
       {!networkAvailable && (
-        <View style={{ marginTop: 10, marginBottom: 10 }}>
-          <Text style={{ color: 'red', textAlign: 'center' }}>
+        <View style={styles.networkError}>
+          <Text style={styles.networkErrorText}>
             You are offline. Some features may be unavailable.
           </Text>
         </View>
       )}
       {error && (
-        <View className="bg-red-100 border border-red-400 rounded-lg p-4 mt-6 mb-2">
-          <Text className="text-red-700 text-center font-semibold">{error}</Text>
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
       {success && (
-        <View className="bg-green-100 border border-green-400 rounded-lg p-4 mt-6 mb-2">
-          <Text className="text-green-700 text-center font-semibold">Transfer successful! Redirecting to dashboard...</Text>
+        <View style={styles.successBanner}>
+          <Text style={styles.successText}>Transfer successful! Redirecting to dashboard...</Text>
         </View>
       )}
-      <View className="items-center">
-        <Text className="text-2xl font-bold text-primaryText mt-4 mb-2">
+      <View style={styles.titleSection}>
+        <Text style={styles.title}>
           Enter your Transaction Pin
         </Text>
-        <Text className="text-gray-500 mb-12">
+        <Text style={styles.subtitle}>
           Please input your 4-digit transaction pin to continue.
         </Text>
         {renderPinInputs()}
       </View>
       {renderKeypad()}
-      <View className="pb-4">
+      <View style={{ paddingBottom: 16 }}>
         <TouchableOpacity
-          className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
+          style={styles.continueButton}
           onPress={handleSubmit}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text className="text-white text-lg mr-2 font-semibold">
-              Continue
-            </Text>
+            <>
+              <Text style={styles.continueButtonText}>
+                Continue
+              </Text>
+              <MaterialIcons name="arrow-forward" size={18} color="white" />
+            </>
           )}
-          {!loading && <MaterialIcons name="arrow-forward" size={18} color="white" />}
         </TouchableOpacity>
       </View>
     </View>

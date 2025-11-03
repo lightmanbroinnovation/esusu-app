@@ -376,7 +376,7 @@ export default function AddContributor() {
     const days = [];
     // Add empty views for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+      days.push(<View key={`empty-${i}`} style={[styles.calendarDayEmpty, { padding: 8 }]} />);
     }
     
     // Add the days of the month
@@ -393,17 +393,19 @@ export default function AddContributor() {
       days.push(
         <TouchableOpacity
           key={day}
-          className={`flex-1 items-center justify-center my-1 rounded-full
-            ${isSelected ? 'bg-blue-600' : ''}
-            ${isDisabled ? 'opacity-30' : ''}`}
-          style={{ padding: 8 }}
+          style={[
+            styles.calendarDay,
+            isSelected ? styles.calendarDaySelected : null,
+            isDisabled ? styles.calendarDayDisabled : null,
+            { padding: 8 }
+          ]}
           disabled={isDisabled}
           onPress={() => {
             const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
             setDob(selectedDate);
           }}
         >
-          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
+          <Text style={isSelected ? styles.calendarDayTextSelected : styles.calendarDayTextUnselected}>{day}</Text>
         </TouchableOpacity>
       );
     }
@@ -414,17 +416,17 @@ export default function AddContributor() {
     for (let i = 0; i < totalDays; i += 7) {
       const weekDays = days.slice(i, i + 7);
       while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} style={[styles.calendarDayEmpty, { padding: 8 }]} />);
       }
       rows.push(
-        <View key={`row-${i}`} className="flex-row">
+        <View key={`row-${i}`} style={styles.calendarRow}>
           {weekDays}
         </View>
       );
     }
 
     return (
-      <View className="flex-1">
+      <View style={styles.calendarContainer}>
         {rows}
       </View>
     );
@@ -450,6 +452,432 @@ export default function AddContributor() {
   };
 
   const genderOptions = ['Male', 'Female', 'Prefer not to say'];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    content: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      marginTop: 56,
+    },
+    backButton: {
+      padding: 8,
+      borderRadius: 999,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      flex: 1,
+      textAlign: 'center',
+    },
+    headerSpacer: {
+      width: 40,
+    },
+    scrollContent: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    title: {
+      fontSize: 30,
+      fontWeight: 'bold',
+      color: '#0052CC',
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    subtitle: {
+      color: '#374151',
+      marginBottom: 24,
+    },
+    imageSection: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    imagePlaceholder: {
+      backgroundColor: '#F3F4F6',
+      width: 96,
+      height: 96,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    imagePlaceholderText: {
+      color: '#6B7280',
+      fontSize: 12,
+      marginTop: 8,
+    },
+    imageContainer: {
+      marginBottom: 8,
+    },
+    image: {
+      borderRadius: 10,
+      height: 150,
+      width: 150,
+    },
+    changeImageText: {
+      color: '#16A34A',
+      textAlign: 'center',
+      marginTop: 8,
+      fontWeight: '500',
+    },
+    addImageButton: {
+      backgroundColor: '#F3F4F6',
+      width: '100%',
+      paddingVertical: 64,
+      borderRadius: 12,
+      marginBottom: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addImageText: {
+      color: '#0052CC',
+      marginTop: 8,
+    },
+    addImageLabel: {
+      color: '#16A34A',
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    formContainer: {
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    formField: {
+      marginVertical: 8,
+    },
+    fieldLabel: {
+      color: '#374151',
+      marginBottom: 8,
+    },
+    textInput: {
+      backgroundColor: '#F3F4F6',
+      padding: 16,
+      borderRadius: 12,
+    },
+    phoneContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    phoneFlagContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      backgroundColor: '#F4F4F5',
+    },
+    phoneFlagText: {
+      fontSize: 16,
+      color: '#BDBDBD',
+    },
+    phoneInput: {
+      flex: 1,
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      backgroundColor: '#F4F4F5',
+    },
+    genderButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      height: 48,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      paddingVertical: 12,
+      backgroundColor: '#F4F4F5',
+    },
+    genderButtonText: {
+      color: '#000000',
+    },
+    genderButtonTextPlaceholder: {
+      color: '#6B7280',
+    },
+    languageContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    languageButton: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 999,
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    languageButtonSelected: {
+      backgroundColor: '#2563EB',
+    },
+    languageButtonUnselected: {
+      backgroundColor: '#F3F4F6',
+    },
+    languageButtonText: {
+      color: '#FFFFFF',
+    },
+    languageButtonTextUnselected: {
+      color: '#4B5563',
+    },
+    dateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      height: 48,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      borderRadius: 8,
+      paddingVertical: 12,
+      backgroundColor: '#F4F4F5',
+    },
+    dateButtonText: {
+      color: '#000000',
+    },
+    dateButtonTextPlaceholder: {
+      color: '#6B7280',
+    },
+    spacer: {
+      height: 96,
+    },
+    bottomButton: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: '#E5E7EB',
+    },
+    nextButton: {
+      backgroundColor: '#2563EB',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    nextButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 18,
+    },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    modalContent: {
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 16,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    modalOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 4,
+      borderRadius: 8,
+    },
+    modalOptionText: {
+      textAlign: 'center',
+      fontSize: 18,
+    },
+    modalCancelButton: {
+      marginTop: 16,
+      padding: 16,
+      alignItems: 'center',
+      backgroundColor: '#0072CE',
+      borderRadius: 12,
+    },
+    modalCancelButtonText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: 18,
+    },
+    calendarModalContent: {
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 16,
+      height: '55%',
+    },
+    calendarHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      marginBottom: 8,
+    },
+    calendarNavButton: {
+      padding: 8,
+      borderRadius: 999,
+      backgroundColor: '#F3F4F6',
+    },
+    calendarMonthButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    calendarMonthText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    calendarDaysHeader: {
+      flexDirection: 'row',
+      paddingHorizontal: 8,
+      marginBottom: 8,
+    },
+    calendarDayLabel: {
+      flex: 1,
+      textAlign: 'center',
+      fontWeight: '500',
+      color: '#6B7280',
+    },
+    calendarContainer: {
+      flex: 1,
+    },
+    calendarRow: {
+      flexDirection: 'row',
+    },
+    calendarDayEmpty: {
+      flex: 1,
+      marginVertical: 4,
+      padding: 8,
+    },
+    calendarDay: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: 4,
+      borderRadius: 999,
+      padding: 8,
+    },
+    calendarDaySelected: {
+      backgroundColor: '#2563EB',
+    },
+    calendarDayDisabled: {
+      opacity: 0.3,
+    },
+    calendarDayText: {
+      textAlign: 'center',
+    },
+    calendarDayTextSelected: {
+      textAlign: 'center',
+      color: '#FFFFFF',
+    },
+    calendarDayTextUnselected: {
+      textAlign: 'center',
+      color: '#000000',
+    },
+    calendarDoneButton: {
+      marginTop: 16,
+      padding: 16,
+      alignItems: 'center',
+      backgroundColor: '#0072CE',
+      borderRadius: 12,
+    },
+    calendarDoneButtonText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: 18,
+    },
+    yearSelectorModalContent: {
+      backgroundColor: '#FFFFFF',
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 16,
+      height: '50%',
+    },
+    yearSelectorTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    yearOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 4,
+      borderRadius: 8,
+    },
+    yearOptionSelected: {
+      backgroundColor: '#DBEAFE',
+    },
+    yearOptionText: {
+      textAlign: 'center',
+      fontSize: 18,
+    },
+    yearOptionTextSelected: {
+      textAlign: 'center',
+      fontSize: 18,
+      color: '#2563EB',
+      fontWeight: 'bold',
+    },
+    cameraModalContainer: {
+      flex: 1,
+      backgroundColor: '#000000',
+    },
+    cameraModalContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    cameraSavingIndicator: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      padding: 32,
+      borderRadius: 12,
+    },
+    cameraSavingText: {
+      color: '#FFFFFF',
+      marginTop: 16,
+    },
+    cameraInstruction: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      marginBottom: 32,
+    },
+    cameraControls: {
+      marginTop: 'auto',
+      width: '100%',
+      paddingHorizontal: 16,
+      paddingVertical: 40,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cameraControlButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      padding: 16,
+      borderRadius: 999,
+    },
+    cameraCaptureButton: {
+      backgroundColor: '#FFFFFF',
+      padding: 8,
+      borderRadius: 999,
+    },
+    cameraCaptureCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 999,
+      borderWidth: 4,
+      borderColor: '#FFFFFF',
+    },
+  });
 
   const fetchData = async (fromRefresh = false) => {
     // Check if we can fetch data
@@ -511,105 +939,104 @@ export default function AddContributor() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
         {/* Header */}
-        <View className="flex-row items-center px-4 mt-14">
+        <View style={styles.header}>
           <TouchableOpacity 
             onPress={navigateBack}
-            className=" p-2 rounded-full"
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">Add New User</Text>
-          <View style={{width: 40}} />
+          <Text style={styles.headerTitle}>Add New User</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView className="flex-1 px-4">
+        <ScrollView style={styles.scrollContent}>
           {/* Title */}
-          <Text className="text-3xl font-bold text-[#0052CC] mt-4 mb-2">Add New User</Text>
-          <Text className="text-gray-700 mb-6">Help your customer start their Esusu journey</Text>
+          <Text style={styles.title}>Add New User</Text>
+          <Text style={styles.subtitle}>Help your customer start their Esusu journey</Text>
           
           {/* Profile Image Section */}
-          <View className="items-center mb-6">
+          <View style={styles.imageSection}>
             {imageLoading || uploadingImage ? (
-              <View className="bg-gray-100 w-24 h-24 rounded-2xl items-center justify-center mb-2">
+              <View style={styles.imagePlaceholder}>
                 <ActivityIndicator size="small" color="#0052CC" />
-                <Text className="text-gray-500 text-xs mt-2">
+                <Text style={styles.imagePlaceholderText}>
                   {uploadingImage ? 'Uploading...' : 'Loading...'}
                 </Text>
               </View>
             ) : hasImage && imageUri && !imageError ? (
-              <View className="mb-2">
+              <View style={styles.imageContainer}>
                 <Image 
                   source={{ uri: imageUri }} 
-                  className="w-24 h-24 rounded-2xl"
-                  style={{borderRadius: 10, height: 150, width: 150}}
+                  style={styles.image}
                   onError={handleImageError}
                   onLoadStart={() => console.log('[AddContributor] Image loading started:', imageUri)}
                   onLoadEnd={() => console.log('[AddContributor] Image loading completed:', imageUri)}
                 />
                 <TouchableOpacity onPress={handleAddImage}>
-                  <Text className="text-green-500 text-center mt-2 font-medium">+ Change Image</Text>
+                  <Text style={styles.changeImageText}>+ Change Image</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <View>
                 <TouchableOpacity 
                   onPress={handleAddImage}
-                  className="bg-gray-100 w-full p-16 rounded-xl mb-2 items-center justify-center"
+                  style={styles.addImageButton}
                 >
                   <Ionicons name="camera" size={40} color="#0052CC" />
-                  <Text className="text-[#0052CC] mt-2">Tap to add photo</Text>
+                  <Text style={styles.addImageText}>Tap to add photo</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleAddImage}>
-                  <Text className="text-green-500 text-center font-medium">+ Add User Image</Text>
+                  <Text style={styles.addImageLabel}>+ Add User Image</Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
           
           {/* Form Fields */}
-          <View className="space-y-4 my-2">
+          <View style={styles.formContainer}>
             {/* First Name */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">First Name</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>First Name</Text>
               <TextInput
                 value={firstName}
                 onChangeText={setFirstName}
                 placeholder="Enter first name"
-                className="bg-gray-100 p-4 rounded-xl"
+                style={styles.textInput}
               />
             </View>
             
             {/* Last Name */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">Last Name</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Last Name</Text>
               <TextInput
                 value={lastName}
                 onChangeText={setLastName}
                 placeholder="Enter last name"
-                className="bg-gray-100 p-4 rounded-xl"
+                style={styles.textInput}
               />
             </View>
 
             {/* Middle Name */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">Middle Name</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Middle Name</Text>
               <TextInput
                 value={middleName}
                 onChangeText={setMiddleName}
                 placeholder="Enter middle name"
-                className="bg-gray-100 p-4 rounded-xl"
+                style={styles.textInput}
               />
             </View>
             
             {/* Phone Number */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">Phone Number</Text>
-              <View className="flex-row items-center">
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
+              <View style={styles.phoneContainer}>
                 {/* NGN Flag + Code */}
-                <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
+                <View style={styles.phoneFlagContainer}>
                   <Image
                     source={{ uri: "https://flagcdn.com/w40/ng.png" }}
                     style={{
@@ -619,7 +1046,7 @@ export default function AddContributor() {
                       marginRight: 6,
                     }}
                   />
-                  <Text className="text-base text-[#BDBDBD]">
+                  <Text style={styles.phoneFlagText}>
                     NGN
                   </Text>
                 </View>
@@ -627,7 +1054,7 @@ export default function AddContributor() {
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   placeholder="Enter phone number"
-                  className="flex-1 text-base border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                  style={styles.phoneInput}
                   keyboardType="phone-pad"
                   placeholderTextColor="#BDBDBD"
                 />
@@ -635,43 +1062,46 @@ export default function AddContributor() {
             </View>
             
             {/* NIN */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">National Identity Number (NIN)</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>National Identity Number (NIN)</Text>
               <TextInput
                 value={nin}
                 onChangeText={setNin}
                 placeholder="Enter NIN"
-                className="bg-gray-100 p-4 rounded-xl"
+                style={styles.textInput}
                 keyboardType="numeric"
                 maxLength={11}
               />
             </View>
             
             {/* Gender */}
-            <View className="my-2">
-              <Text className="text-gray-700 mb-2">Gender</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Gender</Text>
               <TouchableOpacity 
                 onPress={() => setShowGenderPicker(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={styles.genderButton}
               >
-                <Text className={gender ? "text-black" : "text-gray-500"}>{gender || "Select your gender"}</Text>
+                <Text style={gender ? styles.genderButtonText : styles.genderButtonTextPlaceholder}>
+                  {gender || "Select your gender"}
+                </Text>
                 <Ionicons name="chevron-down" size={24} color="#0052CC" />
               </TouchableOpacity>
             </View>
             
             {/* Language Selection */}
-            <View className='my-2'>
-              <Text className="text-gray-700 mb-2">Language</Text>
-              <View className="flex-row flex-wrap gap-2">
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Language</Text>
+              <View style={styles.languageContainer}>
                 {['english', 'yoruba', 'hausa', 'igbo'].map((language) => (
                   <TouchableOpacity 
                     key={language}
                     onPress={() => handleLanguageSelect(language)}
-                    className={`py-3 px-6 rounded-full ${
-                      selectedLanguage === language ? 'bg-blue-600' : 'bg-gray-100'
-                    }`}
+                    style={[
+                      styles.languageButton,
+                      selectedLanguage === language ? styles.languageButtonSelected : styles.languageButtonUnselected
+                    ]}
                   >
-                    <Text className={selectedLanguage === language ? 'text-white' : 'text-gray-600'}>
+                    <Text style={selectedLanguage === language ? styles.languageButtonText : styles.languageButtonTextUnselected}>
                       {language.charAt(0).toUpperCase() + language.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -680,13 +1110,13 @@ export default function AddContributor() {
             </View>
             
             {/* Date of Birth */}
-            <View className="my-2">
-              <Text className="text-gray-700 mb-2">Date of Birth</Text>
+            <View style={styles.formField}>
+              <Text style={styles.fieldLabel}>Date of Birth</Text>
               <TouchableOpacity 
                 onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={styles.dateButton}
               >
-                <Text className={dob ? "text-black" : "text-gray-500"}>
+                <Text style={dob ? styles.dateButtonText : styles.dateButtonTextPlaceholder}>
                   {moment(dob).format('MMMM D, YYYY')}
                 </Text>
                 <Ionicons name="calendar" size={24} color="#0052CC" />
@@ -694,20 +1124,20 @@ export default function AddContributor() {
             </View>
           </View>
           
-          <View className="h-24" />
+          <View style={styles.spacer} />
         </ScrollView>
         
         {/* Bottom Button */}
-        <View className="p-4 border-t border-gray-200">
+        <View style={styles.bottomButton}>
           <TouchableOpacity 
             onPress={handleNext}
-            className="bg-blue-600 p-4 rounded-xl items-center"
+            style={styles.nextButton}
             disabled={uploadingImage}
           >
             {uploadingImage ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-            <Text className="text-white font-semibold text-lg">Next</Text>
+            <Text style={styles.nextButtonText}>Next</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -721,32 +1151,32 @@ export default function AddContributor() {
           animationType="slide"
           onRequestClose={() => setShowGenderPicker(false)}
         >
-          <View className="flex-1 justify-end bg-black bg-opacity-30">
-            <View className="bg-white rounded-t-3xl p-4">
-              <Text className="text-xl font-bold text-center mb-4">Select Gender</Text>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Gender</Text>
               <TouchableOpacity
-                className="py-3 px-4 mb-1 rounded-lg"
+                style={styles.modalOption}
                 onPress={() => {
                   setGender('Male');
                   setShowGenderPicker(false);
                 }}
               >
-                <Text className="text-center text-lg">Male</Text>
+                <Text style={styles.modalOptionText}>Male</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="py-3 px-4 mb-1 rounded-lg"
+                style={styles.modalOption}
                 onPress={() => {
                   setGender('Female');
                   setShowGenderPicker(false);
                 }}
               >
-                <Text className="text-center text-lg">Female</Text>
+                <Text style={styles.modalOptionText}>Female</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowGenderPicker(false)}
-                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                style={styles.modalCancelButton}
               >
-                <Text className="text-white font-bold text-lg">Cancel</Text>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -761,40 +1191,40 @@ export default function AddContributor() {
           animationType="slide"
           onRequestClose={() => setShowCalendar(false)}
         >
-          <View className="flex-1 justify-end bg-black bg-opacity-30">
-            <View className="bg-white rounded-t-3xl p-4" style={{ height: '55%' }}>
-              <View className="flex-row justify-between items-center p-2 mb-2">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.calendarModalContent, { height: '55%' }]}>
+              <View style={styles.calendarHeader}>
                 <TouchableOpacity 
                   onPress={() => changeMonth('prev')}
-                  className="p-2 rounded-full bg-gray-100"
+                  style={styles.calendarNavButton}
                 >
                   <Ionicons name="chevron-back" size={20} color="#0072CE" />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => setShowYearSelector(true)}
-                  className="flex-row items-center"
+                  style={styles.calendarMonthButton}
                 >
-                  <Text className="text-xl font-bold text-center">{moment(dob).format('MMMM YYYY')}</Text>
-                  <Ionicons name="chevron-down" size={20} color="#0072CE" className="ml-1" />
+                  <Text style={styles.calendarMonthText}>{moment(dob).format('MMMM YYYY')}</Text>
+                  <Ionicons name="chevron-down" size={20} color="#0072CE" style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={() => changeMonth('next')}
-                  className="p-2 rounded-full bg-gray-100"
+                  style={styles.calendarNavButton}
                 >
                   <Ionicons name="chevron-forward" size={20} color="#0072CE" />
                 </TouchableOpacity>
               </View>
-              <View className="flex-row p-2 mb-2">
+              <View style={styles.calendarDaysHeader}>
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <Text key={day} className="flex-1 text-center font-medium text-gray-500">{day}</Text>
+                  <Text key={day} style={styles.calendarDayLabel}>{day}</Text>
                 ))}
               </View>
               {renderCalendar()}
               <TouchableOpacity 
                 onPress={() => setShowCalendar(false)}
-                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                style={styles.calendarDoneButton}
               >
-                <Text className="text-white font-bold text-lg">Done</Text>
+                <Text style={styles.calendarDoneButtonText}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -809,18 +1239,23 @@ export default function AddContributor() {
           animationType="slide"
           onRequestClose={() => setShowYearSelector(false)}
         >
-          <View className="flex-1 justify-end bg-black bg-opacity-30">
-            <View className="bg-white rounded-t-3xl p-4" style={{ height: '50%' }}>
-              <Text className="text-xl font-bold text-center mb-4">Select Year</Text>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.yearSelectorModalContent, { height: '50%' }]}>
+              <Text style={styles.yearSelectorTitle}>Select Year</Text>
               <FlatList
                 data={availableYears}
                 keyExtractor={(item) => item.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    className={`py-3 px-4 mb-1 rounded-lg ${moment(dob).year() === item ? 'bg-blue-100' : ''}`}
+                    style={[
+                      styles.yearOption,
+                      moment(dob).year() === item ? styles.yearOptionSelected : null
+                    ]}
                     onPress={() => selectYear(item)}
                   >
-                    <Text className={`text-center text-lg ${moment(dob).year() === item ? 'text-blue-600 font-bold' : ''}`}>{item}</Text>
+                    <Text style={moment(dob).year() === item ? styles.yearOptionTextSelected : styles.yearOptionText}>
+                      {item}
+                    </Text>
                   </TouchableOpacity>
                 )}
                 showsVerticalScrollIndicator={true}
@@ -833,9 +1268,9 @@ export default function AddContributor() {
               />
               <TouchableOpacity 
                 onPress={() => setShowYearSelector(false)}
-                className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                style={styles.modalCancelButton}
               >
-                <Text className="text-white font-bold text-lg">Cancel</Text>
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -849,37 +1284,37 @@ export default function AddContributor() {
         visible={showCamera}
         onRequestClose={() => setShowCamera(false)}
       >
-        <View className="flex-1 bg-black">
-          <SafeAreaView className="flex-1">
-            <View className="flex-1 justify-center items-center">
+        <View style={styles.cameraModalContainer}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.cameraModalContent}>
               {savingImage ? (
-                <View className="bg-white/20 p-8 rounded-xl">
+                <View style={styles.cameraSavingIndicator}>
                   <ActivityIndicator size="large" color="#FFFFFF" />
-                  <Text className="text-white mt-4">Saving photo...</Text>
+                  <Text style={styles.cameraSavingText}>Saving photo...</Text>
                 </View>
               ) : (
-                <View className="w-full items-center">
-                  <Text className="text-white text-xl mb-8">Position your face in the frame</Text>
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                  <Text style={styles.cameraInstruction}>Position your face in the frame</Text>
                   
                   {/* Camera Controls */}
-                  <View className="mt-auto w-full px-4 py-10 flex-row items-center justify-between">
+                  <View style={styles.cameraControls}>
                     <TouchableOpacity 
                       onPress={() => setShowCamera(false)}
-                      className="bg-white/20 p-4 rounded-full"
+                      style={styles.cameraControlButton}
                     >
                       <Ionicons name="close" size={30} color="#FFFFFF" />
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
                       onPress={takePicture}
-                      className="bg-white p-2 rounded-full"
+                      style={styles.cameraCaptureButton}
                     >
-                      <View className="w-16 h-16 rounded-full border-4 border-white" />
+                      <View style={styles.cameraCaptureCircle} />
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
                       onPress={handleSelectFromGallery}
-                      className="bg-white/20 p-4 rounded-full"
+                      style={styles.cameraControlButton}
                     >
                       <Ionicons name="images" size={30} color="#FFFFFF" />
                     </TouchableOpacity>

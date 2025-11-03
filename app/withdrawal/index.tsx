@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -120,8 +121,8 @@ const WithdrawalScreen = () => {
 
   if (!networkAvailable && !loggedInUserId) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>No network. Please connect to the internet to load withdrawal data.</Text>
+      <View style={styles.noNetworkContainer}>
+        <Text style={styles.noNetworkText}>No network. Please connect to the internet to load withdrawal data.</Text>
       </View>
     );
   }
@@ -129,50 +130,41 @@ const WithdrawalScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+      style={styles.keyboardView}
     >
-      <View className="flex-1 px-4">
-        <SafeAreaView className="flex-1">
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
           {/* Header */}
-          <View className="flex-row items-center justify-between mt-16">
+          <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.back()}
-              className="w-10 h-10 rounded-full  items-center justify-center"
+              style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-lg font-semibold">Withdraw</Text>
-            <View className="w-10" />
+            <Text style={styles.headerTitle}>Withdraw</Text>
+            <View style={styles.headerSpacer} />
           </View>
 
           {/* Content */}
-          <View className="mt-8">
-            <Text className="text-2xl font-bold text-blue-600 mb-2">Withdraw Funds</Text>
-            <Text className="text-base text-gray-600 mb-8">
+          <View style={styles.content}>
+            <Text style={styles.title}>Withdraw Funds</Text>
+            <Text style={styles.subtitle}>
               Enter the contributor's registered phone number to retrieve their details
             </Text>
 
-          
-
             {/* Phone Input */}
-            <Text className="text-base font-medium mb-2">Phone Number</Text>
-            <View className="flex-row items-center mb-6">
-              <View className="">
-              <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <View style={styles.phoneInputRow}>
+              <View style={styles.flagContainer}>
               <Image
                 source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                style={{
-                  width: 24,
-                  height: 18,
-                  borderRadius: 2,
-                  marginRight: 6,
-                }}
+                  style={styles.flagImage}
               />
-              <Text className="text-base text-[#BDBDBD]">NGN</Text>
-            </View>
+                <Text style={styles.flagText}>NGN</Text>
               </View>
               <TextInput
-              className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                style={styles.textInput}
               placeholder="Enter phone number"
               keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'phone-pad'}
                 value={phoneNumber}
@@ -180,30 +172,32 @@ const WithdrawalScreen = () => {
                   setPhoneNumber(text);
                   setError(null);
                 }}
+                placeholderTextColor="#BDBDBD"
               />
             </View>
               {/* Error Message */}
               {error && (
-                <View className="mb-4 p-3 bg-red-50 rounded-lg">
-                  <Text className="text-red-600">{error}</Text>
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
                 </View>
               )}
           </View>
 
-          <View className="flex-1 justify-end pb-4">
+          <View style={styles.buttonContainer}>
             {/* Continue Button */}
             {!isKeyboardVisible && (
               <TouchableOpacity
-                className={`flex-row justify-center items-center ${loading || !phoneNumber ? 'bg-[#0072CE]/50' : 'bg-[#0072CE]'} py-4 rounded-lg`}
+                style={[
+                  styles.nextButton,
+                  (loading || !phoneNumber) && styles.nextButtonDisabled
+                ]}
                 onPress={handleSearch}
                 disabled={loading || !phoneNumber || !loggedInUserId}
               >
                 {loading ? (
                   <ActivityIndicator color="white" size="small" />
                 ) : (
-                  <>
-                    <Text className="text-white text-lg mr-2 font-semibold">Next</Text>
-                  </>
+                  <Text style={styles.nextButtonText}>Next</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -213,5 +207,136 @@ const WithdrawalScreen = () => {
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  noNetworkContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noNetworkText: {
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 64,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  content: {
+    marginTop: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2563EB',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4B5563',
+    marginBottom: 32,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  phoneInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  flagContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  flagImage: {
+    width: 24,
+    height: 18,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  flagText: {
+    fontSize: 16,
+    color: '#BDBDBD',
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  errorContainer: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#DC2626',
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 16,
+  },
+  nextButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#0072CE',
+    opacity: 0.5,
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+});
 
 export default WithdrawalScreen; 

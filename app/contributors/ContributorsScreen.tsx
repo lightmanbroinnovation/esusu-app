@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, FlatList, SafeAreaView, Modal, ActivityIndicator, Alert, ScrollView, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Image, FlatList, SafeAreaView, Modal, ActivityIndicator, Alert, ScrollView, RefreshControl, Dimensions, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import Footer from '../components/Footer';
@@ -370,6 +370,155 @@ export default function ContributorsScreen() {
     yearly: 'Contributors who save once a year.'
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      color: '#4B5563',
+    },
+    retryButton: {
+      marginTop: 16,
+      padding: 12,
+      backgroundColor: '#3B82F6',
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: '#FFFFFF',
+    },
+    scrollContent: {
+      flex: 1,
+      paddingHorizontal: 16,
+      marginTop: 8,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    backButton: {
+      padding: 8,
+      borderRadius: 999,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      flex: 1,
+    },
+    card: {
+      backgroundColor: '#232335',
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    cardTitle: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    cardSubtitle: {
+      color: '#B0B0C3',
+      fontSize: 15,
+      marginBottom: 16,
+    },
+    photosRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 18,
+    },
+    photoImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: '#FFFFFF',
+      backgroundColor: '#EEEEEE',
+    },
+    photoOverlay: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#2D2D44',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#FFFFFF',
+    },
+    photoOverlayText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+    },
+    reminderButton: {
+      backgroundColor: '#007AFF',
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    reminderButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 12,
+      width: '83.333333%',
+      padding: 24,
+      position: 'relative',
+    },
+    modalTitle: {
+      color: '#2563EB',
+      fontSize: 24,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+      paddingBottom: 16,
+      marginBottom: 16,
+    },
+    modalText: {
+      textAlign: 'center',
+      color: '#374151',
+      fontSize: 16,
+      marginBottom: 24,
+    },
+    modalCloseButton: {
+      backgroundColor: '#2563EB',
+      paddingVertical: 12,
+      borderRadius: 16,
+      position: 'absolute',
+      bottom: -16,
+      left: '30%',
+      width: '40%',
+    },
+    modalCloseButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData(true);
@@ -384,26 +533,27 @@ export default function ContributorsScreen() {
   // Only show error if there is truly no data to display (e.g., error and no contributors at all)
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView style={styles.container}>
       <StatusBarAdapter backgroundColor="#FFFFFF" barStyle="dark-content" />
       {error ? (
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-600">Error: {error}</Text>
-          <TouchableOpacity onPress={handleRetry} className="mt-4 p-3 bg-blue-500 rounded-lg">
-            <Text className="text-white">Retry</Text>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error: {error}</Text>
+          <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          className="flex-1 px-4 mt-2" contentContainerStyle={{ paddingBottom: 32 }}
+          style={styles.scrollContent}
+          contentContainerStyle={{ paddingBottom: 32 }}
         >
           {/* Header with Back Arrow */}
-          <View className="flex-row items-center mb-4">
-            <TouchableOpacity onPress={navigateBack} className=" p-2 rounded-full ">
+          <View style={styles.header}>
+            <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#000" />
             </TouchableOpacity>
-            <Text className="text-lg font-bold text-center flex-1">Contributor</Text>
+            <Text style={styles.headerTitle}>Contributor</Text>
           </View>
       
           {/* Grouped Contributor Cards */}
@@ -429,60 +579,36 @@ export default function ContributorsScreen() {
               <Text style={{ color: '#B0B0C3', fontSize: 15, marginBottom: 16 }}>
                 {groupSubtitles[group] || ''}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+              <View style={styles.photosRow}>
                 {(groupedPhotos[group] || []).slice(0, 8).map((photoUri, idx) => (
-                            <Image 
+                  <Image 
                     key={idx}
                     source={{ uri: photoUri }}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      borderWidth: 2,
-                      borderColor: '#fff',
-                      marginLeft: idx === 0 ? 0 : -14,
-                      backgroundColor: '#eee',
-                    }}
+                    style={[
+                      styles.photoImage,
+                      { marginLeft: idx === 0 ? 0 : -14 }
+                    ]}
                   />
                 ))}
                 {(groupedPhotos[group] || []).length > 8 && (
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: '#2D2D44',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginLeft: -14,
-                      borderWidth: 2,
-                      borderColor: '#fff',
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                  <View style={[styles.photoOverlay, { marginLeft: -14 }]}>
+                    <Text style={styles.photoOverlayText}>
                       +{(groupedPhotos[group] || []).length - 8}
                     </Text>
-                          </View>
-                        )}
-                      </View>
-                      <TouchableOpacity 
-                style={{
-                  backgroundColor: '#007AFF',
-                  borderRadius: 12,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                }}
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity 
+                style={styles.reminderButton}
                 onPress={e => {
                   e.stopPropagation();
                   openReminderModal(group);
                 }}
               >
                 <Ionicons name="notifications" size={22} color="#5FF3E2" style={{ marginRight: 8 }} />
-                <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>Send Reminder</Text>
-                      </TouchableOpacity>
-                    </TouchableOpacity>
+                <Text style={styles.reminderButtonText}>Send Reminder</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
@@ -495,21 +621,20 @@ export default function ContributorsScreen() {
         visible={reminderModalVisible} 
         onRequestClose={closeReminderModal}
       >
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white rounded-xl w-10/12 p-6 relative">
-            <Text className="text-blue-600 text-2xl font-bold text-center border-b border-gray-200 pb-4 mb-4">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
               Reminder Sent!
             </Text>
-            <Text className="text-center text-gray-700 text-base mb-6">
+            <Text style={styles.modalText}>
               {getReminderMessage()}
             </Text>
             {/* Close Button */}
             <TouchableOpacity 
-              className="bg-blue-600 py-3 rounded-2xl absolute -bottom-[16px] left-[30%]"
-              style={{ width: '40%' }}
+              style={styles.modalCloseButton}
               onPress={closeReminderModal}
             >
-              <Text className="text-white font-semibold text-center">Close</Text>
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>

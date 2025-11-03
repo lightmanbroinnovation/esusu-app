@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 import { checkPhoneNumberAvailability } from '../../services/api'; // Import the API function
 import { useBackButtonHandler } from '../utils/backButtonHandler';
+import { StyleSheet } from 'react-native';
 
 export default function Signup() {
   const router = useRouter();
@@ -161,103 +162,96 @@ export default function Signup() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.keyboardAvoidingView}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       <ScrollView 
-        className="flex-1 bg-white"
-        contentContainerStyle={{ flexGrow: 1 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View
-          className="flex-1 px-6"
-          style={{
-            paddingTop: insets.top + getResponsiveSize(16),
-            paddingBottom: insets.bottom + getResponsiveSize(16),
-            paddingHorizontal: getResponsiveSize(24),
-          }}
-        >
+        <View style={[styles.container, {
+          paddingTop: insets.top + getResponsiveSize(16),
+          paddingBottom: insets.bottom + getResponsiveSize(16),
+          paddingHorizontal: getResponsiveSize(24),
+        }]}>
           {/* Header */}
-          <View className="flex-row justify-between items-center" style={{ marginBottom: getResponsiveSize(24) }}>
+          <View style={[styles.header, { marginBottom: getResponsiveSize(24) }]}>
             <TouchableOpacity
-              className="flex-row items-center"
+              style={[styles.backButton, { padding: getResponsiveSize(8) }]}
               onPress={() => router.back()}
-              style={{ padding: getResponsiveSize(8) }}
             >
               <Ionicons name="arrow-back" size={getResponsiveSize(28)} />
             </TouchableOpacity>
-            <Text className="font-semibold" style={{ fontSize: getResponsiveSize(16) }}>Step 1 of 4</Text>
+            <Text style={[styles.stepText, { fontSize: getResponsiveSize(16) }]}>Step 1 of 4</Text>
           </View>
 
           {message && (
-            <View style={{ 
+            <View style={[styles.messageContainer, { 
               marginBottom: getResponsiveSize(16), 
-              padding: getResponsiveSize(12), 
-              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF', 
-              borderRadius: getResponsiveSize(8) 
-            }}>
-              <Text style={{ 
-                color: messageType === 'error' ? '#D92D20' : '#0072CE', 
-                textAlign: 'center',
+              padding: getResponsiveSize(12),
+              backgroundColor: messageType === 'error' ? '#FFD6D6' : '#D6F5FF',
+              borderRadius: getResponsiveSize(8)
+            }]}>
+              <Text style={[styles.messageText, { 
+                color: messageType === 'error' ? '#D92D20' : '#0072CE',
                 fontSize: getResponsiveSize(14)
-              }}>{message}</Text>
+              }]}>{message}</Text>
             </View>
           )}
 
-          <View style={{ marginTop: getResponsiveSize(32) }}>
-            <Text className="text-2xl font-bold text-[#0072CE] mb-2" style={{ fontSize: getResponsiveSize(24) }}>
+          <View style={[styles.headerTextContainer, { marginTop: getResponsiveSize(32) }]}>
+            <Text style={[styles.title, { fontSize: getResponsiveSize(24) }]}>
               Let's Get Started!
             </Text>
-            <Text className="text-base text-[#4F4F4F]" style={{ fontSize: getResponsiveSize(16) }}>
+            <Text style={[styles.subtitle, { fontSize: getResponsiveSize(16) }]}>
               We'll send a verification code to your phone number and email to secure your account.
             </Text>
           </View>
 
           {/* Phone Number Input */}
-          <View style={{ marginTop: getResponsiveSize(32) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Phone Number *</Text>
-            <View className="flex-row items-center">
+          <View style={[styles.inputContainer, { marginTop: getResponsiveSize(32) }]}>
+            <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Phone Number *</Text>
+            <View style={styles.phoneInputContainer}>
               {/* NG Flag + Code */}
-              <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]" style={{
+              <View style={[styles.flagContainer, {
                 paddingHorizontal: getResponsiveSize(12),
                 paddingVertical: getResponsiveSize(12),
                 borderRadius: getResponsiveSize(8)
-              }}>
+              }]}>
                 <Image
                   source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                  style={{
+                  style={[styles.flagImage, {
                     width: getResponsiveSize(24),
                     height: getResponsiveSize(18),
-                    borderRadius: 2,
                     marginRight: getResponsiveSize(6),
-                  }}
+                  }]}
                 />
-                <Text className="text-base text-[#BDBDBD]" style={{ fontSize: getResponsiveSize(16) }}>NGN</Text>
+                <Text style={[styles.countryCode, { fontSize: getResponsiveSize(16) }]}>NGN</Text>
               </View>
 
               {/* Phone input */}
               <TextInput
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
-                maxLength={11} // Allow 11 digits for local Nigerian numbers starting with 0
+                maxLength={11}
                 value={phone}
                 onChangeText={setPhone}
-                className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
                 placeholderTextColor="#BDBDBD"
-                style={{
+                style={[styles.phoneInput, {
                   paddingHorizontal: getResponsiveSize(12),
                   paddingVertical: getResponsiveSize(12),
                   borderRadius: getResponsiveSize(8),
                   fontSize: getResponsiveSize(16)
-                }}
+                }]}
               />
             </View>
           </View>
 
           {/* Email Input */}
-          <View style={{ marginTop: getResponsiveSize(24) }}>
-            <Text className="text-sm text-[#4F4F4F] mb-1" style={{ fontSize: getResponsiveSize(14) }}>Email Address *</Text>
+          <View style={[styles.inputContainer, { marginTop: getResponsiveSize(24) }]}>
+            <Text style={[styles.inputLabel, { fontSize: getResponsiveSize(14) }]}>Email Address *</Text>
             <TextInput
               placeholder="Enter your email address"
               keyboardType="email-address"
@@ -265,41 +259,38 @@ export default function Signup() {
               autoCorrect={false}
               value={email}
               onChangeText={setEmail}
-              className="text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
               placeholderTextColor="#BDBDBD"
-              style={{
+              style={[styles.emailInput, {
                 paddingHorizontal: getResponsiveSize(12),
                 paddingVertical: getResponsiveSize(12),
                 borderRadius: getResponsiveSize(8),
                 fontSize: getResponsiveSize(16)
-              }}
+              }]}
             />
           </View>
 
           {/* Sign up text */}
-          <Text className="text-[#4F4F4F] my-2" style={{ fontSize: getResponsiveSize(14) }}>
+          <Text style={[styles.loginText, { fontSize: getResponsiveSize(14) }]}>
             Already have an account?{" "}
-            <Text className="text-[#0072CE] font-semibold"
-                 onPress={() => router.push("/login")}>Login</Text>
+            <Text style={styles.loginLink} onPress={() => router.push("/login")}>Login</Text>
           </Text>
 
           {/* Spacer to push button down */}
-          <View className="flex-1 justify-end" style={{ paddingBottom: getResponsiveSize(16) }}>
+          <View style={[styles.buttonContainer, { paddingBottom: getResponsiveSize(16) }]}>
             {/* Continue Button */}
             <TouchableOpacity
-              className="flex-row justify-center items-center bg-[#0072CE] py-4 rounded-lg"
-              onPress={handleSignup}
-              disabled={loading} // Disable button when loading
-              style={{
+              style={[styles.continueButton, {
                 paddingVertical: getResponsiveSize(16),
                 borderRadius: getResponsiveSize(8),
                 opacity: loading ? 0.7 : 1
-              }}
+              }]}
+              onPress={handleSignup}
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text className="text-white text-lg mr-2 font-semibold" style={{ fontSize: getResponsiveSize(18) }}>Continue</Text>
+                <Text style={[styles.continueButtonText, { fontSize: getResponsiveSize(18) }]}>Continue</Text>
               )}
               {!loading && <MaterialIcons name="arrow-forward" size={getResponsiveSize(18)} color="white" />}
             </TouchableOpacity>
@@ -309,3 +300,113 @@ export default function Signup() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontWeight: '600',
+  },
+  messageContainer: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  messageText: {
+    textAlign: 'center',
+  },
+  headerTextContainer: {
+    marginTop: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0072CE',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#4F4F4F',
+  },
+  inputContainer: {
+    marginTop: 24,
+  },
+  inputLabel: {
+    color: '#4F4F4F',
+    marginBottom: 4,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flagContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F4F4F5',
+    marginRight: 12,
+  },
+  flagImage: {
+    borderRadius: 2,
+  },
+  countryCode: {
+    color: '#BDBDBD',
+  },
+  phoneInput: {
+    flex: 1,
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F4F4F5',
+  },
+  emailInput: {
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F4F4F5',
+  },
+  loginText: {
+    color: '#4F4F4F',
+    marginVertical: 8,
+  },
+  loginLink: {
+    color: '#0072CE',
+    fontWeight: '600',
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  continueButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+  },
+  continueButtonText: {
+    color: 'white',
+    marginRight: 8,
+    fontWeight: '600',
+  },
+});

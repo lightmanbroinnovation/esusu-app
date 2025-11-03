@@ -7,7 +7,8 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  ScrollView
+  ScrollView,
+  StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +19,112 @@ import { getCachedData, invalidateCache } from '../utils/dataCaching';
 import { fetchAgentVerificationData } from '../../services/api';
 import EsusuLoader from './EsusuLoader';
 import { useDataFetchGuard, useRenderGuard } from '../utils/dataFetchGuard';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 999,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#0052CC',
+    marginTop: 16,
+  },
+  subtitle: {
+    color: '#374151',
+    marginBottom: 32,
+    marginTop: 8,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#4B5563',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  formContainer: {
+    marginTop: 24,
+  },
+  formField: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    color: '#374151',
+    marginBottom: 4,
+  },
+  textInput: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 12,
+  },
+  bottomButton: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  nextButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  nextButtonEnabled: {
+    backgroundColor: '#2563EB',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 18,
+  },
+});
 
 interface User {
   firstname: string;
@@ -207,61 +314,61 @@ export default function AgentVerification() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1">
+    <SafeAreaView style={styles.container}>
+      <View style={{ flex: 1 }}>
         {/* Header */}
-        <View className="flex-row items-center px-4">
+        <View style={styles.header}>
           <TouchableOpacity 
             onPress={navigateBack}
-            className="bg-gray-100 p-2 rounded-full"
+            style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold flex-1 text-center">Add New User</Text>
-          <View style={{width: 40}} />
+          <Text style={styles.headerTitle}>Add New User</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        <View className="flex-1 px-4">
+        <View style={styles.content}>
           {/* Title */}
-          <Text className="text-3xl font-bold text-[#0052CC] mt-4">Confirm Your Identity</Text>
-          <Text className="text-gray-700 mb-8 mt-2">
+          <Text style={styles.title}>Confirm Your Identity</Text>
+          <Text style={styles.subtitle}>
             Before completing this onboarding, we need to verify your identity as the agent responsible.
           </Text>
           
           {loading ? (
-            <View className="items-center justify-center py-10">
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#0052CC" />
-              <Text className="mt-4 text-gray-600">Loading your information...</Text>
+              <Text style={styles.loadingText}>Loading your information...</Text>
             </View>
           ) : error ? (
-            <View className="items-center justify-center py-10">
-              <Text className="text-red-500 text-center mb-4">{error}</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity 
                 onPress={handleRetry}
-                className="bg-blue-600 px-6 py-2 rounded-md"
+                style={styles.retryButton}
               >
-                <Text className="text-white font-semibold">Retry</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : (
             /* Form Fields */
-            <View className="space-y-6">
+            <View style={styles.formContainer}>
               {/* Agent Name */}
-              <View>
-                <Text className="text-gray-700 mb-1">Agent Name</Text>
+              <View style={styles.formField}>
+                <Text style={styles.fieldLabel}>Agent Name</Text>
                 <TextInput
                   value={userData ? `${userData.firstname} ${userData.lastname}` : ''}
-                  className="bg-gray-100 p-4 rounded-xl"
+                  style={styles.textInput}
                   editable={false}
                 />
               </View>
               
               {/* Agent ID */}
-              <View>
-                <Text className="text-gray-700 mb-1">Agent ID</Text>
+              <View style={styles.formField}>
+                <Text style={styles.fieldLabel}>Agent ID</Text>
                 <TextInput
                   value={userData ? userData.id : ''}
-                  className="bg-gray-100 p-4 rounded-xl"
+                  style={styles.textInput}
                   editable={false}
                 />
               </View>
@@ -270,13 +377,16 @@ export default function AgentVerification() {
         </View>
         
         {/* Bottom Button */}
-        <View className="p-4 border-t border-gray-200">
+        <View style={styles.bottomButton}>
           <TouchableOpacity 
             onPress={handleNext}
-            className={`${userData ? 'bg-blue-600' : 'bg-gray-400'} p-4 rounded-xl items-center`}
+            style={[
+              styles.nextButton,
+              userData ? styles.nextButtonEnabled : styles.nextButtonDisabled
+            ]}
             disabled={loading || !!error || !userData}
           >
-            <Text className="text-white font-semibold text-lg">Next</Text>
+            <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
         </View>
       </View>

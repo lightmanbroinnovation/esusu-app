@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Modal, Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  ScrollView, 
+  Modal, 
+  Platform, 
+  StyleSheet, 
+  ViewStyle, 
+  TextStyle, 
+  TextInputProps, 
+  TouchableOpacityProps,
+  ScrollViewProps,
+  ModalProps
+} from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { uploadCacDocument } from '../../services/api';
@@ -168,51 +184,52 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1">
-        <View className="p-6">
-          {/* Header styled like transaction-pin.tsx */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 32, marginBottom: 4 }}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
             <TouchableOpacity
-              style={{  borderRadius: 100, marginRight: 8 }}
+              style={styles.backButton}
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={28} color="#222" />
             </TouchableOpacity>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', flex: 1, textAlign: 'center' }}>Business Info</Text>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'transparent', marginLeft: 8 }} />
+            <Text style={styles.headerTitle}>Business Info</Text>
+            <View style={styles.headerPlaceholder} />
           </View>
+          
           {successMessage && (
-            <View style={{ backgroundColor: '#D1FAE5', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-              <Text style={{ color: '#065F46', fontWeight: 'bold', textAlign: 'center' }}>{successMessage}</Text>
+            <View style={styles.successMessage}>
+              <Text style={styles.successMessageText}>{successMessage}</Text>
             </View>
           )}
 
-          <View className="mt-4 mb-8">
-            <Text className="text-[#0052CC] text-3xl font-bold text-center">
-              Add Your Business Info
-            </Text>
-            <Text className="text-gray-600 text-base text-center mt-2 px-4">
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Add Your Business Info</Text>
+            <Text style={styles.subtitle}>
               Tell us about your business so we can verify and support your operations.
             </Text>
           </View>
 
-          <View className="space-y-4">
-            <View>
-              <Text className="text-gray-700 mb-1 font-medium">Business Name</Text>
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Business Name</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+                style={styles.input}
                 placeholder="Enter business name"
+                placeholderTextColor="#9CA3AF"
                 value={businessName}
                 onChangeText={setBusinessName}
               />
             </View>
 
-            <View>
-              <Text className="text-gray-700 mb-1 font-medium">Business Address</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Business Address</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+                style={[styles.input, styles.textArea]}
                 placeholder="Enter address"
+                placeholderTextColor="#9CA3AF"
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -221,15 +238,17 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
               />
             </View>
 
-            <View className="flex-row justify-between space-x-4">
-              <View className="flex-1">
-                <Text className="text-gray-700 mb-1 font-medium">State</Text>
+            <View style={styles.rowContainer}>
+              <View style={styles.flex1}>
+                <Text style={styles.label}>State</Text>
                 <TouchableOpacity
-                  className="border border-gray-300 rounded-lg p-3 bg-gray-50 flex-row justify-between items-center"
+                  style={styles.dropdownButton}
                   onPress={() => setShowStateDropdown(true)}
                 >
-                  <Text className={state ? "text-gray-800" : "text-gray-400"}>{state || 'Select the state'}</Text>
-                  <Ionicons name={'chevron-down'} size={20} color="#9B9B9B" />
+                  <Text style={[styles.dropdownButtonText, state ? styles.dropdownButtonTextSelected : styles.dropdownButtonTextPlaceholder]}>
+                    {state || 'Select the state'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#9B9B9B" />
                 </TouchableOpacity>
                 <Modal
                   visible={showStateDropdown}
@@ -237,19 +256,20 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                   animationType="fade"
                   onRequestClose={() => setShowStateDropdown(false)}
                 >
-                  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ backgroundColor: 'white', borderRadius: 12, width: '85%', maxHeight: 400, padding: 16 }}>
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
                       <TextInput
                         placeholder="Search state..."
+                        placeholderTextColor="#9CA3AF"
                         value={stateSearch}
                         onChangeText={setStateSearch}
-                        style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, marginBottom: 12, padding: 8 }}
+                        style={styles.searchInput}
                       />
-                      <ScrollView style={{ maxHeight: 300 }}>
+                      <ScrollView style={styles.modalScrollView}>
                         {states.filter(s => s.toLowerCase().includes(stateSearch.toLowerCase())).map((s) => (
                           <TouchableOpacity
                             key={s}
-                            style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}
+                            style={styles.modalItem}
                             onPress={() => {
                               setState(s);
                               setShowStateDropdown(false);
@@ -257,26 +277,35 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                               fetchCities(s);
                             }}
                           >
-                            <Text style={{ fontSize: 16, color: '#222' }}>{s}</Text>
+                            <Text style={styles.modalItemText}>{s}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
-                      <TouchableOpacity onPress={() => setShowStateDropdown(false)} style={{ marginTop: 12, alignSelf: 'flex-end' }}>
-                        <Text style={{ color: '#0072CE', fontWeight: 'bold' }}>Close</Text>
+                      <TouchableOpacity 
+                        onPress={() => setShowStateDropdown(false)} 
+                        style={styles.modalCloseButton}
+                      >
+                        <Text style={styles.modalCloseButtonText}>Close</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                 </Modal>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-700 mb-1 font-medium">City</Text>
+              <View style={styles.flex1}>
+                <Text style={styles.label}>City</Text>
                 <TouchableOpacity
-                  className="border border-gray-300 rounded-lg p-3 bg-gray-50 flex-row justify-between items-center"
+                  style={[styles.dropdownButton, !state && styles.dropdownButtonDisabled]}
                   onPress={() => state && setShowCityDropdown(true)}
                   disabled={!state}
                 >
-                  <Text className={city ? "text-gray-800" : "text-gray-400"}>{city || 'Select the city'}</Text>
-                  <Ionicons name={'chevron-down'} size={20} color="#9B9B9B" />
+                  <Text style={[
+                    styles.dropdownButtonText, 
+                    city ? styles.dropdownButtonTextSelected : styles.dropdownButtonTextPlaceholder,
+                    !state && styles.dropdownButtonTextDisabled
+                  ]}>
+                    {city || 'Select the city'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color={!state ? "#D1D5DB" : "#9B9B9B"} />
                 </TouchableOpacity>
                 <Modal
                   visible={showCityDropdown}
@@ -284,31 +313,35 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                   animationType="fade"
                   onRequestClose={() => setShowCityDropdown(false)}
                 >
-                  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ backgroundColor: 'white', borderRadius: 12, width: '85%', maxHeight: 400, padding: 16 }}>
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
                       <TextInput
                         placeholder="Search city..."
+                        placeholderTextColor="#9CA3AF"
                         value={citySearch}
                         onChangeText={setCitySearch}
-                        style={{ borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, marginBottom: 12, padding: 8 }}
+                        style={styles.searchInput}
                       />
-                      <ScrollView style={{ maxHeight: 300 }}>
+                      <ScrollView style={styles.modalScrollView}>
                         {cities.filter(c => c.toLowerCase().includes(citySearch.toLowerCase())).map((c) => (
                           <TouchableOpacity
                             key={c}
-                            style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}
+                            style={styles.modalItem}
                             onPress={() => {
                               setCity(c);
                               setShowCityDropdown(false);
                               setCitySearch('');
                             }}
                           >
-                            <Text style={{ fontSize: 16, color: '#222' }}>{c}</Text>
+                            <Text style={styles.modalItemText}>{c}</Text>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
-                      <TouchableOpacity onPress={() => setShowCityDropdown(false)} style={{ marginTop: 12, alignSelf: 'flex-end' }}>
-                        <Text style={{ color: '#0072CE', fontWeight: 'bold' }}>Close</Text>
+                      <TouchableOpacity 
+                        onPress={() => setShowCityDropdown(false)} 
+                        style={styles.modalCloseButton}
+                      >
+                        <Text style={styles.modalCloseButtonText}>Close</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -316,28 +349,29 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
               </View>
             </View>
 
-            <View>
-              <Text className="text-gray-700 mb-1 font-medium">CAC Number</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>CAC Number</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+                style={styles.input}
                 placeholder="Enter CAC number"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="number-pad"
                 value={cacNumber}
                 onChangeText={setCacNumber}
               />
             </View>
 
-            <View>
-              <Text className="text-gray-700 mb-1 font-medium">Upload Your CAC Document</Text>
-              <View className="border border-dashed border-gray-400 rounded-lg p-6 items-center justify-center bg-gray-50 h-40">
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Upload Your CAC Document</Text>
+              <View style={styles.uploadContainer}>
                 <Ionicons name="cloud-upload-outline" size={40} color="#0072CE" />
-                <Text className="text-gray-600 mt-2 text-center">Choose a file & drop it here</Text>
-                <Text className="text-gray-500 text-xs mt-1">JPEG, and PNG formats, up to 5MB</Text>
+                <Text style={styles.uploadText}>Choose a file & drop it here</Text>
+                <Text style={styles.uploadSubtext}>JPEG, and PNG formats, up to 5MB</Text>
                 <TouchableOpacity
-                  className="bg-blue-100 py-2 px-4 rounded-lg mt-3"
+                  style={styles.uploadButton}
                   onPress={handleChooseDocument}
                 >
-                  <Text className="text-[#0072CE] font-semibold">Choose from Browser</Text>
+                  <Text style={styles.uploadButtonText}>Choose from Browser</Text>
                 </TouchableOpacity>
                 {/* Hidden file input for web */}
                 {Platform.OS === 'web' && (
@@ -349,10 +383,10 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                     onChange={handleFileChange}
                   />
                 )}
-                {/* Show selected file name if available, styled inside the parent */}
+                {/* Show selected file name if available */}
                 {cacDocumentName && Platform.OS === 'web' && (
-                  <View style={{ marginTop: 8, backgroundColor: '#F0FDF4', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12, alignSelf: 'stretch', alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#166534', fontSize: 13, fontWeight: '500' }}>Selected: {cacDocumentName}</Text>
+                  <View style={styles.selectedFileContainer}>
+                    <Text style={styles.selectedFileText}>Selected: {cacDocumentName}</Text>
                   </View>
                 )}
               </View>
@@ -360,10 +394,10 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
           </View>
 
           <TouchableOpacity 
-            className="bg-[#007BFF] py-4 rounded-xl mt-8"
+            style={styles.submitButton}
             onPress={handleSubmit}
           >
-            <Text className="text-white text-center text-lg font-medium">
+            <Text style={styles.submitButtonText}>
               Next
             </Text>
           </TouchableOpacity>
@@ -372,5 +406,251 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  // Layout
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  container: {
+    padding: 24,
+  },
+  formContainer: {
+    marginTop: 8,
+    gap: 16,
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  flex1: {
+    flex: 1,
+  },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 4,
+  },
+  backButton: {
+    borderRadius: 100,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    color: '#222',
+  },
+  headerPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'transparent',
+    marginLeft: 8,
+  },
+  
+  // Success Message
+  successMessage: {
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  successMessageText: {
+    color: '#065F46',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  
+  // Title & Subtitle
+  titleContainer: {
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  title: {
+    color: '#0052CC',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 32,
+  },
+  subtitle: {
+    color: '#6B7280',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+  },
+  
+  // Form Elements
+  inputGroup: {
+    marginBottom: 4,
+  },
+  label: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    fontSize: 16,
+    color: '#111827',
+  },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  
+  // Dropdown
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  dropdownButtonTextSelected: {
+    color: '#111827',
+  },
+  dropdownButtonTextPlaceholder: {
+    color: '#9CA3AF',
+  },
+  dropdownButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  
+  // Modal
+  modalOverlay: {
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.2)', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white', 
+    borderRadius: 12, 
+    width: '85%', 
+    maxHeight: 400, 
+    padding: 16,
+  },
+  searchInput: {
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    borderRadius: 8, 
+    marginBottom: 12, 
+    padding: 12,
+    fontSize: 16,
+    color: '#111827',
+  },
+  modalScrollView: {
+    maxHeight: 300,
+  },
+  modalItem: {
+    paddingVertical: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#F3F4F6',
+  },
+  modalItemText: {
+    fontSize: 16, 
+    color: '#111827',
+  },
+  modalCloseButton: {
+    marginTop: 12, 
+    alignSelf: 'flex-end',
+  },
+  modalCloseButtonText: {
+    color: '#0072CE', 
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  
+  // Upload Section
+  uploadContainer: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#9CA3AF',
+    borderRadius: 8,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+    height: 160,
+  },
+  uploadText: {
+    color: '#4B5563',
+    marginTop: 8,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  uploadSubtext: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  uploadButton: {
+    backgroundColor: '#DBEAFE',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  uploadButtonText: {
+    color: '#0072CE',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  selectedFileContainer: {
+    marginTop: 8,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'stretch',
+    alignItems: 'flex-start',
+  },
+  selectedFileText: {
+    color: '#166534',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  
+  // Submit Button
+  submitButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 32,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+});
 
 export default BusinessInfoForm; 

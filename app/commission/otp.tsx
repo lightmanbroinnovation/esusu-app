@@ -1,14 +1,154 @@
 export const options = {
   headerShown: false, // Hide the header
 };
-;
+
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Vibration, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router"; // Correct import
 import { MaterialIcons, Ionicons } from "@expo/vector-icons"; // Import icon libraries
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchUser } from "../../services/api";
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButtonIcon: {
+    backgroundColor: '#F3F4F6',
+    padding: 8,
+    borderRadius: 999,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 32,
+  },
+  content: {
+    flex: 1,
+    marginTop: 32,
+    paddingHorizontal: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#0074FF',
+  },
+  subtitle: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  amountContainer: {
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  amountLabel: {
+    textAlign: 'center',
+    color: '#4B5563',
+  },
+  amountValue: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2563EB',
+  },
+  pinInputsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  pinInput: {
+    width: 48,
+    height: 48,
+    textAlign: 'center',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: '#F4F4F5',
+  },
+  pinDot: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0072CE',
+  },
+  resendButton: {
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  resendText: {
+    color: '#0074FF',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  bottomContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 16,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  continueButtonActive: {
+    backgroundColor: '#0072CE',
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    marginRight: 8,
+    fontWeight: '600',
+  },
+  keypadContainer: {
+    marginTop: 40,
+    width: '100%',
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  keypadKey: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  keypadText: {
+    fontSize: 30,
+    fontWeight: '600',
+    color: '#0072CE',
+  },
+});
 
 export default function OTPScreen() {
   const [pin, setPin] = useState<string>(""); // State for the entered PIN
@@ -90,18 +230,19 @@ export default function OTPScreen() {
 
   const renderPinInputs = () => {
     return (
-      <View className="flex-row items-center justify-center space-x-4 mt-6">
+      <View style={styles.pinInputsContainer}>
         {[0, 1, 2, 3].map((i) => (
           <TouchableOpacity
             key={i}
-            onPress={() => setShowKeypad(true)} // Show keypad when clicked
-            className="w-12 h-12 text-center mr-2 justify-center items-center border rounded-lg"
-            style={{
-              borderColor: i < pin.length ? "#0072CE" : "#ccc",
-              backgroundColor: "#F4F4F5",
-            }}
+            onPress={() => setShowKeypad(true)}
+            style={[
+              styles.pinInput,
+              {
+                borderColor: i < pin.length ? "#0072CE" : "#ccc",
+              }
+            ]}
           >
-            <Text className="text-xl font-bold text-[#0072CE]">{pin[i] ? "•" : ""}</Text>
+            <Text style={styles.pinDot}>{pin[i] ? "•" : ""}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -111,11 +252,11 @@ export default function OTPScreen() {
   const renderKeypad = () => {
     const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "x", "0", "✓"];
     return (
-      <View className="mt-10 space-y-4 w-full">
+      <View style={styles.keypadContainer}>
         {Array(4)
           .fill(null)
           .map((_, rowIndex) => (
-            <View key={rowIndex} className="flex-row justify-between">
+            <View key={rowIndex} style={styles.keypadRow}>
               {keys.slice(rowIndex * 3, rowIndex * 3 + 3).map((key) => (
                 <TouchableOpacity
                   key={key}
@@ -131,15 +272,15 @@ export default function OTPScreen() {
                       handleKeyPress(key);
                     }
                   }}
-                  className="w-20 h-20 bg-white justify-center items-center"
+                  style={styles.keypadKey}
                   disabled={loading}
                 >
                   {key === "x" ? (
-                    <Ionicons name="backspace-outline" size={30} color="#0072CE" /> // Delete icon
+                    <Ionicons name="backspace-outline" size={30} color="#0072CE" />
                   ) : key === "✓" ? (
-                    <MaterialIcons name="check-circle" size={30} color="#0072CE" /> // Enter icon
+                    <MaterialIcons name="check-circle" size={30} color="#0072CE" />
                   ) : (
-                    <Text className="text-3xl font-semibold text-[#0072CE]">{key}</Text> // Regular number keys
+                    <Text style={styles.keypadText}>{key}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -153,49 +294,54 @@ export default function OTPScreen() {
   const formattedAmount = Number(withdrawAmount).toLocaleString();
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       {/* Back Button */}
-      <View className="flex-row items-center mt-10 px-4 pt-4">
-      <TouchableOpacity
-          className="flex-row items-center"
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => router.back()}
           disabled={loading}
         >
-          <Ionicons name="arrow-back" size={28} className="bg-gray-100 p-2 rounded-full" />
+          <View style={styles.backButtonIcon}>
+            <Ionicons name="arrow-back" size={28} />
+          </View>
         </TouchableOpacity>
-          <Text className="text-xl font-bold flex-1 text-center mr-8">Withdraw</Text>
-        </View>
+        <Text style={styles.headerTitle}>Withdraw</Text>
+      </View>
 
       {/* Main Content */}
-      <View className="flex-1 mt-8 px-4">
-        <Text className="text-[24px] font-bold text-center text-primaryText">OTP Verification</Text>
-        <Text className="text-gray-500 text-center mt-2 mb-2">
-        Enter the OTP sent to your registered phone number to complete your withdrawal.
+      <View style={styles.content}>
+        <Text style={styles.title}>OTP Verification</Text>
+        <Text style={styles.subtitle}>
+          Enter the OTP sent to your registered phone number to complete your withdrawal.
         </Text>
         
         {/* Amount Display */}
-        <View className="bg-blue-50 py-4 px-6 rounded-xl mb-4">
-          <Text className="text-center text-gray-600">Withdrawal Amount</Text>
-          <Text className="text-center text-[20px] font-bold text-blue-600">₦{formattedAmount}</Text>
+        <View style={styles.amountContainer}>
+          <Text style={styles.amountLabel}>Withdrawal Amount</Text>
+          <Text style={styles.amountValue}>₦{formattedAmount}</Text>
         </View>
 
         {renderPinInputs()}
 
-        <TouchableOpacity className="mt-2 text-center" disabled={loading}>
-          <Text className="text-primaryText text-xl text-center">Resend Code</Text>
+        <TouchableOpacity style={styles.resendButton} disabled={loading}>
+          <Text style={styles.resendText}>Resend Code</Text>
         </TouchableOpacity>
      
-        <View className="flex-1 justify-end pb-4">
+        <View style={styles.bottomContainer}>
           {/* Continue Button */}
           <TouchableOpacity
-            className={`flex-row justify-center items-center py-4 rounded-lg ${loading ? 'bg-gray-400' : 'bg-[#0072CE]'}`}
+            style={[
+              styles.continueButton,
+              (loading || pin.length !== 4) ? styles.continueButtonDisabled : styles.continueButtonActive
+            ]}
             onPress={handleSubmit}
             disabled={loading || pin.length !== 4}
           >
-            {loading ? (
+            {loading && (
               <ActivityIndicator color="white" size="small" style={{ marginRight: 8 }} />
-            ) : null}
-            <Text className="text-white text-lg mr-2 font-semibold">
+            )}
+            <Text style={styles.continueButtonText}>
               {loading ? 'Processing...' : 'Complete Withdrawal'}
             </Text>
           </TouchableOpacity>

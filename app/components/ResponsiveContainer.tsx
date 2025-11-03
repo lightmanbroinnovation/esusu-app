@@ -56,8 +56,8 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
 
   return (
     <View
-      className={`flex-1 ${className}`}
       style={{
+        flex: 1,
         paddingHorizontal: getPadding(),
         paddingTop: safeArea ? (Platform.OS === 'ios' ? insets.top : 0) : 0,
         paddingBottom: safeArea ? insets.bottom : 0,
