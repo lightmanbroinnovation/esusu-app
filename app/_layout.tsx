@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import "./global.css";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -193,14 +193,7 @@ async function registerForPushNotificationsAsync() {
 
 function RootLayoutWithAuth() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
-<<<<<<< HEAD
   const [isReady, setIsReady] = useState(false);
-=======
-  const colorScheme = useColorScheme();
-  // CRITICAL: Start with isReady=true so Stack can mount immediately
-  // This ensures Expo Router initializes and routes are discovered on first render
-  const [isReady, setIsReady] = useState(true);
->>>>>>> 4decc708f68c1a1f1d1f443942de44eff6edce01
   const [isConnected, setIsConnected] = useState(true);
   const [isTryingToReconnect, setIsTryingToReconnect] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -270,14 +263,14 @@ function RootLayoutWithAuth() {
 
   // Check for network connectivity
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state: NetInfo.NetInfoState) => {
-      setIsConnected(!!state.isConnected);
-      if (!state.isConnected) {
-        console.log('No network connection detected.');
-      } else if (state.isConnected && !isConnected) {
-        console.log('Network connection restored.');
-      }
-    });
+const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+  setIsConnected(!!state.isConnected);
+  if (!state.isConnected) {
+    console.log('No network connection detected.');
+  } else if (state.isConnected && !isConnected) {
+    console.log('Network connection restored.');
+  }
+});
 
     return () => {
       unsubscribe();
