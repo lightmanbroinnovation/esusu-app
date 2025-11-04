@@ -1,25 +1,57 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    },
+    "target": "esnext",
+    "module": "commonjs",
+    "lib": [
+      "es6",
+      "esnext",
+      "dom"
+    ],
+    "jsx": "react-native",
+    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "jsx": "react-native"
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@app/*": [
+        "app/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@config/*": [
+        "config/*"
+      ],
+      "@utils/*": [
+        "app/utils/*"
+      ],
+      "@components/*": [
+        "app/components/*"
+      ],
+      "@types/*": [
+        "app/types/*"
+      ]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./app/types"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "expo-env.d.ts"
   ],
   "exclude": [
-    "node_modules"
-  ]
+    "node_modules",
+    "**/node_modules/*"
+  ],
+  "extends": "expo/tsconfig.base"
 }
