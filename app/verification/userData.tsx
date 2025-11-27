@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
   },
   content: {
     flex: 1,
@@ -38,70 +38,123 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: 24,
   },
   backButton: {
-    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  headerText: {
-    fontSize: 20,
+  headerStepText: {
     fontWeight: '600',
-    marginLeft: 16,
-    color: '#1F2937',
+  },
+  scrollView: {
+    marginTop: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#1A1A1A',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 32,
+    color: '#4F4F4F',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginTop: 24,
+  },
+  inputWrapper: {
+    marginVertical: 8,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
+    fontSize: 14,
+    color: '#4F4F4F',
     marginBottom: 8,
   },
+  requiredStar: {
+    color: '#EF4444',
+  },
   input: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1F2937',
+    width: '100%',
+    height: 48,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+    fontSize: 16,
   },
   inputFocused: {
     borderColor: '#3B82F6',
     backgroundColor: '#FFFFFF',
   },
-  dateInput: {
+  touchableInput: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
+    width: '100%',
+    height: 48,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  calendarButton: {
-    padding: 8,
-    backgroundColor: '#EFF6FF',
+    borderColor: '#E0E0E0',
     borderRadius: 8,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#BDBDBD',
+  },
+  inputText: {
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  phoneNumberText: {
+    fontSize: 16,
+    color: '#0072CE',
+    marginBottom: 4,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  flagImage: {
+    width: 24,
+    height: 18,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#4F4F4F',
+  },
+  phoneInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#F4F4F5',
+  },
+  spacer: {
+    height: 64,
   },
   // Modal styles
   modalContainer: {
@@ -113,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
+    padding: 16,
     height: '55%',
   },
   modalHeader: {
@@ -145,6 +198,39 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#6B7280',
   },
+  calendarContainer: {
+    flex: 1,
+  },
+  calendarRow: {
+    flexDirection: 'row',
+  },
+  dayCell: {
+    flex: 1,
+    marginVertical: 4,
+    marginHorizontal: 8,
+    padding: 8,
+  },
+  dayButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+    borderRadius: 999,
+    padding: 8,
+  },
+  dayButtonSelected: {
+    backgroundColor: '#2563EB',
+  },
+  dayButtonDisabled: {
+    opacity: 0.3,
+  },
+  dayText: {
+    textAlign: 'center',
+    color: '#000000',
+  },
+  dayTextSelected: {
+    color: '#FFFFFF',
+  },
   // Year selector
   yearSelectorContainer: {
     height: '50%',
@@ -174,7 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     padding: 16,
     borderRadius: 12,
-    marginTop: 16,
+    marginTop: 20,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -183,36 +269,47 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   // Gender picker
+  genderPickerModal: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   genderPickerContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 32,
+    padding: 16,
+  },
+  genderPickerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
   },
   genderOption: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  genderOptionSelected: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 4,
+    borderRadius: 8,
   },
   genderText: {
-    fontSize: 16,
-    color: '#1F2937',
+    fontSize: 18,
+    color: '#1A1A1A',
     textAlign: 'center',
   },
-  genderTextSelected: {
-    color: '#2563EB',
-    fontWeight: '500',
+  genderCancelButton: {
+    marginTop: 16,
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#0072CE',
+    borderRadius: 12,
+  },
+  genderCancelText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  bottomButtonContainer: {
+    paddingBottom: 16,
   },
 });
 
@@ -226,7 +323,7 @@ export default function UserData() {
 
   // Calculate minimum birth date (18 years ago)
   const minBirthYear = moment().subtract(18, 'years').year();
-  
+
   // State for input fields
   const [firstname, setFirstname] = useState("");
   const [middlename, setMiddlename] = useState("");
@@ -237,9 +334,9 @@ export default function UserData() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
   const [showGenderPicker, setShowGenderPicker] = useState(false);
-  
+
   // Available years (going back 100 years from minimum age)
-  const availableYears = Array.from({length: 82}, (_, i) => minBirthYear - i).sort((a, b) => b - a);
+  const availableYears = Array.from({ length: 82 }, (_, i) => minBirthYear - i).sort((a, b) => b - a);
 
   // State to track keyboard visibility
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -263,6 +360,9 @@ export default function UserData() {
           const user = userResponse?.data?.user;
           if (user && user.phoneNumber) {
             setFetchedPhoneNumber(user.phoneNumber);
+          }
+          if (user && user.email) {
+            setEmail(user.email);
           }
           if (user && user.firstName && user.lastName && user.middleName) {
             router.replace({
@@ -299,7 +399,7 @@ export default function UserData() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Validate age
       const userAge = moment().diff(moment(dob), 'years');
       if (userAge < 18) {
@@ -369,7 +469,7 @@ export default function UserData() {
 
       // Call the completeRegistration API
       const response = await completeRegistration(userData);
-      
+
       if (response.status === 'Success') {
         dispatch(addNotification({
           type: 'success',
@@ -420,41 +520,42 @@ export default function UserData() {
     const currentYear = moment(dob).year(); // Get the current year
     const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth(); // Get days in month
     const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day(); // Get the first day of the month
-    
+
     // Check if user will be 18 after selecting this date
     const isValidYear = currentYear <= minBirthYear;
 
     const days = [];
     // Add empty views for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+      days.push(<View key={`empty-${i}`} style={styles.dayCell} />);
     }
-    
+
     // Add the days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = moment(`${currentYear}-${currentMonth + 1}-${day}`);
-      const isSelected = moment(dob).date() === day && 
-                         moment(dob).month() === currentMonth && 
-                         moment(dob).year() === currentYear;
-      
+      const isSelected = moment(dob).date() === day &&
+        moment(dob).month() === currentMonth &&
+        moment(dob).year() === currentYear;
+
       // Check if this date would make the user at least 18 years old
       const wouldBeEighteen = moment().diff(currentDate, 'years') >= 18;
       const isDisabled = !wouldBeEighteen;
-      
+
       days.push(
         <TouchableOpacity
           key={day}
-          className={`flex-1 items-center justify-center my-1 rounded-full
-            ${isSelected ? 'bg-blue-600' : ''}
-            ${isDisabled ? 'opacity-30' : ''}`}
-          style={{ padding: 8 }} // Uniform padding
+          style={[
+            styles.dayButton,
+            isSelected && styles.dayButtonSelected,
+            isDisabled && styles.dayButtonDisabled
+          ]}
           disabled={isDisabled}
           onPress={() => {
             const selectedDate = moment(`${currentYear}-${currentMonth + 1}-${day}`).toDate();
             setDob(selectedDate);
           }}
         >
-          <Text className={`text-center ${isSelected ? 'text-white' : 'text-black'}`}>{day}</Text>
+          <Text style={[styles.dayText, isSelected && styles.dayTextSelected]}>{day}</Text>
         </TouchableOpacity>
       );
     }
@@ -466,17 +567,17 @@ export default function UserData() {
       const weekDays = days.slice(i, i + 7);
       // Fill empty days if the week has less than 7 days
       while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} className="flex-1 my-1" style={{ padding: 8 }} />);
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} style={styles.dayCell} />);
       }
       rows.push(
-        <View key={`row-${i}`} className="flex-row">
+        <View key={`row-${i}`} style={styles.calendarRow}>
           {weekDays}
         </View>
       );
     }
 
     return (
-      <View className="flex-1">
+      <View style={styles.calendarContainer}>
         {rows}
       </View>
     );
@@ -485,12 +586,12 @@ export default function UserData() {
   // Function to change the month
   const changeMonth = (direction: 'next' | 'prev') => {
     const newDate = moment(dob).add(direction === 'next' ? 1 : -1, 'months');
-    
+
     // Prevent going beyond today's date minus 18 years
     if (direction === 'next' && newDate.isAfter(moment().subtract(18, 'years'))) {
       return;
     }
-    
+
     setDob(newDate.toDate());
   };
 
@@ -500,145 +601,127 @@ export default function UserData() {
       style={{ flex: 1 }}
     >
       <View
-        className="flex-1 bg-white px-6"
-        style={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-        }}
+        style={[
+          styles.container,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+          }
+        ]}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mt-6">
+        <View style={styles.header}>
           <TouchableOpacity
-            className="flex-row items-center"
+            style={styles.backButton}
             onPress={() => router.back()}
           >
             <Ionicons name="arrow-back" size={28} />
           </TouchableOpacity>
-          <Text className="font-semibold">Step 2 of 4</Text>
+          <Text style={styles.headerStepText}>Step 2 of 4</Text>
         </View>
 
-        <ScrollView className="mt-8" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Title */}
           <View>
-            <Text className="text-[24px] font-bold text-primaryText mb-2">
+            <Text style={styles.title}>
               Tell Us About Yourself
             </Text>
-            <Text className="text-base text-[#4F4F4F]">
+            <Text style={styles.subtitle}>
               Enter your details as they appear in your official records.
             </Text>
           </View>
 
           {/* Input Fields */}
-          <View className="mt-6 space-y-4">
+          <View style={styles.inputContainer}>
             {/* Firstname */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">First Name <Text className="text-red-500">*</Text></Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>First Name <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
                 value={firstname}
                 onChangeText={setFirstname}
                 placeholder="Enter first name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-inputBg"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
+                style={styles.input}
               />
             </View>
 
             {/* Middle Name */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Middle Name <Text className="text-red-500">*</Text></Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Middle Name <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
                 value={middlename}
                 onChangeText={setMiddlename}
                 placeholder="Enter middle name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-inputBg"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
+                style={styles.input}
               />
             </View>
 
             {/* Lastname */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Last Name <Text className="text-red-500">*</Text></Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Last Name <Text style={styles.requiredStar}>*</Text></Text>
               <TextInput
                 value={lastname}
                 onChangeText={setLastname}
                 placeholder="Enter last name"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
+                style={styles.input}
               />
             </View>
 
             {/* Gender Selection */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Gender</Text>
-              <TouchableOpacity 
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Gender</Text>
+              <TouchableOpacity
                 onPress={() => setShowGenderPicker(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={styles.touchableInput}
               >
-                <Text className="text-base text-[#BDBDBD]">{gender || "Select your gender"}</Text>
+                <Text style={styles.placeholderText}>{gender || "Select your gender"}</Text>
                 <Ionicons name="chevron-down" size={24} color="#0072CE" />
               </TouchableOpacity>
             </View>
 
             {/* Email */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Email address</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Email address</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
                 editable={false}
                 placeholder="Enter email address"
                 keyboardType="email-address"
-                className="w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
-                style={{
-                  backgroundColor: "#F4F4F5",
-                }}
+                style={styles.input}
               />
             </View>
 
             {/* Phone Number */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Phone Number</Text>
-              {fetchedPhoneNumber ? (
-                <Text className="text-base text-[#0072CE] mb-1">{fetchedPhoneNumber}</Text>
-              ) : null}
-              <View className="flex-row items-center">
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Phone Number</Text>
+              <View style={styles.phoneContainer}>
                 {/* NG Flag + Code */}
-                <View className="flex-row items-center mr-3 border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]">
+                <View style={styles.countryCodeContainer}>
                   <Image
                     source={{ uri: "https://flagcdn.com/w40/ng.png" }}
-                    style={{
-                      width: 24,
-                      height: 18,
-                      borderRadius: 2,
-                      marginRight: 6,
-                    }}
+                    style={styles.flagImage}
                   />
-                  <Text className="text-base text-[#4F4F4F]">NG</Text>
+                  <Text style={styles.countryCodeText}>NG</Text>
                 </View>
 
                 {/* Phone input (non-editable) */}
                 <TextInput
                   value={fetchedPhoneNumber ? String(fetchedPhoneNumber) : (phone ? String(phone) : '')}
                   editable={false}
-                  className="flex-1 text-base text-[#1A1A1A] border border-[#E0E0E0] rounded-lg px-3 py-3 bg-[#F4F4F5]"
+                  style={styles.phoneInput}
                   placeholderTextColor="#BDBDBD"
                 />
               </View>
             </View>
 
             {/* Date of Birth */}
-            <View className="my-2">
-              <Text className="text-[#4F4F4F] mb-2">Date Of Brith</Text>
-              <TouchableOpacity 
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Date Of Birth</Text>
+              <TouchableOpacity
                 onPress={() => setShowCalendar(true)}
-                className="flex-row items-center justify-between w-full h-12 px-4 border border-[#E0E0E0] rounded-lg py-3 bg-[#F4F4F5]"
+                style={styles.touchableInput}
               >
-                <Text className="text-base text-[#BDBDBD]">{moment(dob).format('YYYY-MM-DD') || 'Select your DOB'}</Text>
+                <Text style={styles.placeholderText}>{moment(dob).format('YYYY-MM-DD') || 'Select your DOB'}</Text>
                 <Ionicons name="calendar" size={24} color="#0072CE" />
               </TouchableOpacity>
               {/* <Text className="text-xs text-gray-500 mt-1">You must be at least 18 years old</Text> */}
@@ -647,7 +730,7 @@ export default function UserData() {
           </View>
 
           {/* Spacer to push button down */}
-          <View className="h-16" />
+          <View style={styles.spacer} />
         </ScrollView>
 
         {/* Gender Picker Modal */}
@@ -658,32 +741,32 @@ export default function UserData() {
             animationType="slide"
             onRequestClose={() => setShowGenderPicker(false)}
           >
-            <View className="flex-1 justify-end bg-black bg-opacity-30">
-              <View className="bg-white rounded-t-3xl p-4">
-                <Text className="text-xl font-bold text-center mb-4">Select Gender</Text>
+            <View style={styles.genderPickerModal}>
+              <View style={styles.genderPickerContainer}>
+                <Text style={styles.genderPickerTitle}>Select Gender</Text>
                 <TouchableOpacity
-                  className="py-3 px-4 mb-1 rounded-lg"
+                  style={styles.genderOption}
                   onPress={() => {
                     setGender('Male');
                     setShowGenderPicker(false);
                   }}
                 >
-                  <Text className="text-center text-lg">Male</Text>
+                  <Text style={styles.genderText}>Male</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="py-3 px-4 mb-1 rounded-lg"
+                  style={styles.genderOption}
                   onPress={() => {
                     setGender('Female');
                     setShowGenderPicker(false);
                   }}
                 >
-                  <Text className="text-center text-lg">Female</Text>
+                  <Text style={styles.genderText}>Female</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setShowGenderPicker(false)}
-                  className="mt-4 p-4 items-center bg-[#0072CE] rounded-xl"
+                  style={styles.genderCancelButton}
                 >
-                  <Text className="text-white font-bold text-lg">Cancel</Text>
+                  <Text style={styles.genderCancelText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -700,20 +783,20 @@ export default function UserData() {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => changeMonth('prev')}
                   style={styles.monthNavButton}
                 >
                   <Ionicons name="chevron-back" size={20} color="#2563EB" />
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowYearSelector(true)}
                   style={{ flexDirection: 'row', alignItems: 'center' }}
                 >
                   <Text style={styles.monthText}>{moment(dob).format('MMMM YYYY')}</Text>
                   <Ionicons name="chevron-down" size={20} color="#2563EB" style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => changeMonth('next')}
                   style={styles.monthNavButton}
                 >
@@ -725,10 +808,12 @@ export default function UserData() {
                   <Text key={day} style={styles.weekDay}>{day}</Text>
                 ))}
               </View>
-              {renderCalendar()}
-              <TouchableOpacity 
+              <ScrollView style={{ flex: 1, marginBottom: 8 }} showsVerticalScrollIndicator={false}>
+                {renderCalendar()}
+              </ScrollView>
+              <TouchableOpacity
                 onPress={() => setShowCalendar(false)}
-                style={[styles.button, { marginTop: 16 }]}
+                style={[styles.button, { marginTop: 8 }]}
               >
                 <Text style={styles.buttonText}>Done</Text>
               </TouchableOpacity>
@@ -776,7 +861,7 @@ export default function UserData() {
                   index,
                 })}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowYearSelector(false)}
                 style={[styles.button, { backgroundColor: '#EF4444' }]}
               >
@@ -787,7 +872,7 @@ export default function UserData() {
         </Modal>
 
         {/* Continue Button */}
-        <View style={{ paddingBottom: 16 }}>
+        <View style={styles.bottomButtonContainer}>
           {!isKeyboardVisible && (
             <TouchableOpacity
               style={styles.button}

@@ -13,7 +13,9 @@
       "bundleIdentifier": "com.esususmartsolutions.esusuappv1",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "NSCameraUsageDescription": "This app needs access to camera to take photos for contributor verification.",
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select images for contributor verification."
       },
@@ -96,7 +98,8 @@
         {
           "photosPermission": "The app accesses your photos to let you select images for contributor verification."
         }
-      ]
+      ],
+      "react-native-document-scanner-plugin"
     ],
     "experiments": {
       "typedRoutes": true

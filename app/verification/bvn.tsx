@@ -145,7 +145,7 @@ export default function BvnScreen() {
   // Calculate minimum birth date (18 years ago)
   const minBirthYear = moment().subtract(18, 'years').year();
   // Available years (going back 100 years from minimum age)
-  const availableYears = Array.from({length: 82}, (_, i) => minBirthYear - i).sort((a, b) => b - a);
+  const availableYears = Array.from({ length: 82 }, (_, i) => minBirthYear - i).sort((a, b) => b - a);
 
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
@@ -166,7 +166,7 @@ export default function BvnScreen() {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      
+
       // Validate BVN/NIN
       if (!bvn || bvn.length !== 11) {
         dispatch(addNotification({
@@ -207,7 +207,7 @@ export default function BvnScreen() {
 
       // Call initiate identity verification
       const response = await initiateIdentityVerification(identityData);
-      
+
       if (response.status === 'Success') {
         dispatch(addNotification({
           type: 'success',
@@ -239,7 +239,7 @@ export default function BvnScreen() {
   const handleOtpVerification = async () => {
     try {
       setLoading(true);
-      
+
       if (otp.length !== 6) {
         dispatch(addNotification({
           type: 'error',
@@ -251,7 +251,7 @@ export default function BvnScreen() {
 
       // Call validate identity with OTP
       const response = await validateIdentity(otp);
-      
+
       if (response.status === 'Success') {
         dispatch(addNotification({
           type: 'success',
@@ -288,28 +288,28 @@ export default function BvnScreen() {
     const currentYear = moment(dob).year();
     const daysInMonth = moment(`${currentYear}-${currentMonth + 1}`, "YYYY-MM").daysInMonth();
     const firstDayOfMonth = moment(`${currentYear}-${currentMonth + 1}-01`).day();
-    
+
     const days = [];
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} style={bvStyles.dayEmpty} />);
+      days.push(<View key={`empty-${i}`} style={bvStyles.dayCell} />);
     }
-    
+
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = moment(`${currentYear}-${currentMonth + 1}-${day}`);
-      const isSelected = moment(dob).date() === day && 
-                         moment(dob).month() === currentMonth && 
-                         moment(dob).year() === currentYear;
-      
+      const isSelected = moment(dob).date() === day &&
+        moment(dob).month() === currentMonth &&
+        moment(dob).year() === currentYear;
+
       const wouldBeEighteen = moment().diff(currentDate, 'years') >= 18;
       const isDisabled = !wouldBeEighteen;
-      
+
       days.push(
         <TouchableOpacity
           key={day}
           style={[
-            bvStyles.dayBtn,
-            isSelected && bvStyles.dayBtnSelected,
-            isDisabled && bvStyles.dayBtnDisabled,
+            bvStyles.dayButton,
+            isSelected && bvStyles.dayButtonSelected,
+            isDisabled && bvStyles.dayButtonDisabled,
           ]}
           disabled={isDisabled}
           onPress={() => {
@@ -327,10 +327,10 @@ export default function BvnScreen() {
     for (let i = 0; i < totalDays; i += 7) {
       const weekDays = days.slice(i, i + 7);
       while (weekDays.length < 7) {
-        weekDays.push(<View key={`empty-${i + weekDays.length}`} style={bvStyles.dayEmpty} />);
+        weekDays.push(<View key={`empty-${i + weekDays.length}`} style={bvStyles.dayCell} />);
       }
       rows.push(
-        <View key={`row-${i}`} style={bvStyles.weekRow}>
+        <View key={`row-${i}`} style={bvStyles.calendarRow}>
           {weekDays}
         </View>
       );
@@ -345,11 +345,11 @@ export default function BvnScreen() {
 
   const changeMonth = (direction: 'next' | 'prev') => {
     const newDate = moment(dob).add(direction === 'next' ? 1 : -1, 'months');
-    
+
     if (direction === 'next' && newDate.isAfter(moment().subtract(18, 'years'))) {
       return;
     }
-    
+
     setDob(newDate.toDate());
   };
 
@@ -391,10 +391,10 @@ export default function BvnScreen() {
               onPress={() => setShowIdentityTypeDropdown(!showIdentityTypeDropdown)}
             >
               <Text style={styles.dropdownButtonText}>{identityType}</Text>
-              <Ionicons 
-                name={showIdentityTypeDropdown ? 'chevron-up' : 'chevron-down'} 
-                size={24} 
-                color="#0072CE" 
+              <Ionicons
+                name={showIdentityTypeDropdown ? 'chevron-up' : 'chevron-down'}
+                size={24}
+                color="#0072CE"
               />
             </TouchableOpacity>
             {showIdentityTypeDropdown && (
@@ -438,10 +438,10 @@ export default function BvnScreen() {
 
             {/* Date of Birth */}
             <View style={bvStyles.inputGroup}>
-              <Text style={bvStyles.label}>Date Of Brith</Text>
-              <TouchableOpacity 
+              <Text style={bvStyles.label}>Date Of Birth</Text>
+              <TouchableOpacity
                 onPress={() => setShowCalendar(true)}
-                style={bvStyles.inputRow}
+                style={bvStyles.inputRowSpaced}
               >
                 <Text style={bvStyles.placeholderText}>{moment(dob).format('YYYY-MM-DD') || 'Select your DOB'}</Text>
                 <Ionicons name="calendar" size={24} color="#0072CE" />
@@ -476,39 +476,41 @@ export default function BvnScreen() {
             onRequestClose={() => setShowCalendar(false)}
           >
             <View style={bvStyles.modalOverlay}>
-              <View style={[bvStyles.modalCard, { height: '55%' }] }>
-                <View style={bvStyles.modalHeaderRow}>
-                  <TouchableOpacity 
+              <View style={bvStyles.modalContent}>
+                <View style={bvStyles.modalHeader}>
+                  <TouchableOpacity
                     onPress={() => changeMonth('prev')}
-                    style={bvStyles.roundBtn}
+                    style={bvStyles.monthNavButton}
                   >
-                    <Ionicons name="chevron-back" size={20} color="#0072CE" />
+                    <Ionicons name="chevron-back" size={20} color="#2563EB" />
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => setShowYearSelector(true)}
                     style={bvStyles.inlineRow}
                   >
-                    <Text style={bvStyles.modalTitleCenter}>{moment(dob).format('MMMM YYYY')}</Text>
-                    <Ionicons name="chevron-down" size={20} color="#0072CE" />
+                    <Text style={bvStyles.monthText}>{moment(dob).format('MMMM YYYY')}</Text>
+                    <Ionicons name="chevron-down" size={20} color="#2563EB" style={{ marginLeft: 4 }} />
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => changeMonth('next')}
-                    style={bvStyles.roundBtn}
+                    style={bvStyles.monthNavButton}
                   >
-                    <Ionicons name="chevron-forward" size={20} color="#0072CE" />
+                    <Ionicons name="chevron-forward" size={20} color="#2563EB" />
                   </TouchableOpacity>
                 </View>
-                <View style={bvStyles.weekHeaderRow}>
+                <View style={bvStyles.weekDaysContainer}>
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <Text key={day} style={bvStyles.weekHeaderText}>{day}</Text>
+                    <Text key={day} style={bvStyles.weekDay}>{day}</Text>
                   ))}
                 </View>
-                {renderCalendar()}
-                <TouchableOpacity 
+                <ScrollView style={{ flex: 1, marginBottom: 8 }} showsVerticalScrollIndicator={false}>
+                  {renderCalendar()}
+                </ScrollView>
+                <TouchableOpacity
                   onPress={() => setShowCalendar(false)}
-                  style={bvStyles.primaryBtn}
+                  style={[bvStyles.button, { marginTop: 8 }]}
                 >
-                  <Text style={bvStyles.primaryText}>Done</Text>
+                  <Text style={bvStyles.buttonText}>Done</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -524,8 +526,8 @@ export default function BvnScreen() {
             onRequestClose={() => setShowYearSelector(false)}
           >
             <View style={bvStyles.modalOverlay}>
-              <View style={[bvStyles.modalCard, { height: '50%' }]}>
-                <Text style={bvStyles.modalTitleCenter}>Select Year</Text>
+              <View style={[bvStyles.modalContent, { height: '50%' }]}>
+                <Text style={[bvStyles.monthText, { marginBottom: 16 }]}>Select Year</Text>
                 <FlatList
                   data={availableYears}
                   keyExtractor={(item) => item.toString()}
@@ -545,11 +547,11 @@ export default function BvnScreen() {
                     index,
                   })}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowYearSelector(false)}
-                  style={bvStyles.primaryBtn}
+                  style={[bvStyles.button, { backgroundColor: '#EF4444' }]}
                 >
-                  <Text style={bvStyles.primaryText}>Cancel</Text>
+                  <Text style={bvStyles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -642,7 +644,7 @@ export default function BvnScreen() {
       </View>
     </KeyboardAvoidingView>
   );
-} 
+}
 
 const bvStyles = StyleSheet.create({
   flex: { flex: 1 },
@@ -657,17 +659,96 @@ const bvStyles = StyleSheet.create({
   inputGroup: { marginVertical: 8 },
   label: { color: '#4F4F4F', marginBottom: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'center', width: '100%', height: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#F4F4F5' },
+  inputRowSpaced: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#F4F4F5' },
   textInput: { flex: 1, fontSize: 16, color: '#1A1A1A' },
   placeholderText: { fontSize: 16, color: '#BDBDBD' },
   fullInput: { width: '100%', height: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 8, backgroundColor: '#F4F4F5', paddingVertical: 12, marginBottom: 16 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' },
-  modalCard: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16 },
-  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, marginBottom: 8 },
-  roundBtn: { padding: 8, borderRadius: 999, backgroundColor: '#F3F4F6' },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.3)' },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 16,
+    height: '55%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 8,
+    marginBottom: 8,
+  },
+  monthNavButton: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+  },
+  monthText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#1F2937',
+  },
+  weekDaysContainer: {
+    flexDirection: 'row',
+    padding: 8,
+    marginBottom: 8,
+  },
+  weekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  calendarContainer: {
+    flex: 1,
+  },
+  calendarRow: {
+    flexDirection: 'row',
+  },
+  dayCell: {
+    flex: 1,
+    marginVertical: 4,
+    marginHorizontal: 8,
+    padding: 8,
+  },
+  dayButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+    borderRadius: 999,
+    padding: 8,
+  },
+  dayButtonSelected: {
+    backgroundColor: '#2563EB',
+  },
+  dayButtonDisabled: {
+    opacity: 0.3,
+  },
+  dayText: {
+    textAlign: 'center',
+    color: '#000000',
+  },
+  dayTextSelected: {
+    color: '#FFFFFF',
+  },
+  button: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
   inlineRow: { flexDirection: 'row', alignItems: 'center' },
-  modalTitleCenter: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', flex: 1 },
-  weekHeaderRow: { flexDirection: 'row', padding: 8, marginBottom: 8 },
-  weekHeaderText: { flex: 1, textAlign: 'center', fontWeight: '500', color: '#6B7280' },
   primaryBtn: { marginTop: 16, padding: 16, alignItems: 'center', backgroundColor: '#0072CE', borderRadius: 12 },
   primaryText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 18 },
   yearItem: { paddingVertical: 12, paddingHorizontal: 16, marginBottom: 4, borderRadius: 8 },
@@ -675,13 +756,5 @@ const bvStyles = StyleSheet.create({
   yearText: { textAlign: 'center', fontSize: 18 },
   yearTextActive: { color: '#2563EB', fontWeight: 'bold' },
   bottomPad: { paddingBottom: 16 },
-  dayEmpty: { flex: 1, padding: 8, marginVertical: 4 },
-  dayBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', marginVertical: 4, borderRadius: 999, padding: 8 },
-  dayBtnSelected: { backgroundColor: '#2563EB' },
-  dayBtnDisabled: { opacity: 0.3 },
-  dayText: { textAlign: 'center', color: '#000000' },
-  dayTextSelected: { color: '#FFFFFF' },
-  weekRow: { flexDirection: 'row' },
-  calendarContainer: { flex: 1 },
   spacer: { height: 64 },
 });

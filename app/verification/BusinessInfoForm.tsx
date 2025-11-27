@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  ScrollView, 
-  Modal, 
-  Platform, 
-  StyleSheet, 
-  ViewStyle, 
-  TextStyle, 
-  TextInputProps, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  Modal,
+  Platform,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+  TextInputProps,
   TouchableOpacityProps,
   ScrollViewProps,
   ModalProps
@@ -19,6 +19,7 @@ import {
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { uploadCacDocument } from '../../services/api';
+import * as DocumentPicker from 'expo-document-picker';
 // @ts-ignore
 import { sendNotification, NotificationTemplates } from '../services/notificationService';
 
@@ -55,7 +56,7 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
       console.log('States API response:', json);
       console.log('Response type:', typeof json);
       console.log('Response keys:', Object.keys(json));
-      
+
       // Try different possible response structures
       if (json.states) {
         console.log('Found states in json.states:', json.states);
@@ -84,7 +85,7 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
       console.log(`LGAs API response for state ${state}:`, json);
       console.log('Response type:', typeof json);
       console.log('Response keys:', Object.keys(json));
-      
+
       // Try different possible response structures
       if (json.lga) {
         console.log('Found lga in json.lga:', json.lga);
@@ -152,7 +153,7 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
         return;
       }
       onSave(formData);
-      router.push({ 
+      router.push({
         pathname: '/verification/BusinessLocationUpload',
         params: { state, city }
       });
@@ -161,16 +162,26 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
     }
   };
 
-  const handleChooseDocument = () => {
+  const handleChooseDocument = async () => {
     if (Platform.OS === 'web') {
       if (fileInputRef.current) {
         (fileInputRef.current as HTMLInputElement).click();
       }
     } else {
-      // For mobile, use a file picker (not implemented here)
-    alert('Choosing document from browser (feature to be implemented)');
-    setCacDocument('dummy_cac_document_uri.pdf');
-      setCacDocumentName('dummy_cac_document_uri.pdf');
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ['image/*', 'application/pdf'],
+          copyToCacheDirectory: true,
+        });
+
+        if (result.assets && result.assets.length > 0) {
+          const file = result.assets[0];
+          setCacDocument(file.uri);
+          setCacDocumentName(file.name);
+        }
+      } catch (err) {
+        console.error('Error picking document:', err);
+      }
     }
   };
 
@@ -198,7 +209,7 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
             <Text style={styles.headerTitle}>Business Info</Text>
             <View style={styles.headerPlaceholder} />
           </View>
-          
+
           {successMessage && (
             <View style={styles.successMessage}>
               <Text style={styles.successMessageText}>{successMessage}</Text>
@@ -281,8 +292,8 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
-                      <TouchableOpacity 
-                        onPress={() => setShowStateDropdown(false)} 
+                      <TouchableOpacity
+                        onPress={() => setShowStateDropdown(false)}
                         style={styles.modalCloseButton}
                       >
                         <Text style={styles.modalCloseButtonText}>Close</Text>
@@ -299,7 +310,7 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                   disabled={!state}
                 >
                   <Text style={[
-                    styles.dropdownButtonText, 
+                    styles.dropdownButtonText,
                     city ? styles.dropdownButtonTextSelected : styles.dropdownButtonTextPlaceholder,
                     !state && styles.dropdownButtonTextDisabled
                   ]}>
@@ -337,8 +348,8 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
-                      <TouchableOpacity 
-                        onPress={() => setShowCityDropdown(false)} 
+                      <TouchableOpacity
+                        onPress={() => setShowCityDropdown(false)}
                         style={styles.modalCloseButton}
                       >
                         <Text style={styles.modalCloseButtonText}>Close</Text>
@@ -365,13 +376,28 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
               <Text style={styles.label}>Upload Your CAC Document</Text>
               <View style={styles.uploadContainer}>
                 <Ionicons name="cloud-upload-outline" size={40} color="#0072CE" />
-                <Text style={styles.uploadText}>Choose a file & drop it here</Text>
-                <Text style={styles.uploadSubtext}>JPEG, and PNG formats, up to 5MB</Text>
+                {/* Show upload instructions only if no file is selected */}
+                {!cacDocumentName && (
+                  <>
+                    <Text style={styles.uploadText}>Choose a file & drop it here</Text>
+                    <Text style={styles.uploadSubtext}>JPEG, and PNG formats, up to 5MB</Text>
+                  </>
+                )}
+
+                {/* Show selected file name if available */}
+                {cacDocumentName && (
+                  <View style={styles.selectedFileContainer}>
+                    <Text style={styles.selectedFileText}>Selected: {cacDocumentName}</Text>
+                  </View>
+                )}
+
                 <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={handleChooseDocument}
                 >
-                  <Text style={styles.uploadButtonText}>Choose from Browser</Text>
+                  <Text style={styles.uploadButtonText}>
+                    {cacDocumentName ? 'Change Document' : 'Choose from Browser'}
+                  </Text>
                 </TouchableOpacity>
                 {/* Hidden file input for web */}
                 {Platform.OS === 'web' && (
@@ -383,17 +409,11 @@ const BusinessInfoForm = ({ onClose, onSave }: BusinessInfoFormProps) => {
                     onChange={handleFileChange}
                   />
                 )}
-                {/* Show selected file name if available */}
-                {cacDocumentName && Platform.OS === 'web' && (
-                  <View style={styles.selectedFileContainer}>
-                    <Text style={styles.selectedFileText}>Selected: {cacDocumentName}</Text>
-                  </View>
-                )}
               </View>
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.submitButton}
             onPress={handleSubmit}
           >
@@ -431,7 +451,7 @@ const styles = StyleSheet.create({
   flex1: {
     flex: 1,
   },
-  
+
   // Header
   header: {
     flexDirection: 'row',
@@ -457,7 +477,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     marginLeft: 8,
   },
-  
+
   // Success Message
   successMessage: {
     backgroundColor: '#D1FAE5',
@@ -470,7 +490,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  
+
   // Title & Subtitle
   titleContainer: {
     marginTop: 16,
@@ -490,7 +510,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 16,
   },
-  
+
   // Form Elements
   inputGroup: {
     marginBottom: 4,
@@ -514,7 +534,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
-  
+
   // Dropdown
   dropdownButton: {
     borderWidth: 1,
@@ -542,26 +562,26 @@ const styles = StyleSheet.create({
   dropdownButtonTextDisabled: {
     color: '#9CA3AF',
   },
-  
+
   // Modal
   modalOverlay: {
-    flex: 1, 
-    backgroundColor: 'rgba(0,0,0,0.2)', 
-    justifyContent: 'center', 
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white', 
-    borderRadius: 12, 
-    width: '85%', 
-    maxHeight: 400, 
+    backgroundColor: 'white',
+    borderRadius: 12,
+    width: '85%',
+    maxHeight: 400,
     padding: 16,
   },
   searchInput: {
-    borderWidth: 1, 
-    borderColor: '#E5E7EB', 
-    borderRadius: 8, 
-    marginBottom: 12, 
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    marginBottom: 12,
     padding: 12,
     fontSize: 16,
     color: '#111827',
@@ -570,24 +590,24 @@ const styles = StyleSheet.create({
     maxHeight: 300,
   },
   modalItem: {
-    paddingVertical: 12, 
-    borderBottomWidth: 1, 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
   modalItemText: {
-    fontSize: 16, 
+    fontSize: 16,
     color: '#111827',
   },
   modalCloseButton: {
-    marginTop: 12, 
+    marginTop: 12,
     alignSelf: 'flex-end',
   },
   modalCloseButtonText: {
-    color: '#0072CE', 
+    color: '#0072CE',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  
+
   // Upload Section
   uploadContainer: {
     borderWidth: 1,
@@ -637,7 +657,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  
+
   // Submit Button
   submitButton: {
     backgroundColor: '#007BFF',

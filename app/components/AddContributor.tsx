@@ -498,6 +498,7 @@ export default function AddContributor() {
     imageSection: {
       alignItems: 'center',
       marginBottom: 24,
+    
     },
     imagePlaceholder: {
       backgroundColor: '#F3F4F6',
@@ -507,6 +508,7 @@ export default function AddContributor() {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 8,
+      padding: 10,
     },
     imagePlaceholderText: {
       color: '#6B7280',
