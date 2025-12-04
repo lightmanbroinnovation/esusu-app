@@ -109,7 +109,7 @@
     "lightningcss": "^1.29.3",
     "lodash": "^4.17.21",
     "react-native-simple-bottom-sheet": "^1.0.4",
-    "react-test-renderer": "18.3.1",
+    "react-test-renderer": "19.0.0",
     "typescript": "~5.8.3"
   },
   "expo": {
