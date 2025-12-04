@@ -4,7 +4,7 @@
     "slug": "esusu-app-v1",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icons.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -25,7 +25,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icons.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.esususmartsolutions.esusuappv1",
@@ -39,7 +39,7 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ],
-      "icon": "./assets/images/icons.png",
+      "icon": "./assets/images/app-icon.png",
       "versionCode": 1,
       "targetSdkVersion": 35,
       "compileSdkVersion": 35,
@@ -50,7 +50,6 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -75,7 +74,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icons.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#E6F3FF"
@@ -84,7 +83,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icons.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#0072CE",
           "mode": "production",
           "androidMode": "default",

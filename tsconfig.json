@@ -1,21 +1,21 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "commonjs",
+    "module": "esnext",
     "lib": [
       "es6",
       "esnext",
       "dom"
     ],
     "jsx": "react-native",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "strict": true,
     "baseUrl": ".",
-    "paths": {
+    /* "paths": {
       "@/*": [
         "./*"
       ],
@@ -37,7 +37,7 @@
       "@types/*": [
         "app/types/*"
       ]
-    },
+    }, */
     "typeRoots": [
       "./node_modules/@types",
       "./app/types"
@@ -53,5 +53,5 @@
     "node_modules",
     "**/node_modules/*"
   ],
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base" // Temporarily disabled until expo is fully installed
 }

@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+        "image": "latest"
       }
     },
     "development-slim": {
@@ -17,7 +17,7 @@
       "android": {
         "gradleCommand": ":app:assembleDebug",
         "withoutCredentials": true,
-        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+        "image": "latest"
       },
       "ios": {
         "buildConfiguration": "Debug",
@@ -27,7 +27,7 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+        "image": "latest"
       }
     },
     "production": {

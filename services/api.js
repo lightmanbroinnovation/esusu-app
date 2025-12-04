@@ -114,7 +114,7 @@ const safeAsyncStorage = {
 // Global API error handler
 const handleApiError = (error, endpoint) => {
   console.error(`API Error for ${endpoint}:`, error);
-  
+
   if (error.name === 'AbortError') {
     return new Error('Request timeout - server took too long to respond');
   } else if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_CLOSED')) {
@@ -132,19 +132,19 @@ const handleApiError = (error, endpoint) => {
 const enhancedFetch = async (url, options = {}) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-  
+
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -164,7 +164,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(async request => { // Made async to await secure storage
   request.metadata = { startTime: new Date().getTime() };
   const token = await safeAsyncStorage.getItem('auth_token'); // Get token from AsyncStorage using safe wrapper
-  
+
   // Debug logging for authentication issues
   console.log(`🔐 API Request to: ${request.url}`);
   console.log(`🔑 Token present: ${!!token}`);
@@ -172,7 +172,7 @@ axiosInstance.interceptors.request.use(async request => { // Made async to await
     console.log(`🔑 Token length: ${token.length}`);
     console.log(`🔑 Token preview: ${token.substring(0, 20)}...`);
   }
-  
+
   if (token && request.headers) {
     request.headers.Authorization = `Bearer ${token}`;
   } else {
@@ -186,10 +186,10 @@ axiosInstance.interceptors.response.use(response => {
   const endTime = new Date().getTime();
   const duration = endTime - response.config.metadata.startTime;
   console.log(`Request to ${response.config.url} took ${duration}ms`);
-  
+
   // Track API call performance
   trackApiCall(response.config.metadata.startTime);
-  
+
   return response;
 }, error => {
   // Global error handling for API responses
@@ -210,23 +210,23 @@ const getCacheKey = (endpoint, id) => `${endpoint}_${id}`;
 export const checkPhoneNumberAvailability = async (phoneNumber, email) => {
   try {
     console.log("API: Checking phone number availability:", phoneNumber, "and Email:", email);
-    
+
     // Ensure we have valid values
     if (!phoneNumber || !email) {
       throw new Error("Phone number and email are required");
     }
-    
+
     const payload = {
       phoneNumber: phoneNumber.trim(),
       email: email.trim()
     };
-    
+
     console.log("API: Sending payload to /checkAvailable:", JSON.stringify(payload, null, 2));
-    
+
     const response = await axiosInstance.post('/checkAvailable', payload);
     console.log("API Response - checkAvailable:", response.data);
     return response.data;
-    
+
   } catch (error) {
     console.error("Error checking phone number availability:", error);
     throw error;
@@ -398,7 +398,7 @@ export const loginUser = async (phoneNumber, passCodeOrFingerprint) => {
     console.log('Attempting login with:', payload);
     const response = await axiosInstance.post('/login', payload);
     console.log('Login response:', response.data);
-    
+
     if (response.data.data && response.data.data.token) {
       await safeAsyncStorage.setItem('auth_token', response.data.data.token);
       // Store user data if available
@@ -440,7 +440,7 @@ export const addContributor = async (contributorData) => {
       photoUri: contributorData.photoUri ? (typeof contributorData.photoUri === 'string' ? contributorData.photoUri.substring(0, 30) + '...' : 'INVALID_URI') : 'MISSING',
       imageUrl: contributorData.imageUrl ? (typeof contributorData.imageUrl === 'string' ? contributorData.imageUrl.substring(0, 30) + '...' : 'INVALID_URI') : 'MISSING'
     }));
-    
+
     // Make sure photoUri is properly included - ensure consistency between the two fields
     if (!contributorData.photoUri && contributorData.imageUrl) {
       contributorData.photoUri = contributorData.imageUrl;
@@ -449,12 +449,12 @@ export const addContributor = async (contributorData) => {
       contributorData.imageUrl = contributorData.photoUri;
       console.log("Added missing imageUrl from photoUri");
     }
-    
+
     // Ensure both URLs are properly set
     if (!contributorData.photoUri && !contributorData.imageUrl) {
       console.warn("WARNING: No image URL provided for contributor!");
     }
-    
+
     // Log the final processed data being sent to the server (truncate long URLs)
     const logData = {
       ...contributorData,
@@ -462,13 +462,13 @@ export const addContributor = async (contributorData) => {
       imageUrl: contributorData.imageUrl ? contributorData.imageUrl.substring(0, 30) + '...' : null
     };
     console.log("PROCESSED CONTRIBUTOR DATA:", JSON.stringify(logData));
-    
+
     const response = await axiosInstance.post("/contributors", contributorData);
     console.log("API RESPONSE - Contributor added successfully:", response.data);
-    
+
     // Invalidate contributor cache for the agent
     await invalidateCache(getCacheKey('contributors', contributorData.agentId));
-    
+
     return response.data;
   } catch (error) {
     console.error("Error adding contributor:", error);
@@ -481,14 +481,14 @@ export const fetchContributors = async (agentId) => {
   return getCachedData(
     getCacheKey('contributors', agentId),
     async () => {
-  try {
-    const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
-    console.log("Contributors fetched successfully:", response.data);
+      try {
+        const response = await axiosInstance.get(`/contributors?agentId=${agentId}`);
+        console.log("Contributors fetched successfully:", response.data);
         return response.data;
-  } catch (error) {
-    console.error("Error fetching contributors:", error);
-    throw error;
-  }
+      } catch (error) {
+        console.error("Error fetching contributors:", error);
+        throw error;
+      }
     },
     // Cache contributor list for 2 minutes
     1000 * 60 * 2
@@ -503,7 +503,7 @@ export const fetchTransactions = async (userId) => {
       try {
         const response = await axiosInstance.get(`/users/${userId}`);
         console.log("User fetched successfully for transactions");
-        
+
         // Check if the user has transactions data
         if (response.data && response.data.transactions) {
           return response.data.transactions;
@@ -511,10 +511,10 @@ export const fetchTransactions = async (userId) => {
           console.log("No transactions found for this user");
           return [];
         }
-  } catch (error) {
-    console.error("Error fetching transactions:", error);
-    throw error;
-  }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        throw error;
+      }
     },
     // Cache transactions for 2 minutes
     1000 * 60 * 2
@@ -526,7 +526,7 @@ export const fetchCommissions = async (userId) => {
   try {
     const response = await axiosInstance.get(`/users/${userId}`); // Adjust the endpoint as necessary
     console.log("Commissions fetched successfully:", response.data);
-    
+
     // Return the commissions for the user
     return response.data.commissions || []; // Return an empty array if no commissions
   } catch (error) {
@@ -557,13 +557,13 @@ export const addPinToUser = async (userId, pin) => {
   try {
     // Get current user data
     const user = await fetchUser(userId);
-    
+
     // Check if PIN already exists
     if (user.pin) {
       console.log("User already has a PIN");
       return user;
     }
-    
+
     // Add PIN to user
     const updatedUser = await updateUser(userId, { pin });
     console.log("PIN added to user successfully");
@@ -591,11 +591,11 @@ export const fetchContributorTransactions = async (contributorId) => {
 export const submitBusinessVerification = async (userId, verificationData) => {
   try {
     console.log(`Submitting business verification for user ${userId}`);
-    
+
     // First get the current user data
     const userResponse = await axiosInstance.get(`/users/${userId}`);
     const userData = userResponse.data;
-    
+
     // Update the user with verification data
     const updatedUserData = {
       ...userData,
@@ -605,7 +605,7 @@ export const submitBusinessVerification = async (userId, verificationData) => {
       verificationStatus: 'pending',
       verification_data: verificationData // Store the full verification data as a nested object
     };
-    
+
     // Update the user record
     const response = await axiosInstance.patch(`/users/${userId}`, updatedUserData);
     console.log("Business verification submitted successfully:", response.data);
@@ -622,7 +622,7 @@ export const getVerificationStatus = async (userId) => {
     // Get the user data which now includes verification info
     const response = await axiosInstance.get(`/users/${userId}`);
     const userData = response.data;
-    
+
     // Extract verification status
     const verificationStatus = {
       status: userData.verificationStatus || 'not_started',
@@ -631,7 +631,7 @@ export const getVerificationStatus = async (userId) => {
       verify_business: userData.verify_business || false,
       verification_data: userData.verification_data || {}
     };
-    
+
     console.log("Verification status fetched successfully:", verificationStatus);
     return verificationStatus;
   } catch (error) {
@@ -683,14 +683,14 @@ export const getUserBankAccounts = async () => {
 export const addBankAccount = async (userId, bankAccount) => {
   try {
     console.log(`Adding bank account for user: ${userId}`);
-    
+
     // First get the current user data
     const userResponse = await axiosInstance.get(`/users/${userId}`);
     const userData = userResponse.data;
-    
+
     // Create or update the bank accounts array
     let bankAccounts = userData.bankAccounts || [];
-    
+
     // If this is set as primary, update all others to not primary
     if (bankAccount.isPrimary) {
       bankAccounts = bankAccounts.map(account => ({
@@ -698,27 +698,27 @@ export const addBankAccount = async (userId, bankAccount) => {
         isPrimary: false
       }));
     }
-    
+
     // If this is the first account, make it primary by default
     if (bankAccounts.length === 0 && bankAccount.isPrimary === undefined) {
       bankAccount.isPrimary = true;
     }
-    
+
     // Add unique ID to the bank account
     const newBankAccount = {
       ...bankAccount,
       id: Date.now().toString(),
       createdAt: new Date().toISOString()
     };
-    
+
     // Add the new bank account to the array
     bankAccounts.push(newBankAccount);
-    
+
     // Update the user record with the bank accounts
     const response = await axiosInstance.patch(`/users/${userId}`, {
       bankAccounts
     });
-    
+
     console.log("Bank account added successfully:", newBankAccount);
     return response.data.bankAccounts;
   } catch (error) {
@@ -731,41 +731,41 @@ export const addBankAccount = async (userId, bankAccount) => {
 export const fetchContributorByPhone = async (agentId, phoneNumber) => {
   try {
     console.log(`Looking for contributor with phone ${phoneNumber} for agent ${agentId}`);
-    
+
     // First fetch all contributors for this agent
     const contributors = await fetchContributors(agentId);
-    
+
     // Make sure contributors is an array before using find
     if (!Array.isArray(contributors)) {
       console.warn("No contributors array returned for agent:", agentId);
       throw new Error(`No contributors found for agent`);
     }
-    
+
     console.log(`Found ${contributors.length} total contributors for agent ${agentId}`);
-    
+
     // Format phone number to remove country code if present
     let formattedPhoneNumber = phoneNumber;
     if (phoneNumber.startsWith('+234')) {
       formattedPhoneNumber = phoneNumber.replace('+234', '0');
     }
-    
+
     console.log("Searching with formatted phone:", formattedPhoneNumber);
-    
+
     // Find the contributor with matching phone number
-    const contributor = contributors.find(c => 
-      c.phonenumber === formattedPhoneNumber || 
-      c.phoneNumber === formattedPhoneNumber || 
+    const contributor = contributors.find(c =>
+      c.phonenumber === formattedPhoneNumber ||
+      c.phoneNumber === formattedPhoneNumber ||
       c.phone === formattedPhoneNumber
     );
-    
+
     // Log all contributor phone numbers for debugging
     console.log("Available phone numbers:", contributors.map(c => c.phonenumber || c.phoneNumber || c.phone));
-    
+
     if (!contributor) {
       console.warn(`No contributor found with phone number ${formattedPhoneNumber} among ${contributors.length} contributors`);
       throw new Error(`No contributor found with phone number ${phoneNumber}`);
     }
-    
+
     console.log("Contributor found:", contributor);
     return contributor;
   } catch (error) {
@@ -949,7 +949,7 @@ export const fetchTransactionHistory = async () => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/account/history', {
       method: 'GET',
       headers: {
@@ -957,10 +957,10 @@ export const fetchTransactionHistory = async () => {
         ...headers
       }
     });
-    
+
     const data = await response.json();
     console.log('[api.js] Transaction history response:', data);
-    
+
     if (data.status === 'Success' && data.data) {
       // Ensure we return an array
       if (Array.isArray(data.data)) {
@@ -985,11 +985,11 @@ export const fetchTransactionHistory = async () => {
 export const fetchContributorDetailsForDeposit = async (phoneNumber) => {
   try {
     console.log(`Fetching contributor details for deposit with phone: ${phoneNumber}`);
-    
+
     // Get token from AsyncStorage
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/details', {
       method: 'POST',
       headers: {
@@ -1001,10 +1001,10 @@ export const fetchContributorDetailsForDeposit = async (phoneNumber) => {
         phoneNumber: phoneNumber
       })
     });
-    
+
     const data = await response.json();
     console.log("Contributor details response:", data);
-    
+
     if (data && data.status === 'Success') {
       return data.data;
     } else {
@@ -1020,11 +1020,11 @@ export const fetchContributorDetailsForDeposit = async (phoneNumber) => {
 export const creditContributorAccount = async (phoneNumber, amount) => {
   try {
     console.log(`Crediting contributor account with phone: ${phoneNumber}, amount: ${amount}`);
-    
+
     // Get token from AsyncStorage
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/contributor-account/credit', {
       method: 'POST',
       headers: {
@@ -1036,10 +1036,10 @@ export const creditContributorAccount = async (phoneNumber, amount) => {
         amount: amount
       })
     });
-    
+
     const data = await response.json();
     console.log("Credit contributor account response:", data);
-    
+
     if (data && data.status === 'Success') {
       return data;
     } else {
@@ -1212,15 +1212,15 @@ export const logoutUser = async () => {
 export const forceClearAllData = async () => {
   try {
     console.log('Starting force clear of all device data...');
-    
+
     // 1. Use the comprehensive clearAllData function first
     await clearAllData();
     console.log('✓ All data cleared via clearAllData');
-    
+
     // 2. Clear all caches as backup
     await clearAllCaches();
     console.log('✓ All caches cleared');
-    
+
     // 3. Clear user and cache data specifically
     await clearDataByPatterns([
       'user',
@@ -1245,7 +1245,7 @@ export const forceClearAllData = async () => {
       'data'
     ]);
     console.log('✓ User and cache data cleared by patterns');
-    
+
     // 4. Clear specific known keys (in case they were missed)
     const specificKeys = [
       'auth_token',
@@ -1310,8 +1310,8 @@ export const forceClearAllData = async () => {
       'bankAccounts',
       'commissionData'
     ];
-    
-      for (const key of specificKeys) {
+
+    for (const key of specificKeys) {
       try {
         await safeAsyncStorage.removeItem(key);
         await safeAsyncStorage.removeItem(`cache_${key}`);
@@ -1320,12 +1320,12 @@ export const forceClearAllData = async () => {
       }
     }
     console.log('✓ Specific keys cleared');
-    
+
     // 4. Clear any potential cache keys with patterns
     try {
       const allKeys = await safeAsyncStorage.getAllKeys();
-      const cacheKeys = allKeys.filter(key => 
-        key.startsWith('cache_') || 
+      const cacheKeys = allKeys.filter(key =>
+        key.startsWith('cache_') ||
         key.includes('contributor') ||
         key.includes('transaction') ||
         key.includes('user') ||
@@ -1340,7 +1340,7 @@ export const forceClearAllData = async () => {
         key.includes('settlement') ||
         key.includes('withdraw')
       );
-      
+
       if (cacheKeys.length > 0) {
         await safeAsyncStorage.multiRemove(cacheKeys);
         console.log(`✓ Cleared ${cacheKeys.length} additional cache keys`);
@@ -1348,7 +1348,7 @@ export const forceClearAllData = async () => {
     } catch (e) {
       console.log('Error clearing pattern-based keys:', e);
     }
-    
+
     // 5. Clear any potential file system cache (if using expo-file-system)
     try {
       const FileSystem = await import('expo-file-system');
@@ -1367,7 +1367,7 @@ export const forceClearAllData = async () => {
     } catch (e) {
       console.log('File system cache clear skipped (expo-file-system not available)');
     }
-    
+
     // 6. Clear any potential image cache
     try {
       const ImageCache = await import('expo-image');
@@ -1378,7 +1378,7 @@ export const forceClearAllData = async () => {
     } catch (e) {
       console.log('Image cache clear skipped (expo-image not available)');
     }
-    
+
     // 7. Clear any potential web cache (if running on web)
     if (typeof window !== 'undefined' && window.caches) {
       try {
@@ -1389,68 +1389,61 @@ export const forceClearAllData = async () => {
         console.log('Web cache clear failed:', e);
       }
     }
-    
+
     // 8. Clear any potential SQLite databases (if using expo-sqlite)
     try {
       // Check if expo-sqlite is available before importing
       const SQLite = require('expo-sqlite');
       if (SQLite && SQLite.openDatabase) {
-      const db = SQLite.openDatabase('app.db');
-      if (db) {
-        await new Promise((resolve, reject) => {
-          db.transaction(tx => {
-            tx.executeSql('DELETE FROM sqlite_sequence', [], resolve, reject);
+        const db = SQLite.openDatabase('app.db');
+        if (db) {
+          await new Promise((resolve, reject) => {
+            db.transaction(tx => {
+              tx.executeSql('DELETE FROM sqlite_sequence', [], resolve, reject);
+            });
           });
-        });
-        console.log('✓ SQLite database cleared');
+          console.log('✓ SQLite database cleared');
         }
       }
     } catch (e) {
       console.log('SQLite clear skipped (expo-sqlite not available)');
     }
-    
-    // 9. Clear any potential MMKV storage (if using react-native-mmkv)
-    try {
-      // Check if react-native-mmkv is available before importing
-      const { MMKV } = require('react-native-mmkv');
-      if (MMKV) {
-        const storage = new MMKV();
-        storage.clearAll();
-        console.log('✓ MMKV storage cleared');
-      }
-    } catch (e) {
-      console.log('MMKV clear skipped (react-native-mmkv not available)');
-    }
-    
+
+    // 9. MMKV storage - REMOVED (package uninstalled for 16KB compatibility)
+    // MMKV caused Metro bundler errors and had 16KB alignment issues
+    // Using AsyncStorage exclusively instead
+    console.log('MMKV not available - using AsyncStorage only');
+
+
     // 10. Clear any potential SecureStore (if using expo-secure-store)
     try {
       // Check if expo-secure-store is available before importing
       const SecureStore = require('expo-secure-store');
       if (SecureStore && SecureStore.deleteItemAsync) {
-      const secureKeys = [
-        'auth_token',
-        'userId',
-        'transactionPin',
-        'biometricKey',
-        'encryptionKey',
-        'sessionToken'
-      ];
-      
-      for (const key of secureKeys) {
-        try {
-          await SecureStore.deleteItemAsync(key);
-        } catch (e) {
-          // Ignore individual key deletion errors
+        const secureKeys = [
+          'auth_token',
+          'userId',
+          'transactionPin',
+          'biometricKey',
+          'encryptionKey',
+          'sessionToken'
+        ];
+
+        for (const key of secureKeys) {
+          try {
+            await SecureStore.deleteItemAsync(key);
+          } catch (e) {
+            // Ignore individual key deletion errors
+          }
         }
-      }
-      console.log('✓ SecureStore cleared');
+        console.log('✓ SecureStore cleared');
       }
     } catch (e) {
       console.log('SecureStore clear skipped (expo-secure-store not available)');
     }
-    
+
     console.log('🎉 ALL DEVICE DATA CLEARED SUCCESSFULLY!');
-    
+
   } catch (error) {
     console.error('Error during force clear:', error);
     // Try to clear at least AsyncStorage as fallback
@@ -1564,7 +1557,7 @@ export const fetchAccountCommission = async () => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await enhancedFetch('https://esusu-server.onrender.com/api/account/commission', {
       method: 'GET',
       headers: {
@@ -1572,9 +1565,9 @@ export const fetchAccountCommission = async () => {
         ...headers
       }
     });
-    
+
     const data = await response.json();
-    console.log('Account commission:', data); 
+    console.log('Account commission:', data);
     return data;
   } catch (error) {
     throw handleApiError(error, 'commission endpoint');
@@ -1636,7 +1629,7 @@ export const getReferrals = async () => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/get-referral', {
       method: 'GET',
       headers: {
@@ -1644,10 +1637,10 @@ export const getReferrals = async () => {
         ...headers
       }
     });
-    
+
     const data = await response.json();
     console.log('Referrals response:', data);
-    
+
     if (data && data.status === 'Success') {
       return data.data;
     } else {
@@ -1664,7 +1657,7 @@ export const saveReferral = async (referralCode) => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/merchant/save-referral', {
       method: 'POST',
       headers: {
@@ -1673,10 +1666,10 @@ export const saveReferral = async (referralCode) => {
       },
       body: JSON.stringify({ referralCode })
     });
-    
+
     const data = await response.json();
     console.log('Save referral response:', data);
-    
+
     if (data && data.status === 'Success') {
       return data;
     } else {
@@ -1693,7 +1686,7 @@ export const withdrawBonus = async () => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
+
     const response = await fetch('https://esusu-server.onrender.com/api/account/withraw-bonus', {
       method: 'POST',
       headers: {
@@ -1702,10 +1695,10 @@ export const withdrawBonus = async () => {
       }
       // No body data needed, just authentication
     });
-    
+
     const data = await response.json();
     console.log('Withdraw bonus response:', data);
-    
+
     if (data && data.status === 'Success') {
       return data;
     } else {
@@ -1722,14 +1715,14 @@ export const checkAuthStatus = async () => {
   try {
     const token = await safeAsyncStorage.getItem('auth_token');
     const tokenExists = !!token;
-    
+
     console.log('🔍 Authentication Status Check:');
     console.log(`🔑 Token exists: ${tokenExists}`);
-    
+
     if (token) {
       console.log(`🔑 Token length: ${token.length}`);
       console.log(`🔑 Token preview: ${token.substring(0, 20)}...`);
-      
+
       // Try to decode the token to check if it's expired
       try {
         const tokenParts = token.split('.');
@@ -1738,11 +1731,11 @@ export const checkAuthStatus = async () => {
           const expirationTime = payload.exp * 1000; // Convert to milliseconds
           const currentTime = Date.now();
           const isExpired = currentTime > expirationTime;
-          
+
           console.log(`⏰ Token expiration: ${new Date(expirationTime).toISOString()}`);
           console.log(`⏰ Current time: ${new Date(currentTime).toISOString()}`);
           console.log(`⏰ Token expired: ${isExpired}`);
-          
+
           if (isExpired) {
             console.log('❌ Token is expired! This could be causing 403 errors.');
             // Clear expired token
@@ -1756,7 +1749,7 @@ export const checkAuthStatus = async () => {
     } else {
       console.log('❌ No authentication token found!');
     }
-    
+
     return {
       hasToken: tokenExists,
       token: token

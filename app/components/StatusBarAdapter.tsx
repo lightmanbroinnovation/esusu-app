@@ -12,18 +12,17 @@ interface StatusBarAdapterProps {
  * StatusBarAdapter provides a consistent way to style the status bar 
  * according to the current screen's background color with improved mobile responsiveness
  */
-const StatusBarAdapter: React.FC<StatusBarAdapterProps> = ({ 
+const StatusBarAdapter: React.FC<StatusBarAdapterProps> = ({
   backgroundColor = '#E6F3FF', // Default to light blue
   barStyle = 'dark-content',
-  ...props
 }) => {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { width, height } = Dimensions.get('window');
-  
+
   // Use transparent for root index
   const bgColor = pathname === '/' ? 'transparent' : backgroundColor;
-  
+
   // Calculate proper status bar height for different devices
   const getStatusBarHeight = () => {
     if (Platform.OS === 'ios') {
@@ -35,8 +34,8 @@ const StatusBarAdapter: React.FC<StatusBarAdapterProps> = ({
   };
 
   return (
-    <View style={{ 
-      backgroundColor: bgColor, 
+    <View style={{
+      backgroundColor: bgColor,
       height: getStatusBarHeight(),
       width: '100%'
     }}>
@@ -44,7 +43,6 @@ const StatusBarAdapter: React.FC<StatusBarAdapterProps> = ({
         translucent
         backgroundColor={bgColor}
         barStyle={barStyle as StatusBarStyle}
-        {...props}
       />
     </View>
   );

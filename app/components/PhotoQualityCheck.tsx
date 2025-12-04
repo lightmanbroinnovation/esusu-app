@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  SafeAreaView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
   Image,
   ActivityIndicator,
   Alert,
@@ -16,20 +16,19 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FaceDetector from 'expo-face-detector';
+// expo-face-detector has been removed as it's deprecated
+// TODO: Implement face detection with react-native-vision-camera if needed
 
 export const PhotoQualityCheck = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   // Simplified state management
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [fileSizeError, setFileSizeError] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
-  const [checkingFace, setCheckingFace] = useState(false);
-  const [faceDetected, setFaceDetected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get screen dimensions for responsive sizing
@@ -183,18 +182,14 @@ export const PhotoQualityCheck = () => {
   useEffect(() => {
     const initializeComponent = () => {
       try {
-    if (params.photoUri && typeof params.photoUri === 'string') {
-      console.log('PhotoQualityCheck: Received photoUri:', params.photoUri);
+        if (params.photoUri && typeof params.photoUri === 'string') {
+          console.log('PhotoQualityCheck: Received photoUri:', params.photoUri);
 
-      // Check if it's already a Cloudinary URL
-          // For face detection we treat any uri the same
+          // Check if it's already a Cloudinary URL
+          // For photo validation we treat any uri the same
           setPhotoUri(params.photoUri);
           setImageError(false);
           setFileSizeError(false);
-          // Run face detection without blocking paint
-          setTimeout(() => {
-            runFaceDetection(params.photoUri as string).catch(err => console.error('Init face detection failed:', err));
-          }, 200);
         }
       } catch (error) {
         console.error('PhotoQualityCheck: Initialization error:', error);
@@ -208,33 +203,6 @@ export const PhotoQualityCheck = () => {
     // Use requestAnimationFrame to ensure UI is ready
     requestAnimationFrame(initializeComponent);
   }, [params.photoUri]);
-
-  // Face detection using expo-face-detector
-  const runFaceDetection = useCallback(async (uri: string): Promise<boolean> => {
-    try {
-      setCheckingFace(true);
-      setFaceDetected(false);
-      const options: FaceDetector.DetectionOptions = {
-        mode: FaceDetector.FaceDetectorMode.fast,
-        detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
-        runClassifications: FaceDetector.FaceDetectorClassifications.none,
-      };
-      const result = await FaceDetector.detectFacesAsync(uri, options);
-      const hasFace = Array.isArray(result.faces) && result.faces.length > 0;
-      setFaceDetected(hasFace);
-      if (!hasFace) {
-        Alert.alert('No face detected', 'Please ensure your face is clearly visible and try again.');
-      }
-      return hasFace;
-    } catch (err) {
-      console.error('Face detection error:', err);
-      Alert.alert('Detection error', 'We could not analyze the photo. Please try another photo.');
-      setFaceDetected(false);
-      return false;
-    } finally {
-      setCheckingFace(false);
-    }
-  }, []);
 
   // File size validation utility
   const validateImageSize = useCallback(async (uri: string, asset?: any): Promise<boolean> => {
@@ -285,7 +253,6 @@ export const PhotoQualityCheck = () => {
 
     try {
       console.log('[PhotoQualityCheck] handleDone called, navigating to /contributor/add with photoUri:', photoUri);
-      console.log('[PhotoQualityCheck] faceDetected:', faceDetected);
       console.log('[PhotoQualityCheck] Platform:', Platform.OS);
 
       // Navigate immediately
@@ -349,8 +316,7 @@ export const PhotoQualityCheck = () => {
           setPhotoUri(result.assets[0].uri);
           setImageError(false);
           setFileSizeError(false);
-          // Run face detection
-          runFaceDetection(result.assets[0].uri);
+          // Face detection removed - expo-face-detector is deprecated
         }
         return;
       }
@@ -389,7 +355,7 @@ export const PhotoQualityCheck = () => {
         exif: false, // Disable EXIF for better performance
         cameraType: ImagePicker.CameraType.front,
       });
-      
+
       if (!result.canceled && result.assets[0]) {
         // Use the original URI directly
         const newUri = result.assets[0].uri;
@@ -413,8 +379,7 @@ export const PhotoQualityCheck = () => {
         setImageError(false);
         setFileSizeError(false);
         setShowCamera(false);
-        // Run face detection
-        runFaceDetection(newUri);
+        // Face detection removed - expo-face-detector is deprecated
       } else {
         setShowCamera(false);
       }
@@ -425,7 +390,7 @@ export const PhotoQualityCheck = () => {
     } finally {
       setSavingImage(false);
     }
-  }, [runFaceDetection]);
+  }, []);
 
   const handleImageError = () => {
     setImageError(true);
@@ -461,13 +426,13 @@ export const PhotoQualityCheck = () => {
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        
+
         {/* Title */}
         <Text style={styles.title}>Check Quality</Text>
         <Text style={styles.subtitle}>
           Make sure your face is not blurred or out of frame before continuing
         </Text>
-        
+
         {/* Simplified Photo Display */}
         <View style={styles.photoContainer}>
           {isLoading ? (
@@ -478,8 +443,8 @@ export const PhotoQualityCheck = () => {
             <View style={[styles.photoPlaceholder, { width: imageSize, height: imageSize }]}>
               <Text style={styles.photoPlaceholderText}>
                 {imageError ? "Image could not be loaded. Please take a new photo." :
-                 fileSizeError ? "Image file size is too large (max 5MB). Please take a smaller photo." :
-                 "No photo taken yet."}
+                  fileSizeError ? "Image file size is too large (max 5MB). Please take a smaller photo." :
+                    "No photo taken yet."}
               </Text>
             </View>
           ) : (
@@ -498,17 +463,11 @@ export const PhotoQualityCheck = () => {
                 onLoadStart={() => console.log('Image loading started')}
                 onLoadEnd={() => console.log('Image loading completed')}
               />
-              {/* Status indicator */}
+              {/* Photo quality indicator */}
               <View style={styles.statusIndicator}>
-                {checkingFace ? (
-                  <ActivityIndicator size="small" color="#0052CC" />
-                ) : faceDetected ? (
-                  <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
-                ) : (
-                  <Ionicons name="warning" size={16} color="#F59E0B" />
-                )}
+                <Ionicons name="checkmark-circle" size={16} color="#22C55E" />
                 <Text style={styles.statusText}>
-                  {checkingFace ? "Analyzing..." : faceDetected ? "Face detected" : "No face detected"}
+                  Photo ready
                 </Text>
               </View>
             </View>
@@ -523,17 +482,15 @@ export const PhotoQualityCheck = () => {
             onPress={handleDone}
             style={[
               styles.continueButton,
-              { opacity: (isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected) ? 0.7 : 1 }
+              { opacity: (isLoading || imageError || fileSizeError || !photoUri) ? 0.7 : 1 }
             ]}
-            disabled={isLoading || checkingFace || imageError || fileSizeError || !photoUri || !faceDetected}
+            disabled={isLoading || imageError || fileSizeError || !photoUri}
           >
             <Text style={styles.continueButtonText}>
               {isLoading ? "Loading..." :
-               checkingFace ? "Analyzing..." :
-               imageError ? "Fix Image Error" :
-               fileSizeError ? "Image Too Large" :
-               !photoUri ? "Take Photo First" :
-               !faceDetected ? "No Face Detected" : "Continue"}
+                imageError ? "Fix Image Error" :
+                  fileSizeError ? "Image Too Large" :
+                    !photoUri ? "Take Photo First" : "Continue"}
             </Text>
           </TouchableOpacity>
 
@@ -541,17 +498,17 @@ export const PhotoQualityCheck = () => {
             onPress={handleNewPhoto}
             style={[
               styles.newPhotoButton,
-              { opacity: (isLoading || checkingFace) ? 0.7 : 1 }
+              { opacity: isLoading ? 0.7 : 1 }
             ]}
-            disabled={isLoading || checkingFace}
+            disabled={isLoading}
           >
             <Text style={styles.newPhotoButtonText}>
-              {isLoading ? "Loading..." : checkingFace ? "Analyzing..." : "Take a New Photo"}
+              {isLoading ? "Loading..." : "Take a New Photo"}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-      
+
       {/* Camera Modal */}
       <Modal
         animationType="slide"
@@ -570,24 +527,24 @@ export const PhotoQualityCheck = () => {
               ) : (
                 <View style={{ width: '100%', alignItems: 'center' }}>
                   <Text style={styles.cameraInstruction}>Position your face in the frame</Text>
-                  
+
                   {/* Camera UI */}
                   <View style={styles.cameraControls}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => setShowCamera(false)}
                       style={styles.cameraControlButton}
                     >
                       <Ionicons name="close" size={30} color="#FFFFFF" />
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       onPress={takePicture}
                       style={styles.cameraCaptureButton}
                     >
                       <View style={styles.cameraCaptureCircle} />
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       style={styles.cameraControlButton}
                       onPress={() => {
                         Alert.alert("Camera Switch", "Switching camera");

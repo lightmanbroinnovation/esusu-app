@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, FlatList, SafeAreaView, Alert, BackHandler, RefreshControl, Dimensions, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { fetchUser } from "@/services/api";
+import { fetchUser } from "../../services/api";
 import StatusBarAdapter from "../components/StatusBarAdapter";
 import Footer from "../components/Footer";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -120,12 +120,12 @@ const menuItems: MenuItem[] = [
 ];
 
 const fetchSettingsData = async () => {
-  const response = await fetchUser();
-  if (response.status === 'Success' && response.data?.user) {
-    return response.data.user;
-  } else {
-    throw new Error('Failed to fetch user data');
-  }
+    const response = await fetchUser();
+    if (response.status === 'Success' && response.data?.user) {
+        return response.data.user;
+    } else {
+        throw new Error('Failed to fetch user data');
+    }
 };
 
 export default function Index() {
@@ -170,7 +170,7 @@ export default function Index() {
                 cacheData = JSON.parse(cached);
                 setUserDetails(cacheData);
             }
-        } catch {}
+        } catch { }
         if (!networkAvailable && cacheData) {
             setLoading(false);
             setRefreshing(false);
@@ -205,15 +205,15 @@ export default function Index() {
         try {
             console.log('About to send notification...');
             await sendNotification(
-              NotificationTemplates.auth.logout.title,
-              NotificationTemplates.auth.logout.body,
-              NotificationTemplates.auth.logout.type
+                NotificationTemplates.auth.logout.title,
+                NotificationTemplates.auth.logout.body,
+                NotificationTemplates.auth.logout.type
             );
             console.log('Notification sent, now performing soft logout (keeping cache)...');
-            
+
             // Use the soft logout utility (keeps cache)
             await performSoftLogout();
-            
+
         } catch (error) {
             console.error("Error during logout:", error);
             Alert.alert("Error", "Failed to log out. Please try again.");
@@ -223,40 +223,40 @@ export default function Index() {
     const handlePress = (route: string) => {
         console.log("Navigating to:", route);
 
-    // Handle logout specially
-    if (route === "/login/passcode") {
-      // Navigate to passcode with phone parameter
-      try {
-        const userPhone = userDetails?.phoneNumber;
-        if (userPhone) {
-          router.push({
-            pathname: '/login/passcode',
-            params: { phone: userPhone, loginMethod: 'phone' }
-          });
+        // Handle logout specially
+        if (route === "/login/passcode") {
+            // Navigate to passcode with phone parameter
+            try {
+                const userPhone = userDetails?.phoneNumber;
+                if (userPhone) {
+                    router.push({
+                        pathname: '/login/passcode',
+                        params: { phone: userPhone, loginMethod: 'phone' }
+                    });
+                } else {
+                    Alert.alert("Error", "Phone number not found. Please log in again.");
+                }
+            } catch (error) {
+                console.error("Navigation error:", error);
+                Alert.alert("Error", "Failed to navigate. Please try again.");
+            }
+        } else if (route === "/logout") {
+            // Show confirmation dialog
+            Alert.alert(
+                "Logout",
+                "Are you sure you want to logout?",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Logout",
+                        onPress: handleLogout
+                    }
+                ]
+            );
         } else {
-          Alert.alert("Error", "Phone number not found. Please log in again.");
-        }
-      } catch (error) {
-        console.error("Navigation error:", error);
-        Alert.alert("Error", "Failed to navigate. Please try again.");
-      }
-    } else if (route === "/logout") {
-      // Show confirmation dialog
-      Alert.alert(
-        "Logout",
-        "Are you sure you want to logout?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Logout",
-            onPress: handleLogout
-          }
-        ]
-      );
-    } else {
             try {
                 // For all other routes, just navigate
                 router.push(route as any);
@@ -280,9 +280,10 @@ export default function Index() {
 
     if (!networkAvailable && !userDetails) {
         return (
-            <View style={styles.noNetworkContainer}>
-                <Text style={styles.noNetworkText}>No network. Please connect to the internet to load settings.</Text>
-            </View>
+            // <View style={styles.noNetworkContainer}>
+            //     <Text style={styles.noNetworkText}>No network. Please connect to the internet to load settings.</Text>
+            // </View>
+            <></>
         );
     }
 
@@ -437,7 +438,7 @@ export default function Index() {
     return (
         <View style={dynamicStyles.container}>
             {/* <StatusBarAdapter backgroundColor="#0074FF" barStyle="dark-content" /> */}
-            
+
             {/* Header */}
             <View style={dynamicStyles.header}>
                 <View style={dynamicStyles.avatarContainer}>
