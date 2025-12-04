@@ -34,10 +34,9 @@
       "distribution": "store",
       "android": {
         "buildType": "app-bundle",
-        "ndk": "29.0.13113456",
         "gradleCommand": ":app:bundleRelease",
-        "autoIncrement": true,
-        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
+        "autoIncrement": false,
+        "image": "latest"
       },
       "ios": {
         "buildConfiguration": "Release",
