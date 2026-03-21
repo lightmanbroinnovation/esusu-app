@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Alert, Modal, SafeAreaView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Alert, Modal, SafeAreaView, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import VerifyBusiness from './index';
 import BusinessInfoForm from './BusinessInfoForm';
@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, CameraType } from 'expo-camera';
+import { CameraType } from 'expo-camera';
 import { submitBusinessVerification } from '../../services/api';
 import { prepareVerificationDataForSubmission } from '../utils/imageUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -48,17 +48,185 @@ enum VerificationStage {
   SUBMITTING = 'submitting'
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '100%',
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    color: '#0052CC',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  loadingText: {
+    color: '#6B7280',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    marginTop: 16,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#0052CC',
+    borderRadius: 4,
+  },
+  progressText: {
+    color: '#6B7280',
+    marginTop: 8,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#EF4444',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  successText: {
+    color: '#10B981',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#0052CC',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 24,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  cameraHeader: {
+    padding: 16,
+  },
+  closeButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    padding: 8,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  cameraGuidelines: {
+    alignItems: 'center',
+  },
+  guidelineText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 8,
+    marginBottom: 32,
+  },
+  documentFrame: {
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+    width: '80%',
+    height: 220,
+  },
+  frameHelperText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    fontSize: 14,
+  },
+  cameraControls: {
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cameraButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 16,
+    borderRadius: 999,
+  },
+  captureButtonContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureButtonInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+  },
+  capturePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 999,
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderSpace: {
+    width: 48,
+    height: 48,
+  },
+});
+
 const VerificationController = ({ onClose }: VerificationControllerProps) => {
   const router = useRouter();
   const [currentStage, setCurrentStage] = useState<VerificationStage>(VerificationStage.MAIN);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
+  const [showView, setShowView] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
-  const [cameraType, setCameraType] = useState<'id' | 'location'>('id');
-  const [cameraReady, setCameraReady] = useState(false);
-  const [currentCameraType, setCurrentCameraType] = useState(CameraType.back);
-  const cameraRef = useRef<Camera>(null);
-  
+  const [currentViewType, setCurrentViewType] = useState<'id' | 'location'>('id');
+  const [viewReady, setViewReady] = useState(false);
+  const viewRef = useRef<View>(null);
+
   const [verificationData, setVerificationData] = useState<VerificationData>({
     businessInfo: null,
     governmentIDType: null,
@@ -86,9 +254,9 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
       governmentIDType: type
     });
     
-    // Request camera permissions for ID capture
-    setCameraType('id');
-    requestCameraPermission();
+    // Request view permissions for ID capture
+    setCurrentViewType('id');
+    requestViewPermission();
   };
   
   const handleIDConfirm = (cloudinaryUrl: string) => {
@@ -103,9 +271,9 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
   };
   
   const handleLocationPhotoTaken = () => {
-    // Request camera permissions for location capture
-    setCameraType('location');
-    requestCameraPermission();
+    // Request view permissions for location capture
+    setCurrentViewType('location');
+    requestViewPermission();
   };
   
   const handleLocationConfirm = (cloudinaryUrl: string) => {
@@ -251,7 +419,7 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
       // Navigate to success page after a short delay
       setTimeout(() => {
         setSubmissionLoading(false);
-    router.push('/verification/success');
+        router.push('/verification/success');
       }, 500);
       
     } catch (error) {
@@ -267,133 +435,89 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
     }
   };
   
-  // Request camera permission and open camera modal
-  const requestCameraPermission = async () => {
+  // Request view permission and open view modal
+  const requestViewPermission = async () => {
     try {
       setIsLoading(true);
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          "Permission Required",
-          "Camera access is needed to take photos. Please enable it in your device settings.",
-          [{ text: "OK" }]
-        );
-        setIsLoading(false);
-        return;
-      }
-      
-      // For location photos, request location permission
-      if (cameraType === 'location') {
-        const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
-        if (locationStatus !== 'granted') {
-          console.log('Location permission not granted');
-          // Continue without location data
-        }
-      }
-      
-      // Set default camera type
-      if (cameraType === 'id') {
-        // Use back camera for ID documents
-        setCurrentCameraType(CameraType.back);
-      } else {
-        // Also use back camera for location photos
-        setCurrentCameraType(CameraType.back);
-      }
-      
-      // Show camera modal
-      setShowCamera(true);
+      // Show view modal
+      setShowView(true);
+      setViewReady(true);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error accessing camera:', error);
+      console.error('Error accessing view:', error);
       Alert.alert(
-        "Camera Error",
-        "There was a problem accessing your camera. Please try again.",
+        "View Error",
+        "There was a problem accessing your view. Please try again.",
         [{ text: "OK" }]
       );
       setIsLoading(false);
     }
   };
   
-  // Toggle between front and back camera
-  const toggleCameraType = () => {
-    setCurrentCameraType(
-      currentCameraType === CameraType.back ? CameraType.front : CameraType.back
+  // Toggle between front and back view
+  const toggleViewType = () => {
+    setCurrentViewType(
+      currentViewType === 'id' ? 'location' : 'id'
     );
   };
   
-  // Take a picture using the camera
+  // Take a picture using view
   const takePicture = async () => {
-    if (!cameraRef.current || !cameraReady) {
-      console.log('Camera not ready');
+    if (!viewRef.current || !viewReady) {
+      console.log('View not ready');
       return;
     }
     
     try {
       setSavingImage(true);
       
-      // Capture photo
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 1,
-        exif: true,
-      });
+      // Simulate photo capture
+      const timestamp = new Date().getTime();
+      const filename = `${currentViewType}_photo_${timestamp}.jpg`;
       
-      if (photo) {
-        // Create a unique filename
-        const timestamp = new Date().getTime();
-        const filename = `${cameraType}_photo_${timestamp}.jpg`;
-        const newUri = `${FileSystem.documentDirectory}${filename}`;
-        
-        // Copy the image to app's document directory for persistence
-        await FileSystem.copyAsync({
-          from: photo.uri,
-          to: newUri
+      console.log(`${currentViewType} photo captured:`, filename);
+      
+      if (currentViewType === 'id') {
+        // Update with document image
+        setVerificationData({
+          ...verificationData,
+          governmentIDImage: filename
         });
+        setShowView(false);
+        setCurrentStage(VerificationStage.DOCUMENT_QUALITY_CHECK);
+      } else {
+        // For business location, get geotag data if available
+        let locationData: LocationImage = {
+          uri: filename,
+          timestamp
+        };
         
-        console.log(`${cameraType} photo saved to:`, newUri);
-        
-        if (cameraType === 'id') {
-          // Update with document image
-          setVerificationData({
-            ...verificationData,
-            governmentIDImage: newUri
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
           });
-          setShowCamera(false);
-          setCurrentStage(VerificationStage.DOCUMENT_QUALITY_CHECK);
-        } else {
-          // For business location, get geotag data if available
-          let locationData: LocationImage = {
-            uri: newUri,
-            timestamp
-          };
           
-          try {
-            const location = await Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.High
-            });
-            
-            if (location) {
-              locationData.latitude = location.coords.latitude;
-              locationData.longitude = location.coords.longitude;
-              console.log('Location data captured:', location.coords);
-            }
-          } catch (locError) {
-            console.log('Could not get location data:', locError);
+          if (location) {
+            locationData.latitude = location.coords.latitude;
+            locationData.longitude = location.coords.longitude;
+            console.log('Location data captured:', location.coords);
           }
-          
-          // Update with location image
-          setVerificationData({
-            ...verificationData,
-            locationImages: [...verificationData.locationImages, locationData]
-          });
-          setShowCamera(false);
-          setCurrentStage(VerificationStage.LOCATION_QUALITY_CHECK);
+        } catch (locError) {
+          console.log('Could not get location data:', locError);
         }
+        
+        // Update with location image
+        setVerificationData({
+          ...verificationData,
+          locationImages: [...verificationData.locationImages, locationData]
+        });
+        setShowView(false);
+        setCurrentStage(VerificationStage.LOCATION_QUALITY_CHECK);
       }
     } catch (error) {
       console.error('Error taking picture:', error);
       Alert.alert(
-        "Camera Error",
+        "View Error",
         "There was a problem capturing the photo. Please try again.",
         [{ text: "OK" }]
       );
@@ -404,7 +528,7 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
   
   // Retake photo function
   const handleRetakePhoto = () => {
-    requestCameraPermission();
+    requestViewPermission();
   };
   
   const renderCurrentStage = () => {
@@ -414,7 +538,6 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
           <VerifyBusiness 
             onStepSelect={handleMainStepSelect}
             onClose={handleCloseVerification}
-            onVerificationComplete={handleVerificationComplete}
             steps={{
               businessInfo: verificationData.businessInfo !== null,
               governmentID: verificationData.governmentIDImage !== null,
@@ -428,7 +551,6 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
           <BusinessInfoForm 
             onClose={() => setCurrentStage(VerificationStage.MAIN)}
             onSave={handleBusinessInfoSave}
-            initialData={verificationData.businessInfo}
           />
         );
       
@@ -451,8 +573,8 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
               handleIDConfirm(cloudinaryUrl);
             }}
             onRetake={() => {
-              setCameraType('id');
-              handleRetakePhoto();
+              setCurrentViewType('id');
+              requestViewPermission();
             }}
           />
         );
@@ -462,7 +584,7 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
           <BusinessLocationUpload 
             onClose={() => setCurrentStage(VerificationStage.MAIN)}
             onTakePhoto={handleLocationPhotoTaken}
-            existingPhotos={verificationData.locationImages.map(img => img.uri)}
+            existingPhotos={verificationData.locationImages.map((img: any) => img.uri)}
             locationData={verificationData.locationImages}
           />
         );
@@ -479,25 +601,25 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
               handleLocationConfirm(cloudinaryUrl);
             }}
             onRetake={() => {
-              setCameraType('location');
-              handleRetakePhoto();
+              setCurrentViewType('location');
+              requestViewPermission();
             }}
           />
         );
       
       case VerificationStage.SUBMITTING:
         return (
-          <SafeAreaView className="flex-1 bg-white">
-            <View className="flex-1 justify-center items-center p-6">
-              <View className="bg-white rounded-2xl w-full p-8 items-center shadow-md">
-                <Text className="text-[#0052CC] text-xl font-bold text-center mb-6">
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.centerContainer}>
+              <View style={styles.card}>
+                <Text style={styles.title}>
                   Submitting Verification
                 </Text>
                 
                 {submissionLoading ? (
                   <>
                     <ActivityIndicator size="large" color="#0052CC" />
-                    <Text className="text-gray-600 mt-4 text-center">
+                    <Text style={styles.loadingText}>
                       {submissionProgress < 10 ? (
                         <Text>Preparing data...</Text>
                       ) : submissionProgress < 90 ? (
@@ -508,99 +630,96 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
                     </Text>
                     
                     {/* Progress bar */}
-                    <View className="w-full h-2 bg-gray-200 rounded-full mt-4">
+                    <View style={styles.progressBarContainer}>
                       <View 
-                        className="h-2 bg-[#0052CC] rounded-full" 
-                        style={{ width: `${submissionProgress}%` }} 
+                        style={[styles.progressBar, { width: `${submissionProgress}%` }]} 
                       />
                     </View>
-                    <Text className="text-gray-500 mt-2 text-sm">
+                    <Text style={styles.progressText}>
                       {submissionProgress}%
                     </Text>
                   </>
                 ) : submissionError ? (
-                  <>
-                    <Ionicons name="alert-circle" size={48} color="#F44336" />
-                    <Text className="text-red-500 mt-4 text-center">
-                      {submissionError}
-                    </Text>
-                    <TouchableOpacity
-                      className="bg-[#0052CC] py-3 px-6 rounded-lg mt-6"
-                      onPress={() => setCurrentStage(VerificationStage.MAIN)}
-                    >
-                      <Text className="text-white font-medium">Try Again</Text>
-                    </TouchableOpacity>
-                  </>
+                  <Text style={styles.errorText}>
+                    {submissionError}
+                  </Text>
                 ) : (
-                  <>
-                    <Ionicons name="checkmark-circle" size={48} color="#4CAF50" />
-                    <Text className="text-green-500 mt-4 text-center">
-                      Verification submitted successfully!
+                  <Text style={styles.successText}>
+                    Verification submitted successfully!
+                  </Text>
+                )}
+                
+                {submissionError && (
+                  <TouchableOpacity 
+                    style={styles.retryButton}
+                    onPress={handleVerificationComplete}
+                  >
+                    <Text style={styles.retryButtonText}>
+                      Retry Submission
                     </Text>
-                  </>
+                  </TouchableOpacity>
                 )}
               </View>
             </View>
           </SafeAreaView>
         );
+      
+      default:
+        return null;
     }
   };
 
   return (
-    <View className="flex-1">
+    <View style={styles.container}>
       {renderCurrentStage()}
       
-      {/* Real-time Camera Modal */}
+      {/* Real-time View Modal */}
       <Modal
         animationType="slide"
         transparent={false}
-        visible={showCamera}
-        onRequestClose={() => setShowCamera(false)}
+        visible={showView}
+        onRequestClose={() => setShowView(false)}
       >
-        <View className="flex-1 bg-black">
-          <Camera
-            ref={cameraRef}
-            type={currentCameraType}
-            className="flex-1"
-            onCameraReady={() => setCameraReady(true)}
-            ratio={cameraType === 'id' ? '4:3' : '16:9'}
+        <View style={styles.cameraContainer}>
+          <View
+            ref={viewRef}
+            style={styles.container}
           >
-            <SafeAreaView className="flex-1">
-              <View className="flex-1 justify-between">
-                {/* Camera Header */}
-                <View className="p-4">
+            <SafeAreaView style={styles.container}>
+              <View style={[styles.container, styles.cameraControls]}>
+                {/* View Header */}
+                <View style={styles.cameraHeader}>
                   <TouchableOpacity 
-                    onPress={() => setShowCamera(false)}
-                    className="bg-black/30 p-2 rounded-full self-start"
+                    onPress={() => setShowView(false)}
+                    style={styles.closeButton}
                   >
                     <Ionicons name="close" size={30} color="#FFF" />
                   </TouchableOpacity>
                 </View>
                 
-                {/* Camera Guidelines */}
-                <View className="items-center">
-                  <Text className="text-white text-xl text-center px-4 mb-4 bg-black/30 py-2 rounded-lg">
-                    {cameraType === 'id' 
-                      ? `Position your ${verificationData.governmentIDType?.replace('_', ' ')} in the frame` 
-                      : 'Position your business location in the frame'}
+                {/* View Guidelines */}
+                <View style={styles.cameraGuidelines}>
+                  <Text style={styles.guidelineText}>
+                    {currentViewType === 'id' 
+                      ? `Position your ${verificationData.governmentIDType?.replace('_', ' ')} in frame` 
+                      : 'Position your business location in frame'}
                   </Text>
                 
                   {/* Document frame guideline */}
-                  {cameraType === 'id' && (
-                    <View className="border-2 border-white border-dashed rounded-md mb-8 justify-center items-center"
-                          style={{width: '80%', height: 220}}>
-                      <Text className="text-white text-center bg-black/50 px-4 py-2 rounded-md text-sm">
+                  {currentViewType === 'id' && (
+                    <View style={[styles.documentFrame, {width: '80%', height: 220}]}>
+                      <Text style={styles.frameHelperText}>
                         Align document edges with this frame
                       </Text>
                     </View>
                   )}
                 </View>
                 
-                {/* Camera Controls */}
-                <View className="p-6 flex-row justify-between items-center mb-4">
+                {/* View Controls */}
+                <View style={styles.cameraControls}>
                   <TouchableOpacity 
-                    onPress={toggleCameraType}
-                    className="bg-white/20 p-4 rounded-full"
+                    onPress={toggleViewType}
+                    style={styles.cameraButton}
                     disabled={savingImage}
                   >
                     <Ionicons name="camera-reverse" size={28} color="#FFF" />
@@ -609,31 +728,30 @@ const VerificationController = ({ onClose }: VerificationControllerProps) => {
                   {/* Capture Button */}
                   <TouchableOpacity 
                     onPress={takePicture}
-                    disabled={!cameraReady || savingImage}
-                    className="rounded-full p-2"
-                    style={{opacity: !cameraReady || savingImage ? 0.7 : 1}}
+                    disabled={!viewReady || savingImage}
+                    style={styles.cameraButton}
                   >
                     {savingImage ? (
-                      <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center">
+                      <View style={styles.captureButtonContainer}>
                         <ActivityIndicator color="#FFF" size="large" />
                       </View>
                     ) : (
-                      <View className="w-20 h-20 rounded-full border-4 border-white bg-white/10 items-center justify-center">
-                        <View className="w-16 h-16 rounded-full bg-white" />
+                      <View style={styles.capturePlaceholder}>
+                        <View style={styles.captureButtonInner} />
                       </View>
                     )}
                   </TouchableOpacity>
                   
                   {/* Placeholder for symmetry */}
-                  <View className="w-12 h-12" />
+                  <View style={styles.placeholderSpace} />
                 </View>
               </View>
             </SafeAreaView>
-          </Camera>
+          </View>
         </View>
       </Modal>
     </View>
   );
 };
 
-export default VerificationController; 
+export default VerificationController;

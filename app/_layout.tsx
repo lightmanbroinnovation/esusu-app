@@ -111,6 +111,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -136,7 +138,7 @@ async function registerForPushNotificationsAsync() {
     }
     
     if (finalStatus !== 'granted') {
-      Alert.alert('Failed to get push token for push notification!');
+      Alert.alert('Failed to get push token for push notification!', 'Please enable push notifications in your device settings.');
       return null;
     }
     
@@ -199,8 +201,8 @@ function RootLayoutWithAuth() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   // CRITICAL: Router hooks MUST be called unconditionally (React rules)
   // These will be available once Stack mounts and creates the router context
@@ -263,17 +265,19 @@ function RootLayoutWithAuth() {
 
   // Check for network connectivity
   useEffect(() => {
-const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
-  setIsConnected(!!state.isConnected);
-  if (!state.isConnected) {
-    console.log('No network connection detected.');
-  } else if (state.isConnected && !isConnected) {
-    console.log('Network connection restored.');
-  }
-});
+    const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+      setIsConnected(!!state.isConnected);
+      if (!state.isConnected) {
+        console.log('No network connection detected.');
+      } else if (state.isConnected && !isConnected) {
+        console.log('Network connection restored.');
+      }
+    });
 
     return () => {
-      unsubscribe();
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
     };
   }, [isConnected]);
 
@@ -414,7 +418,6 @@ const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
               </View>
             )}
             <ConnectionStatus />
-            <NotificationToast />
             <PerformanceMonitor visible={__DEV__} />
           </NotificationProvider>
         </LoadingProvider>

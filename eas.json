@@ -30,6 +30,15 @@
         "image": "latest"
       }
     },
+    "apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "autoIncrement": false,
+        "image": "latest"
+      }
+    },
     "production": {
       "distribution": "store",
       "android": {

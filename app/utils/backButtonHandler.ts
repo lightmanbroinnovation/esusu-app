@@ -96,10 +96,10 @@ export const useBackButtonHandler = (currentRoute?: string, isFromLock: boolean 
       return true; // Prevent default behavior
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+      subscription.remove();
     };
   }, [currentRoute, isFromLock, router]);
 };
@@ -142,10 +142,10 @@ export const useExitAppBackHandler = () => {
       }
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+      subscription.remove();
       if (backPressTimer) clearTimeout(backPressTimer);
     };
   }, [router]);
@@ -160,10 +160,10 @@ export const useDisableBackHandler = () => {
       return true; // Prevent default behavior
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+      subscription.remove();
     };
   }, []);
 };
@@ -178,10 +178,10 @@ export const useCustomBackHandler = (onBackPress: () => void) => {
       return true; // Prevent default behavior
     };
 
-    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+      subscription.remove();
     };
   }, [onBackPress]);
-}; 
+};

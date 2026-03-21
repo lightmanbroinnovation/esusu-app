@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+    backgroundColor: '#ffff',
     flex: 1,
     zIndex: 30,
   },
@@ -211,6 +211,65 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  welcomeSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  welcomeText: {
+    fontSize: 24,
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  usernameText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  fingerprintSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  fingerprintSectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 24,
+  },
+  fingerprintIconButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  usePasswordButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: '#0072CE',
+    borderRadius: 12,
+    marginBottom: 40,
+  },
+  usePasswordText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  legalSection: {
+    paddingHorizontal: 20,
+  },
+  legalText: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
 });
 
 export default function PasscodeScreen() {
@@ -223,6 +282,8 @@ export default function PasscodeScreen() {
   const [showFingerprintModal, setShowFingerprintModal] = useState<boolean>(false);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
   const [logoutLoading, setLogoutLoading] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>('');
+  const [canLoginOffline, setCanLoginOffline] = useState<boolean>(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -353,6 +414,61 @@ export default function PasscodeScreen() {
             fingerprintType: typeof cachedUserData.data?.user?.fingerprint
           });
           
+          // Extract username from user data
+          // Check multiple possible locations for the name
+          let firstName = cachedUserData.data?.firstName || 
+                        cachedUserData.data?.user?.firstname || 
+                        cachedUserData.data?.firstname || 
+                        '';
+          let lastName = cachedUserData.data?.lastName || 
+                       cachedUserData.data?.user?.lastname || 
+                       cachedUserData.data?.lastname || 
+                       '';
+          
+          // If no name found, try direct AsyncStorage access for cache_settings_user
+          if (!firstName && !lastName) {
+            console.log('🔍 No name found in userData, checking cache_settings_user directly...');
+            try {
+              const settingsCacheStr = await AsyncStorage.getItem('cache_settings_user');
+              if (settingsCacheStr) {
+                const settingsCache = JSON.parse(settingsCacheStr);
+                if (settingsCache?.data) {
+                  firstName = settingsCache.data.firstName || '';
+                  lastName = settingsCache.data.lastName || '';
+                  console.log('📝 Found name in cache_settings_user (direct):', { firstName, lastName });
+                }
+              }
+            } catch (error) {
+              console.log('❌ Error checking cache_settings_user (direct):', error);
+            }
+          }
+          
+          // Fallback to getCachedData if still no name found
+          if (!firstName && !lastName) {
+            console.log('🔍 Still no name, trying getCachedData fallback...');
+            try {
+              type SettingsUserData = { data: { firstName?: string; lastName?: string } };
+              const settingsUserData = await getCachedData<SettingsUserData>('settings_user', async () => {
+                return { data: { firstName: '', lastName: '' } };
+              });
+              if (settingsUserData?.data) {
+                firstName = settingsUserData.data.firstName || '';
+                lastName = settingsUserData.data.lastName || '';
+                console.log('📝 Found name in cache_settings_user (getCachedData):', { firstName, lastName });
+              }
+            } catch (error) {
+              console.log('❌ Error checking cache_settings_user (getCachedData):', error);
+            }
+          }
+          
+          const fullName = firstName && lastName ? `${firstName} ${lastName}`.toUpperCase() : firstName.toUpperCase();
+          if (fullName) {
+            setUsername(fullName);
+            console.log('👤 Username set to:', fullName);
+          } else {
+            console.log('⚠️ No username found in cached data');
+          }
+          
           if (hasFingerprint) {
             console.log('✅ Found fingerprint in cached data, checking device capability...');
             
@@ -378,6 +494,24 @@ export default function PasscodeScreen() {
         }
       } catch (error) {
         console.log('❌ Error fetching cached user data:', error);
+      }
+      
+      // Check offline login capability
+      try {
+        const storedToken = await AsyncStorage.getItem('auth_token');
+        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+        const storedPasscode = await AsyncStorage.getItem('userPasscode');
+        
+        const hasOfflineCapability = !!(storedToken && isLoggedIn === 'true' && storedPasscode);
+        setCanLoginOffline(hasOfflineCapability);
+        
+        if (hasOfflineCapability) {
+          console.log('✅ Offline login is available');
+        } else {
+          console.log('❌ Offline login not available');
+        }
+      } catch (error) {
+        console.log('❌ Error checking offline login capability:', error);
       }
       
       // Get all AsyncStorage keys and their values
@@ -499,20 +633,25 @@ export default function PasscodeScreen() {
         console.log("No user data in params, attempting to retrieve from storage");
         const storedUserId = await AsyncStorage.getItem('userId');
         const storedPhone = await AsyncStorage.getItem('userPhone');
+        const storedToken = await AsyncStorage.getItem('auth_token');
+        const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+        const storedPasscode = await AsyncStorage.getItem('userPasscode');
+        
+        // Check if we have offline authentication data
+        const hasOfflineData = !!(storedToken && isLoggedIn === 'true' && storedPasscode);
         
         // Allow login if phone param exists, even if no stored session
-        if (phone || storedPhone) {
-          // Proceed as normal
+        if (phone || storedPhone || hasOfflineData) {
+          console.log("✅ Found session data or offline credentials, proceeding with login");
           return;
         } else {
           // Check if we're in the process of logging out (no auth token)
-          const authToken = await AsyncStorage.getItem('auth_token');
-          if (!authToken) {
+          if (!storedToken) {
             console.log("No auth token found, likely logging out - not redirecting");
             return;
           }
           
-          console.warn("No stored user session or phone param found, redirecting to index");
+          console.warn("No stored user session, phone param, or offline credentials found, redirecting to index");
           router.replace('/');
         }
       } catch (error) {
@@ -550,6 +689,36 @@ export default function PasscodeScreen() {
         return;
       }
       
+      // Check for offline authentication data first
+      const storedPasscode = await AsyncStorage.getItem('userPasscode');
+      const storedToken = await AsyncStorage.getItem('auth_token');
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      
+      // Prioritize offline login if we have stored credentials
+      if (storedToken && isLoggedIn === 'true') {
+        if (useFingerprint) {
+          // Offline biometric login
+          console.log("[Passcode] Offline biometric login successful");
+          router.replace('/dashboard');
+          return;
+        } else if (pin === storedPasscode) {
+          // Offline passcode login
+          console.log("[Passcode] Offline passcode login successful");
+          router.replace('/dashboard');
+          return;
+        } else {
+          console.log("[Passcode] Offline login failed - wrong passcode");
+          Vibration.vibrate(300);
+          Alert.alert("Login Failed", "Incorrect passcode. Please try again.");
+          setPin("");
+          return;
+        }
+      }
+      
+      // If no offline credentials, proceed with online login
+      console.log("[Passcode] No offline credentials found, proceeding with online login");
+      
+      // Online login fallback
       if (loginType === 'phone' && (!loginValue || loginValue.length !== 11)) {
         Alert.alert("Error", "Invalid phone number. Please try again.");
         setPin("");
@@ -574,6 +743,10 @@ export default function PasscodeScreen() {
       if (response && response.data && response.data.token) {
         // Store auth token
         await AsyncStorage.setItem('auth_token', response.data.token);
+        // Store user passcode for offline login
+        if (!useFingerprint && pin) {
+          await AsyncStorage.setItem('userPasscode', pin);
+        }
         // Store user data
         if (phone) await AsyncStorage.setItem('userPhone', phone);
         if (email) await AsyncStorage.setItem('userEmail', email);
@@ -600,7 +773,6 @@ export default function PasscodeScreen() {
           console.log("[Passcode] All data refreshed successfully");
         } catch (error) {
           console.log("[Passcode] Warning: Some data refresh failed:", error);
-          // Continue with navigation even if refresh fails
         }
         
         // Navigate to dashboard
@@ -614,7 +786,25 @@ export default function PasscodeScreen() {
     } catch (error: any) {
       console.error("[Passcode] Error during login:", error);
       Vibration.vibrate(300);
-      // Show error message from server if available, else fallback
+      
+      // Check if we have stored credentials for offline fallback
+      const storedToken = await AsyncStorage.getItem('auth_token');
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      
+      if (storedToken && isLoggedIn === 'true') {
+        const storedPasscode = await AsyncStorage.getItem('userPasscode');
+        if (!useFingerprint && pin && storedPasscode === pin) {
+          console.log("[Passcode] Network error - using offline passcode login");
+          router.replace('/dashboard');
+          return;
+        }
+        if (useFingerprint) {
+          console.log("[Passcode] Network error - using offline biometric login");
+          router.replace('/dashboard');
+          return;
+        }
+      }
+      
       let errorMessage = "An error occurred. Please try again.";
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -737,10 +927,11 @@ export default function PasscodeScreen() {
                   await AsyncStorage.multiRemove([
                     'auth_token',
                     'userPhone',
-                    'userEmail',
-                    'userId',
+                    'userEmail', 
                     'isLoggedIn',
-                    'userData'
+                    'userPasscode', // Clear stored passcode for security
+                    'userData',
+                    'userId'
                   ]);
                   console.log('✓ Critical auth keys cleared');
                 } catch (e) {
@@ -811,32 +1002,41 @@ export default function PasscodeScreen() {
       <View style={styles.fingerprintModalOverlay}>
         <View style={styles.fingerprintModalContainer}>
           <View style={styles.fingerprintModalContent}>
-            <View style={styles.fingerprintIconContainer}>
+            {/* Welcome Text */}
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeText}>Welcome Back,</Text>
+              <Text style={styles.usernameText}>{username || 'USER'}</Text>
+            </View>
+            
+            {/* Fingerprint Section */}
+            <View style={styles.fingerprintSection}>
+              <Text style={styles.fingerprintSectionTitle}>Fingerprint Unlock</Text>
               <TouchableOpacity
                 onPress={handleFingerprintAuth}
-                style={styles.fingerprintIconContainer}
+                style={styles.fingerprintIconButton}
                 disabled={loading}
               >
-                <Ionicons name="finger-print" size={80} color="#0072CE" />
+                <Ionicons name="finger-print" size={60} color="#0072CE" />
                 {loading && (
                   <ActivityIndicator size="small" color="#0072CE" style={styles.fingerprintIconLoading} />
                 )}
               </TouchableOpacity>
-              
-              <Text style={styles.fingerprintModalTitle}>
-                Use Fingerprint
+            </View>
+            
+            {/* Use Password Button */}
+            <TouchableOpacity
+              onPress={showKeypadInstead}
+              style={styles.usePasswordButton}
+              disabled={loading}
+            >
+              <Text style={styles.usePasswordText}>Use Password Instead</Text>
+            </TouchableOpacity>
+            
+            {/* Legal Text */}
+            <View style={styles.legalSection}>
+              <Text style={styles.legalText}>
+                Licensed by the Central Bank of Nigeria. All rights reserved. © 2024 Esusu Financial Systems Limited. All rights reserved.
               </Text>
-              <Text style={styles.fingerprintModalSubtitle}>
-                Tap the fingerprint icon to authenticate
-              </Text>
-              
-              <TouchableOpacity
-                onPress={showKeypadInstead}
-                style={styles.usePasscodeButton}
-                disabled={loading}
-              >
-                <Text style={styles.usePasscodeText}>Login with Passcode</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </View>

@@ -425,11 +425,17 @@ export default function VerificationScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <EsusuLoader />
+          <Text style={styles.loadingText}>Loading verification data...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
         <View style={styles.headerContainer}>
           <TouchableOpacity 
             style={styles.closeButton}
@@ -503,7 +509,7 @@ export default function VerificationScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
-
+      )}
       {/* Government ID Selection Modal */}
       <Modal
         animationType="slide"
@@ -647,6 +653,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     color: '#4B5563'
+  },
+  
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#4B5563',
+    fontSize: 16,
+    textAlign: 'center'
   },
   
   // Steps container
